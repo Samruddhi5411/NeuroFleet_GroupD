@@ -12,6 +12,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -21,105 +23,59 @@ public class BookingController {
     @Autowired
     private BookingService bookingService;
 
-    /**
-     * Generate receipt/invoice for a booking
-     */
-    @GetMapping("/{id}/receipt")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> getBookingReceipt(@PathVariable Long id) {
-        try {
-            Booking booking = bookingService.getBookingById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-
-            // Generate simple text receipt
-            String receipt = generateReceiptText(booking);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.TEXT_PLAIN);
-            headers.setContentDispositionFormData("attachment", 
-                "receipt_" + booking.getId() + ".txt");
-
-            return ResponseEntity.ok()
-                .headers(headers)
-                .body(receipt);
-                
-        } catch (Exception e) {
-            return ResponseEntity.status(500)
-                .body("Error generating receipt: " + e.getMessage());
-        }
+    // Get all bookings
+    @GetMapping
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    public ResponseEntity<List<Booking>> getAllBookings() {
+        System.out.println("📋 GET /api/bookings - Fetching all bookings");
+        return ResponseEntity.ok(bookingService.getAllBookings());
     }
 
-    /**
-     * Get booking details with full information
-     */
-    @GetMapping("/{id}/details")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> getBookingDetails(@PathVariable Long id) {
+    // Get booking by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<Booking> getBookingById(@PathVariable Long id) {
+        System.out.println("🔍 GET /api/bookings/" + id);
         return bookingService.getBookingById(id)
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    /**
-     * Update booking status (complete trip, cancel, etc)
-     */
-    @PutMapping("/{id}/status")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'DRIVER')")
-    public ResponseEntity<?> updateBookingStatus(
-            @PathVariable Long id, 
-            @RequestParam String status) {
+    // Get customer bookings
+    @GetMapping("/customer/{username}")
+    @PreAuthorize("hasAnyAuthority('CUSTOMER', 'ADMIN')")
+    public ResponseEntity<List<Booking>> getCustomerBookings(@PathVariable String username) {
+        System.out.println("🔍 GET /api/bookings/customer/" + username);
+        List<Booking> bookings = bookingService.getCustomerBookings(username);
+        return ResponseEntity.ok(bookings);
+    }
+
+    // Create booking
+    @PostMapping
+    @PreAuthorize("hasAnyAuthority('CUSTOMER', 'ADMIN')")
+    public ResponseEntity<Booking> createBooking(@RequestBody Booking booking) {
+        System.out.println("➕ POST /api/bookings - Creating new booking");
+        Booking savedBooking = bookingService.createBooking(booking);
+        return ResponseEntity.ok(savedBooking);
+    }
+
+    // Update booking
+    @PutMapping("/{id}")
+    public ResponseEntity<Booking> updateBooking(@PathVariable Long id, @RequestBody Booking booking) {
+        System.out.println("✏️ PUT /api/bookings/" + id);
         try {
-            Booking updated = bookingService.updateBookingStatus(id, status);
-            return ResponseEntity.ok(updated);
+            Booking updatedBooking = bookingService.updateBooking(id, booking);
+            return ResponseEntity.ok(updatedBooking);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(404).body(e.getMessage());
+            return ResponseEntity.notFound().build();
         }
     }
 
-    private String generateReceiptText(Booking booking) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        
-        StringBuilder receipt = new StringBuilder();
-        receipt.append("═══════════════════════════════════════\n");
-        receipt.append("         NEUROFLEETX RECEIPT\n");
-        receipt.append("═══════════════════════════════════════\n\n");
-        
-        receipt.append("Booking ID: #").append(booking.getId()).append("\n");
-        receipt.append("Date: ").append(booking.getCreatedAt().format(formatter)).append("\n\n");
-        
-        receipt.append("CUSTOMER DETAILS\n");
-        receipt.append("─────────────────────────────────────\n");
-        receipt.append("Name: ").append(booking.getCustomer().getFullName()).append("\n");
-        receipt.append("Email: ").append(booking.getCustomer().getEmail()).append("\n");
-        receipt.append("Phone: ").append(booking.getCustomer().getPhone()).append("\n\n");
-        
-        receipt.append("VEHICLE DETAILS\n");
-        receipt.append("─────────────────────────────────────\n");
-        receipt.append("Model: ").append(booking.getVehicle().getModel()).append("\n");
-        receipt.append("Number: ").append(booking.getVehicle().getVehicleNumber()).append("\n\n");
-        
-        receipt.append("TRIP DETAILS\n");
-        receipt.append("─────────────────────────────────────\n");
-        receipt.append("Pickup: ").append(booking.getPickupLocation()).append("\n");
-        receipt.append("Dropoff: ").append(booking.getDropoffLocation()).append("\n");
-        receipt.append("Start: ").append(booking.getStartTime().format(formatter)).append("\n");
-        receipt.append("End: ").append(booking.getEndTime().format(formatter)).append("\n");
-        
-        if (booking.getDistanceKm() != null) {
-            receipt.append("Distance: ").append(booking.getDistanceKm()).append(" km\n");
-        }
-        
-        receipt.append("Status: ").append(booking.getStatus()).append("\n\n");
-        
-        receipt.append("PAYMENT SUMMARY\n");
-        receipt.append("─────────────────────────────────────\n");
-        receipt.append("Total Amount: $").append(String.format("%.2f", booking.getTotalPrice())).append("\n");
-        receipt.append("Payment Status: PAID\n\n");
-        
-        receipt.append("═══════════════════════════════════════\n");
-        receipt.append("     Thank you for using NeuroFleetX!\n");
-        receipt.append("═══════════════════════════════════════\n");
-        
-        return receipt.toString();
+    // Delete booking
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Void> deleteBooking(@PathVariable Long id) {
+        System.out.println("🗑️ DELETE /api/bookings/" + id);
+        bookingService.deleteBooking(id);
+        return ResponseEntity.ok().build();
     }
 }

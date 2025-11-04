@@ -6,9 +6,16 @@ package com.example.neurofleetbackkendD.config;
 
 import com.example.neurofleetbackkendD.model.User;
 import com.example.neurofleetbackkendD.model.Vehicle;
+import com.example.neurofleetbackkendD.model.enums.MaintenanceStatus;
+import com.example.neurofleetbackkendD.model.enums.MaintenanceType;
+import com.example.neurofleetbackkendD.model.enums.Priority;
+import com.example.neurofleetbackkendD.model.enums.UserRole;
+import com.example.neurofleetbackkendD.model.enums.VehicleStatus;
+import com.example.neurofleetbackkendD.model.enums.VehicleType;
 import com.example.neurofleetbackkendD.model.Maintenance;
 import com.example.neurofleetbackkendD.repository.UserRepository;
 import com.example.neurofleetbackkendD.repository.VehicleRepository;
+import com.example.neurofleetbackkendD.repository.BookingRepository;
 import com.example.neurofleetbackkendD.repository.MaintenanceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -24,175 +31,215 @@ public class DataInitializer implements CommandLineRunner {
 
     @Autowired
     private UserRepository userRepository;
-
+    
     @Autowired
     private VehicleRepository vehicleRepository;
-
+    
     @Autowired
     private MaintenanceRepository maintenanceRepository;
-
+    
     @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) throws Exception {
-        // Check if data already exists
+        // Skip if data already exists
         if (userRepository.count() > 0) {
-            System.out.println("✅ Database already initialized. Skipping data seeding.");
+            System.out.println("✅ Data already exists. Skipping initialization.");
             return;
         }
 
-        System.out.println("🌱 Initializing database with sample data...");
-
-        // Create Users
+        System.out.println("🚀 Creating sample data...");
+        
         createUsers();
-
-        // Create Vehicles
         createVehicles();
-
-        // Create Sample Maintenance Records
-        createMaintenanceRecords();
-
-        System.out.println("✅ Database initialization completed successfully!");
+        createMaintenance();
+        
+        System.out.println("✅ Sample data created successfully!");
     }
 
     private void createUsers() {
-        List<User> users = Arrays.asList(
-            // Admin
-            createUser("admin", "admin123", "Administrator", "admin@neurofleetx.in", "9876543210", "ADMIN"),
-            
-            // Managers
-            createUser("manager1", "manager123", "Rajesh Kumar", "rajesh.kumar@neurofleetx.in", "9823456789", "MANAGER"),
-            createUser("manager2", "manager123", "Priya Sharma", "priya.sharma@neurofleetx.in", "9823456790", "MANAGER"),
-            
-            // Drivers
-            createUser("driver1", "driver123", "Amit Patil", "amit.patil@neurofleetx.in", "9922100321", "DRIVER"),
-            createUser("driver2", "driver123", "Suresh Deshmukh", "suresh.deshmukh@neurofleetx.in", "9922100654", "DRIVER"),
-            createUser("driver3", "driver123", "Vijay Jadhav", "vijay.jadhav@neurofleetx.in", "9922100876", "DRIVER"),
-            createUser("driver4", "driver123", "Ramesh Shinde", "ramesh.shinde@neurofleetx.in", "9922100987", "DRIVER"),
-            
-            // Customers
-            createUser("customer1", "customer123", "Anil Mehta", "anil.mehta@neurofleetx.in", "9823500111", "CUSTOMER"),
-            createUser("customer2", "customer123", "Sneha Kulkarni", "sneha.kulkarni@neurofleetx.in", "9823500222", "CUSTOMER"),
-            createUser("customer3", "customer123", "Rahul Joshi", "rahul.joshi@neurofleetx.in", "9823500333", "CUSTOMER"),
-            createUser("customer4", "customer123", "Pooja Desai", "pooja.desai@neurofleetx.in", "9823500444", "CUSTOMER")
-        );
-
-        userRepository.saveAll(users);
-        System.out.println("👥 Created " + users.size() + " users");
-    }
-
-    private User createUser(String username, String password, String fullName, String email, String phone, String role) {
-        User user = new User();
-        user.setUsername(username);
-        user.setPassword(passwordEncoder.encode(password));
-        user.setFullName(fullName);
-        user.setEmail(email);
-        user.setPhone(phone);
-        user.setRole(role);
-        user.setActive(true);
-        return user;
+        // Admin
+        User admin = new User();
+        admin.setUsername("admin");
+        admin.setPassword(passwordEncoder.encode("admin123"));
+        admin.setFullName("System Admin");
+        admin.setEmail("admin@neurofleet.com");
+        admin.setPhone("+91-9876543210");
+        admin.setRole(UserRole.ADMIN);
+        userRepository.save(admin);
+        
+        // Manager
+        User manager = new User();
+        manager.setUsername("manager");
+        manager.setPassword(passwordEncoder.encode("manager123"));
+        manager.setFullName("Rajesh Kumar");
+        manager.setEmail("manager@neurofleet.com");
+        manager.setPhone("+91-9876543211");
+        manager.setRole(UserRole.MANAGER);
+        userRepository.save(manager);
+        
+        // Drivers
+        String[] driverNames = {"Amit Sharma", "Vikram Singh", "Rohan Patel"};
+        for (int i = 0; i < driverNames.length; i++) {
+            User driver = new User();
+            driver.setUsername("driver" + (i + 1));
+            driver.setPassword(passwordEncoder.encode("driver123"));
+            driver.setFullName(driverNames[i]);
+            driver.setEmail("driver" + (i + 1) + "@neurofleet.com");
+            driver.setPhone("+91-987654321" + i);
+            driver.setRole(UserRole.DRIVER);
+            driver.setLicenseNumber("MH12-2020-" + (100000 + i));
+            driver.setLicenseExpiry(LocalDateTime.now().plusYears(5));
+            driver.setIsAvailable(true);
+            userRepository.save(driver);
+        }
+        
+        // Customers
+        String[] customerNames = {"Priya Desai", "Sneha Mehta", "Anjali Joshi"};
+        for (int i = 0; i < customerNames.length; i++) {
+            User customer = new User();
+            customer.setUsername("customer" + (i + 1));
+            customer.setPassword(passwordEncoder.encode("customer123"));
+            customer.setFullName(customerNames[i]);
+            customer.setEmail("customer" + (i + 1) + "@example.com");
+            customer.setPhone("+91-987654322" + i);
+            customer.setRole(UserRole.CUSTOMER);
+            userRepository.save(customer);
+        }
+        
+        System.out.println("✅ Created " + userRepository.count() + " users");
     }
 
     private void createVehicles() {
-        List<Vehicle> vehicles = Arrays.asList(
-            // Electric Vehicles
-            createVehicle("MH-12-AA-1010", "Tata Nexon EV", "Tata Motors", "SUV", 5, true, "AVAILABLE", 95, 0, 18.5209, 73.8567),
-            createVehicle("MH-12-BB-2020", "MG ZS EV", "MG Motor", "SUV", 5, true, "AVAILABLE", 88, 0, 18.5314, 73.8446),
-            createVehicle("MH-01-CC-3030", "Hyundai Kona Electric", "Hyundai", "SUV", 5, true, "IN_USE", 72, 0, 19.0760, 72.8777),
-            
-            // Sedans
-            createVehicle("MH-14-DD-4040", "Honda City", "Honda", "SEDAN", 5, false, "AVAILABLE", 0, 85, 18.5196, 73.8553),
-            createVehicle("MH-14-EE-5050", "Hyundai Verna", "Hyundai", "SEDAN", 5, false, "AVAILABLE", 0, 92, 18.5204, 73.8567),
-            createVehicle("MH-02-FF-6060", "Maruti Ciaz", "Maruti Suzuki", "SEDAN", 5, false, "IN_USE", 0, 78, 19.0728, 72.8826),
-            
-            // SUVs
-            createVehicle("MH-31-GG-7070", "Mahindra Scorpio", "Mahindra", "SUV", 7, false, "AVAILABLE", 0, 88, 19.8762, 75.3433),
-            createVehicle("MH-31-HH-8080", "Toyota Fortuner", "Toyota", "SUV", 7, false, "MAINTENANCE", 0, 45, 19.8734, 75.3473),
-            createVehicle("MH-05-II-9090", "Ford Endeavour", "Ford", "SUV", 7, false, "AVAILABLE", 0, 90, 18.5074, 73.8077),
-            
-            // Vans
-            createVehicle("MH-12-JJ-1111", "Toyota Innova Crysta", "Toyota", "VAN", 8, false, "AVAILABLE", 0, 82, 18.5196, 73.8553),
-            createVehicle("MH-14-KK-2222", "Maruti Ertiga", "Maruti Suzuki", "VAN", 7, false, "AVAILABLE", 0, 88, 18.5314, 73.8446),
-            
-            // Bikes
-            createVehicle("MH-12-LL-3333", "Royal Enfield Classic 350", "Royal Enfield", "BIKE", 2, false, "AVAILABLE", 0, 95, 18.5209, 73.8567),
-            createVehicle("MH-14-MM-4444", "Honda Activa 6G", "Honda", "BIKE", 2, false, "AVAILABLE", 0, 88, 18.5314, 73.8446),
-            createVehicle("MH-01-NN-5555", "Bajaj Pulsar 150", "Bajaj", "BIKE", 2, false, "IN_USE", 0, 72, 19.0760, 72.8777)
-        );
-
-        vehicleRepository.saveAll(vehicles);
-        System.out.println("🚗 Created " + vehicles.size() + " vehicles");
+        // Vehicle 1
+        Vehicle v1 = new Vehicle();
+        v1.setVehicleNumber("MH-01-AB-1000");
+        v1.setModel("Maruti Swift");
+        v1.setManufacturer("Maruti Suzuki");
+        v1.setType(VehicleType.SEDAN);
+        v1.setCapacity(5);
+        v1.setIsElectric(false);
+        v1.setStatus(VehicleStatus.AVAILABLE);
+        v1.setBatteryLevel(85.0);
+        v1.setFuelLevel(75.0);
+        v1.setLatitude(19.0760);
+        v1.setLongitude(72.8777);
+        v1.setSpeed(0.0);
+        v1.setMileage(25000);
+        v1.setHealthScore(92.0);
+        v1.setKmsSinceService(2000);
+        vehicleRepository.save(v1);
+        
+        // Vehicle 2
+        Vehicle v2 = new Vehicle();
+        v2.setVehicleNumber("MH-02-CD-2000");
+        v2.setModel("Hyundai Creta");
+        v2.setManufacturer("Hyundai");
+        v2.setType(VehicleType.SUV);
+        v2.setCapacity(5);
+        v2.setIsElectric(false);
+        v2.setStatus(VehicleStatus.AVAILABLE);
+        v2.setBatteryLevel(90.0);
+        v2.setFuelLevel(80.0);
+        v2.setLatitude(19.1136);
+        v2.setLongitude(72.8697);
+        v2.setSpeed(0.0);
+        v2.setMileage(30000);
+        v2.setHealthScore(88.0);
+        v2.setKmsSinceService(3000);
+        vehicleRepository.save(v2);
+        
+        // Vehicle 3
+        Vehicle v3 = new Vehicle();
+        v3.setVehicleNumber("MH-12-EF-3000");
+        v3.setModel("Tata Nexon EV");
+        v3.setManufacturer("Tata Motors");
+        v3.setType(VehicleType.SUV);
+        v3.setCapacity(5);
+        v3.setIsElectric(true);
+        v3.setStatus(VehicleStatus.AVAILABLE);
+        v3.setBatteryLevel(95.0);
+        v3.setFuelLevel(0.0);
+        v3.setLatitude(19.0596);
+        v3.setLongitude(72.8295);
+        v3.setSpeed(0.0);
+        v3.setMileage(15000);
+        v3.setHealthScore(98.0);
+        v3.setKmsSinceService(1000);
+        vehicleRepository.save(v3);
+        
+        // Vehicle 4
+        Vehicle v4 = new Vehicle();
+        v4.setVehicleNumber("MH-14-GH-4000");
+        v4.setModel("Toyota Fortuner");
+        v4.setManufacturer("Toyota");
+        v4.setType(VehicleType.SUV);
+        v4.setCapacity(7);
+        v4.setIsElectric(false);
+        v4.setStatus(VehicleStatus.IN_USE);
+        v4.setBatteryLevel(70.0);
+        v4.setFuelLevel(60.0);
+        v4.setLatitude(19.0178);
+        v4.setLongitude(72.8478);
+        v4.setSpeed(45.0);
+        v4.setMileage(50000);
+        v4.setHealthScore(85.0);
+        v4.setKmsSinceService(4500);
+        vehicleRepository.save(v4);
+        
+        // Vehicle 5
+        Vehicle v5 = new Vehicle();
+        v5.setVehicleNumber("MH-43-KL-5000");
+        v5.setModel("Honda City");
+        v5.setManufacturer("Honda");
+        v5.setType(VehicleType.SEDAN);
+        v5.setCapacity(5);
+        v5.setIsElectric(false);
+        v5.setStatus(VehicleStatus.MAINTENANCE);
+        v5.setBatteryLevel(50.0);
+        v5.setFuelLevel(30.0);
+        v5.setLatitude(19.1197);
+        v5.setLongitude(72.9053);
+        v5.setSpeed(0.0);
+        v5.setMileage(60000);
+        v5.setHealthScore(65.0);
+        v5.setKmsSinceService(6000);
+        vehicleRepository.save(v5);
+        
+        System.out.println("✅ Created " + vehicleRepository.count() + " vehicles");
     }
 
-    private Vehicle createVehicle(String number, String model, String manufacturer, String type, 
-                                   int capacity, boolean isElectric, String status, 
-                                   int battery, int fuel, double lat, double lon) {
-        Vehicle vehicle = new Vehicle();
-        vehicle.setVehicleNumber(number);
-        vehicle.setModel(model);
-        vehicle.setManufacturer(manufacturer);
-        vehicle.setType(type);
-        vehicle.setCapacity(capacity);
-        vehicle.setIsElectric(isElectric);
-        vehicle.setStatus(status);
-        vehicle.setBatteryLevel(battery);
-        vehicle.setFuelLevel(fuel);
-        vehicle.setLatitude(lat);
-        vehicle.setLongitude(lon);
-        vehicle.setHealthScore(status.equals("MAINTENANCE") ? 55 : 90 + (int)(Math.random() * 10));
-        vehicle.setMileage((int)(Math.random() * 10000));
-        vehicle.setLastMaintenanceDate(LocalDateTime.now().minusDays(30));
-        vehicle.setNextMaintenanceDate(LocalDateTime.now().plusDays(30));
-        return vehicle;
-    }
-
-    private void createMaintenanceRecords() {
+    private void createMaintenance() {
         List<Vehicle> vehicles = vehicleRepository.findAll();
+        if (vehicles.isEmpty()) return;
         
-        if (vehicles.isEmpty()) {
-            return;
-        }
-
-        List<Maintenance> maintenanceRecords = Arrays.asList(
-            createMaintenance(vehicles.get(0), "Oil Change", "Regular oil and filter change", 
-                            "COMPLETED", "LOW", false, 1500.0, 1450.0),
-            createMaintenance(vehicles.get(2), "Battery Check", "Electric battery health inspection", 
-                            "IN_PROGRESS", "MEDIUM", false, 3000.0, null),
-            createMaintenance(vehicles.get(7), "Engine Overhaul", "Complete engine service required", 
-                            "PENDING", "CRITICAL", true, 8000.0, null),
-            createMaintenance(vehicles.get(3), "Brake Service", "Brake pad replacement needed", 
-                            "PENDING", "HIGH", true, 4500.0, null)
-        );
-
-        maintenanceRepository.saveAll(maintenanceRecords);
-        System.out.println("🔧 Created " + maintenanceRecords.size() + " maintenance records");
-    }
-
-    private Maintenance createMaintenance(Vehicle vehicle, String issueType, String description, 
-                                          String status, String priority, boolean isPredictive,
-                                          Double estimatedCost, Double actualCost) {
-        Maintenance maintenance = new Maintenance();
-        maintenance.setVehicle(vehicle);
-        maintenance.setIssueType(issueType);
-        maintenance.setDescription(description);
-        maintenance.setStatus(status);
-        maintenance.setPriority(priority);
-        maintenance.setIsPredictive(isPredictive);
-        maintenance.setEstimatedCost(estimatedCost);
-        maintenance.setActualCost(actualCost);
+        // Maintenance 1
+        Maintenance m1 = new Maintenance();
+        m1.setVehicle(vehicles.get(0));
+        m1.setIssueType(MaintenanceType.OIL_CHANGE);
+        m1.setDescription("Routine oil change required");
+        m1.setStatus(MaintenanceStatus.PENDING);
+        m1.setPriority(Priority.MEDIUM);
+        m1.setIsPredictive(true);
+        m1.setPredictedDaysToFailure(15);
+        m1.setScheduledDate(LocalDateTime.now().plusDays(10));
+        m1.setEstimatedCost(2000.0);
+        maintenanceRepository.save(m1);
         
-        if (isPredictive) {
-            maintenance.setPredictedDate(LocalDateTime.now().plusDays(7));
-            maintenance.setScheduledDate(LocalDateTime.now().plusDays(7));
-        } else {
-            maintenance.setScheduledDate(LocalDateTime.now().minusDays(3));
-        }
+        // Maintenance 2
+        Maintenance m2 = new Maintenance();
+        m2.setVehicle(vehicles.get(4));
+        m2.setIssueType(MaintenanceType.ENGINE);
+        m2.setDescription("Engine diagnostic required");
+        m2.setStatus(MaintenanceStatus.IN_PROGRESS);
+        m2.setPriority(Priority.HIGH);
+        m2.setIsPredictive(true);
+        m2.setPredictedDaysToFailure(5);
+        m2.setScheduledDate(LocalDateTime.now().plusDays(2));
+        m2.setEstimatedCost(8000.0);
+        maintenanceRepository.save(m2);
         
-        if ("COMPLETED".equals(status)) {
-            maintenance.setCompletedDate(LocalDateTime.now().minusDays(1));
-        }
-        
-        return maintenance;
+        System.out.println("✅ Created " + maintenanceRepository.count() + " maintenance records");
     }
 }

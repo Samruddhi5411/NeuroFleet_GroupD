@@ -6,6 +6,10 @@ import com.example.neurofleetbackkendD.model.Booking;
 import com.example.neurofleetbackkendD.model.Maintenance;
 import com.example.neurofleetbackkendD.model.User;
 import com.example.neurofleetbackkendD.model.Vehicle;
+import com.example.neurofleetbackkendD.repository.BookingRepository;
+import com.example.neurofleetbackkendD.repository.MaintenanceRepository;
+import com.example.neurofleetbackkendD.repository.UserRepository;
+import com.example.neurofleetbackkendD.repository.VehicleRepository;
 import com.example.neurofleetbackkendD.service.BookingService;
 import com.example.neurofleetbackkendD.service.MaintenanceService;
 import com.example.neurofleetbackkendD.service.UserService;
@@ -17,7 +21,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -74,7 +80,17 @@ public class AdminController {
     public ResponseEntity<?> deleteVehicle(@PathVariable Long id) {
         try {
             vehicleService.deleteVehicle(id);
-            return ResponseEntity.ok("Vehicle deleted successfully");
+            return ResponseEntity.ok(Map.of("message", "Vehicle deleted successfully"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/vehicles/{id}/telemetry")
+    public ResponseEntity<?> updateVehicleTelemetry(@PathVariable Long id) {
+        try {
+            Vehicle updated = vehicleService.updateTelemetry(id);
+            return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
@@ -91,6 +107,16 @@ public class AdminController {
         return bookingService.getBookingById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/bookings")
+    public ResponseEntity<?> createBooking(@Valid @RequestBody Booking booking) {
+        try {
+            Booking created = bookingService.createBooking(booking);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @PutMapping("/bookings/{id}")
@@ -117,7 +143,7 @@ public class AdminController {
     public ResponseEntity<?> deleteBooking(@PathVariable Long id) {
         try {
             bookingService.deleteBooking(id);
-            return ResponseEntity.ok("Booking deleted successfully");
+            return ResponseEntity.ok(Map.of("message", "Booking deleted successfully"));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
@@ -134,6 +160,11 @@ public class AdminController {
         return maintenanceService.getMaintenanceById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/maintenance/predictive")
+    public ResponseEntity<List<Maintenance>> getPredictiveMaintenance() {
+        return ResponseEntity.ok(maintenanceService.getPredictiveMaintenance());
     }
 
     @PostMapping("/maintenance")
@@ -160,7 +191,7 @@ public class AdminController {
     public ResponseEntity<?> deleteMaintenance(@PathVariable Long id) {
         try {
             maintenanceService.deleteMaintenance(id);
-            return ResponseEntity.ok("Maintenance record deleted successfully");
+            return ResponseEntity.ok(Map.of("message", "Maintenance record deleted successfully"));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
@@ -214,13 +245,24 @@ public class AdminController {
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         try {
             userService.deleteUser(id);
-            return ResponseEntity.ok("User deleted successfully");
+            return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 
     // ============ Dashboard Analytics ============
+    @GetMapping("/analytics/dashboard")
+    public ResponseEntity<Map<String, Object>> getDashboardAnalytics() {
+        Map<String, Object> analytics = new HashMap<>();
+        analytics.put("totalVehicles", vehicleService.getAllVehicles().size());
+        analytics.put("activeTrips", bookingService.getActiveTripsCount());
+        analytics.put("totalRevenue", bookingService.getTotalRevenue());
+        analytics.put("pendingMaintenance", maintenanceService.getPendingMaintenanceCount());
+        analytics.put("totalUsers", userService.getAllUsers().size());
+        return ResponseEntity.ok(analytics);
+    }
+
     @GetMapping("/analytics/active-trips")
     public ResponseEntity<Long> getActiveTripsCount() {
         return ResponseEntity.ok(bookingService.getActiveTripsCount());
