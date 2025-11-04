@@ -31,9 +31,14 @@ const FleetInventory = () => {
     };
   }, []);
 
-  useEffect(() => {
-    applyFilters();
-  }, [vehicles, filters]);
+useEffect(() => {
+  const applyFilters = () => {
+    let filtered = [...vehicles];
+    // ... filter logic
+    setFilteredVehicles(filtered);
+  };
+  applyFilters();
+}, [vehicles, filters]);
 
   const loadVehicles = async () => {
     try {

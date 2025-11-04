@@ -6,15 +6,10 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ManagerDashboard from './pages/ManagerDashboardNew';
-import DriverDashboard from './pages/DriverDashboard';
+import DriverDashboard from './pages/driver/DriverDashboard';
 import CustomerDashboard from './pages/CustomerDashboard';
 import FleetInventory from './pages/manager/FleetInventory';
 import RouteOptimization from './pages/manager/RouteOptimization';
-import DriverDashboard from './pages/driver/DriverDashboard';
-
-
-import LandingPage from './pages/LandingPageNew';
-
 
 function App() {
   return (

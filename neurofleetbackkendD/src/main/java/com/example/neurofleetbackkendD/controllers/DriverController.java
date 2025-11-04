@@ -5,7 +5,9 @@ package com.example.neurofleetbackkendD.controllers;
 
 
 import com.example.neurofleetbackkendD.model.Booking;
+import com.example.neurofleetbackkendD.model.User;
 import com.example.neurofleetbackkendD.model.Vehicle;
+import com.example.neurofleetbackkendD.model.enums.VehicleStatus;
 import com.example.neurofleetbackkendD.repository.BookingRepository;
 import com.example.neurofleetbackkendD.repository.VehicleRepository;
 import com.example.neurofleetbackkendD.service.BookingService;
