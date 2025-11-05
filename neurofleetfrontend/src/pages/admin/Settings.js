@@ -28,7 +28,7 @@ const Settings = () => {
 
   const loadUsers = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/admin/users');
+      const response = await axios.get('http://localhost:8083/api/admin/users');
       setUsers(response.data);
     } catch (error) {
       console.error('Error loading users:', error);
@@ -41,7 +41,7 @@ const Settings = () => {
 
   const toggleUserActive = async (userId) => {
     try {
-      await axios.put(`http://localhost:8080/api/admin/users/${userId}/toggle-active`);
+      await axios.put(`http://localhost:8083/api/admin/users/${userId}/toggle-active`);
       await loadUsers();
     } catch (error) {
       console.error('Error toggling user status:', error);

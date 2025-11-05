@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8083/api';
+const AI_SERVICE_URL = 'http://localhost:5001';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -23,10 +24,8 @@ api.interceptors.request.use(
 );
 
 export const authService = {
-  login: (username, password) =>
-    api.post('/auth/login', { username, password }),
-  signup: (userData) =>
-    api.post('/auth/signup', userData),
+  login: (username, password) => api.post('/auth/login', { username, password }),
+  signup: (userData) => api.post('/auth/signup', userData),
 };
 
 export const vehicleService = {
@@ -63,6 +62,68 @@ export const userService = {
   getByRole: (role) => api.get(`/admin/users/role/${role}`),
   getById: (id) => api.get(`/admin/users/${id}`),
   toggleActive: (id) => api.put(`/admin/users/${id}/toggle-active`),
+};
+
+// ============ AI SERVICE INTEGRATION ============
+
+export const aiService = {
+  // Predict ETA using ML model
+  predictETA: async (distanceKm, avgSpeed, trafficLevel, batteryLevel, fuelLevel) => {
+    try {
+      const response = await axios.post(`${AI_SERVICE_URL}/predict-eta`, {
+        distanceKm,
+        avgSpeed,
+        trafficLevel,
+        batteryLevel,
+        fuelLevel,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('AI Service Error:', error);
+      throw error;
+    }
+  },
+
+  // Predict maintenance needs
+  predictMaintenance: async (healthScore, mileage, kmsSinceService, batteryLevel) => {
+    try {
+      const response = await axios.post(`${AI_SERVICE_URL}/predict-maintenance`, {
+        healthScore,
+        mileage,
+        kmsSinceService,
+        batteryLevel,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('AI Service Error:', error);
+      throw error;
+    }
+  },
+
+  // Optimize route
+  optimizeRoute: async (pickup, dropoff, trafficCondition) => {
+    try {
+      const response = await axios.post(`${AI_SERVICE_URL}/optimize-route`, {
+        pickup,
+        dropoff,
+        trafficCondition,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('AI Service Error:', error);
+      throw error;
+    }
+  },
+
+  // Check AI service health
+  checkHealth: async () => {
+    try {
+      const response = await axios.get(`${AI_SERVICE_URL}/health`);
+      return response.data;
+    } catch (error) {
+      return { status: 'offline' };
+    }
+  },
 };
 
 export default api;

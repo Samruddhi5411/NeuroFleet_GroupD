@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { BookingIcon, CloseIcon, CalendarIcon, LocationIcon, CheckIcon } from './Icons';
 
+
+
 const BookingModal = ({ isOpen, onClose, onBook, vehicle }) => {
   const [formData, setFormData] = useState({
     startTime: '',

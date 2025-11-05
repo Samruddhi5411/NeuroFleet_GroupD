@@ -4,10 +4,10 @@ import WelcomePage from './pages/WelcomePage';
 import PortalSelectionPage from './pages/PortalSelectionPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import AdminDashboard from './pages/AdminDashboard';
+import AdminDashboard from './pages/AdminDashboardNew';
 import ManagerDashboard from './pages/ManagerDashboardNew';
-import DriverDashboard from './pages/driver/DriverDashboard';
-import CustomerDashboard from './pages/CustomerDashboard';
+import DriverDashboard from './pages/DriverDashboardNew';
+import CustomerDashboard from './pages/CustomerDashboardNew';
 import FleetInventory from './pages/manager/FleetInventory';
 import RouteOptimization from './pages/manager/RouteOptimization';
 

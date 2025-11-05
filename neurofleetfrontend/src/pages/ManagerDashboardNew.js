@@ -7,6 +7,15 @@ import RouteOptimization from './manager/RouteOptimization';
 import Reports from './manager/Reports';
 import { VehicleIcon, TrendingUpIcon, RouteIcon, ChartIcon, LogoutIcon } from '../components/Icons';
 
+import { askAI } from "../services/aiService";
+
+const handleAskAI = async () => {
+  const result = await askAI("Check vehicle engine health");
+  console.log("AI Response:", result);
+};
+
+
+
 const ManagerDashboardNew = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('fleet');

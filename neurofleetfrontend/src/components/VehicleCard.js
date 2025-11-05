@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
+
 const VehicleCard = ({ vehicle, onEdit, onDelete, isCompact }) => {
   const [prevTelemetry, setPrevTelemetry] = useState({
     speed: vehicle.speed,

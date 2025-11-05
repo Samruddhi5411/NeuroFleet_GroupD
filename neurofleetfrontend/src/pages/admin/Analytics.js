@@ -1,5 +1,11 @@
 import React from 'react';
 import { ChartIcon, TrendingUpIcon, RevenueIcon } from '../../components/Icons';
+import { askAI } from "../../services/aiService.js";
+
+const handleAskAI = async () => {
+  const result = await askAI("Check vehicle engine health");
+  console.log("AI Response:", result);
+};
 
 const Analytics = () => {
   const chartData = {
@@ -25,7 +31,7 @@ const Analytics = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-white/60 text-sm font-semibold mb-1">Total Revenue</p>
-              <p className="text-3xl font-bold text-accent-green">$15,200</p>
+              <p className="text-3xl font-bold text-accent-green">₹15,200</p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-green to-accent-cyan flex items-center justify-center">
               <RevenueIcon size="md" className="text-white" />
@@ -150,10 +156,10 @@ const Analytics = () => {
           <h3 className="text-xl font-bold text-white mb-4">Top Performing Vehicles</h3>
           <div className="space-y-3">
             {[
-              { id: 'NF-001', model: 'Tesla Model S', trips: 45, revenue: 4500 },
-              { id: 'NF-005', model: 'Ford Explorer', trips: 38, revenue: 3800 },
-              { id: 'NF-002', model: 'Tesla Model 3', trips: 36, revenue: 3600 },
-              { id: 'NF-007', model: 'Ford Transit', trips: 32, revenue: 3200 },
+              { id: 'NH 32', model: 'Tesla Model S', trips: 45, revenue: 4500 },
+              { id: 'NH 50', model: 'Ford Explorer', trips: 38, revenue: 3800 },
+              { id: 'NH 60', model: 'Tesla Model 3', trips: 36, revenue: 3600 },
+              { id: 'NH 65', model: 'Ford Transit', trips: 32, revenue: 3200 },
             ].map((vehicle, index) => (
               <div key={vehicle.id} className="flex items-center justify-between p-4 bg-dark-700/40 rounded-xl border border-white/5 hover:border-white/10 transition-all">
                 <div className="flex items-center gap-3">
@@ -166,7 +172,7 @@ const Analytics = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-accent-green font-bold">${vehicle.revenue}</p>
+                  <p className="text-accent-green font-bold">₹{vehicle.revenue}</p>
                   <p className="text-sm text-white/50">{vehicle.trips} trips</p>
                 </div>
               </div>

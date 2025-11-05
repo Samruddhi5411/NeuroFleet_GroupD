@@ -8,7 +8,7 @@ import joblib
 # 1️⃣ Load CSV data
 # =====================================================
 print("📊 Loading fleet routes data...")
-df = pd.read_csv('../data/fleet_routes_data.csv')
+df = pd.read_csv('../data/fleet_routes.csv')
 print(f"✅ Loaded {len(df)} records")
 print("Columns:", df.columns.tolist())
 
