@@ -62,25 +62,46 @@ const CustomerDashboardNew = () => {
     setIsBookingModalOpen(true);
   };
 
-  const handleCreateBooking = async (bookingData) => {
-    try {
-      const response = await bookingService.create({
-        customer: { username },
-        vehicle: { id: bookingData.vehicleId },
-        startTime: bookingData.startTime,
-        endTime: bookingData.endTime,
-        pickupLocation: bookingData.pickupLocation,
-        dropoffLocation: bookingData.dropoffLocation,
-        totalPrice: bookingData.totalPrice,
-      });
+  // const handleCreateBooking = async (bookingData) => {
+  //   try {
+  //     const response = await bookingService.create({
+  //       customer: { username },
+  //       vehicle: { id: bookingData.vehicleId },
+  //       startTime: bookingData.startTime,
+  //       endTime: bookingData.endTime,
+  //       pickupLocation: bookingData.pickupLocation,
+  //       dropoffLocation: bookingData.dropoffLocation,
+  //       totalPrice: bookingData.totalPrice,
+  //     });
 
-      await loadData();
-      return response.data;
-    } catch (error) {
-      console.error('Error creating booking:', error);
-      throw error;
-    }
-  };
+  //     await loadData();
+  //     return response.data;
+  //   } catch (error) {
+  //     console.error('Error creating booking:', error);
+  //     throw error;
+  //   }
+  // };
+
+  const handleCreateBooking = async (bookingData) => {
+  try {
+    const payload = {
+      customer: { username },
+      vehicle: { id: bookingData.vehicleId },
+      startTime: bookingData.startTime,
+      endTime: bookingData.endTime,
+      pickupLocation: bookingData.pickupLocation,
+      dropoffLocation: bookingData.dropoffLocation,
+      totalPrice: bookingData.totalPrice,
+      status: 'PENDING'
+    };
+    
+    await bookingService.create(payload);
+    await loadData();
+  } catch (error) {
+    console.error('Booking error:', error);
+    alert('Failed to create booking: ' + (error.response?.data?.message || error.message));
+  }
+};
 
   const filteredVehicles = vehicles.filter(v => {
     if (filterType !== 'ALL' && v.type !== filterType) return false;

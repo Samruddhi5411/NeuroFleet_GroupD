@@ -44,7 +44,7 @@ useEffect(() => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8080/api/admin/vehicles', {
+      const response = await axios.get('http://localhost:8083/api/admin/vehicles', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setVehicles(response.data);
@@ -61,7 +61,7 @@ useEffect(() => {
     const pollTelemetry = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:8080/api/admin/vehicles', {
+        const response = await axios.get('http://localhost:8083/api/admin/vehicles', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setVehicles(response.data);
@@ -130,7 +130,7 @@ useEffect(() => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:8080/api/admin/vehicles/${vehicleId}`, {
+      await axios.delete(`http://localhost:8083/api/admin/vehicles/${vehicleId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       await loadVehicles();
@@ -145,13 +145,13 @@ useEffect(() => {
       const token = localStorage.getItem('token');
       if (selectedVehicle) {
         await axios.put(
-          `http://localhost:8080/api/admin/vehicles/${selectedVehicle.id}`,
+          `http://localhost:8083/api/admin/vehicles/${selectedVehicle.id}`,
           vehicleData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
         await axios.post(
-          'http://localhost:8080/api/admin/vehicles',
+          'http://localhost:8083/api/admin/vehicles',
           vehicleData,
           { headers: { Authorization: `Bearer ${token}` } }
         );

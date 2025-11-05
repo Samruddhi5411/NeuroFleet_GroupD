@@ -36,7 +36,7 @@ const RouteOptimization = () => {
 
   const fetchRoutes = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/routes');
+      const response = await axios.get('http://localhost:8083/api/routes');
       setRoutes(response.data);
     } catch (error) {
       console.error('Error fetching routes:', error);
@@ -45,7 +45,7 @@ const RouteOptimization = () => {
 
   const fetchVehicles = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/manager/vehicles');
+      const response = await axios.get('http://localhost:8083/api/manager/vehicles');
       setVehicles(response.data);
     } catch (error) {
       console.error('Error fetching vehicles:', error);
@@ -54,7 +54,7 @@ const RouteOptimization = () => {
 
   const fetchLoads = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/loads');
+      const response = await axios.get('http://localhost:8083/api/loads');
       setLoads(response.data);
     } catch (error) {
       console.error('Error fetching loads:', error);
@@ -64,7 +64,7 @@ const RouteOptimization = () => {
   const handleOptimizeRoute = async () => {
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:8080/api/routes/optimize', {
+      const response = await axios.post('http://localhost:8083/api/routes/optimize', {
         ...formData,
         vehicleId: formData.vehicleId || null,
         includeTrafficData: true,
@@ -83,7 +83,7 @@ const RouteOptimization = () => {
 
   const handleAutoAssignLoads = async () => {
     try {
-      await axios.post('http://localhost:8080/api/loads/auto-assign');
+      await axios.post('http://localhost:8083/api/loads/auto-assign');
       alert('Loads auto-assigned successfully!');
       fetchLoads();
       fetchVehicles();

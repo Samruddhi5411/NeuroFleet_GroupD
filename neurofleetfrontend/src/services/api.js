@@ -1,33 +1,56 @@
-import axios from 'axios';
+
 
 const API_BASE_URL = 'http://localhost:8083/api';
-const AI_SERVICE_URL = 'http://localhost:5001';
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
+// Create axios-like wrapper
+const createRequest = async (method, url, data = null) => {
+  const token = localStorage.getItem('token');
+  const headers = {
     'Content-Type': 'application/json',
-  },
-});
-
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
-);
 
+  const options = {
+    method,
+    headers,
+  };
+
+  if (data && (method === 'POST' || method === 'PUT')) {
+    options.body = JSON.stringify(data);
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}${url}`, options);
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return { data: result };
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+};
+
+const api = {
+  get: (url) => createRequest('GET', url),
+  post: (url, data) => createRequest('POST', url, data),
+  put: (url, data) => createRequest('PUT', url, data),
+  delete: (url) => createRequest('DELETE', url),
+};
+
+// ============ AUTH SERVICE ============
 export const authService = {
   login: (username, password) => api.post('/auth/login', { username, password }),
   signup: (userData) => api.post('/auth/signup', userData),
 };
 
+// ============ VEHICLE SERVICE ============
 export const vehicleService = {
   getAll: () => api.get('/admin/vehicles'),
   getAllForCustomer: () => api.get('/customer/vehicles'),
@@ -39,15 +62,37 @@ export const vehicleService = {
   getByStatus: (status) => api.get(`/vehicles/status/${status}`),
 };
 
+// ============ BOOKING SERVICE - FIXED ============
 export const bookingService = {
   getAll: () => api.get('/admin/bookings'),
   getCustomerBookings: (username) => api.get(`/customer/bookings?username=${username}`),
   getById: (id) => api.get(`/bookings/${id}`),
-  create: (booking) => api.post('/customer/bookings', booking),
+  create: async (booking) => {
+    try {
+      // Format the booking data correctly
+      const bookingData = {
+        customer: booking.customer,
+        vehicle: booking.vehicle,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        pickupLocation: booking.pickupLocation || '',
+        dropoffLocation: booking.dropoffLocation || '',
+        totalPrice: booking.totalPrice || 0,
+        status: 'PENDING'
+      };
+
+      console.log('Creating booking with data:', bookingData);
+      return await api.post('/customer/bookings', bookingData);
+    } catch (error) {
+      console.error('Booking creation error:', error);
+      throw new Error('Failed to create booking. Please try again.');
+    }
+  },
   update: (id, booking) => api.put(`/bookings/${id}`, booking),
   getRecommended: (username) => api.get(`/customer/bookings/recommended?username=${username}`),
 };
 
+// ============ MAINTENANCE SERVICE ============
 export const maintenanceService = {
   getAll: () => api.get('/admin/maintenance'),
   getById: (id) => api.get(`/maintenance/${id}`),
@@ -57,6 +102,7 @@ export const maintenanceService = {
   update: (id, maintenance) => api.put(`/admin/maintenance/${id}`, maintenance),
 };
 
+// ============ USER SERVICE ============
 export const userService = {
   getAll: () => api.get('/admin/users'),
   getByRole: (role) => api.get(`/admin/users/role/${role}`),
@@ -64,64 +110,66 @@ export const userService = {
   toggleActive: (id) => api.put(`/admin/users/${id}/toggle-active`),
 };
 
-// ============ AI SERVICE INTEGRATION ============
-
+// ============ AI SERVICE ============
 export const aiService = {
-  // Predict ETA using ML model
   predictETA: async (distanceKm, avgSpeed, trafficLevel, batteryLevel, fuelLevel) => {
     try {
-      const response = await axios.post(`${AI_SERVICE_URL}/predict-eta`, {
+      return await api.post('/ai/predict-eta', {
         distanceKm,
         avgSpeed,
         trafficLevel,
         batteryLevel,
         fuelLevel,
       });
-      return response.data;
     } catch (error) {
       console.error('AI Service Error:', error);
-      throw error;
+      return {
+        data: {
+          predicted_eta: Math.round((distanceKm / avgSpeed) * 60 * 1.5),
+          fallback: true
+        }
+      };
     }
   },
 
-  // Predict maintenance needs
   predictMaintenance: async (healthScore, mileage, kmsSinceService, batteryLevel) => {
     try {
-      const response = await axios.post(`${AI_SERVICE_URL}/predict-maintenance`, {
+      return await api.post('/ai/predict-maintenance', {
         healthScore,
         mileage,
         kmsSinceService,
         batteryLevel,
       });
-      return response.data;
     } catch (error) {
       console.error('AI Service Error:', error);
-      throw error;
+      return {
+        data: {
+          risk_score: 0,
+          priority: 'LOW',
+          fallback: true
+        }
+      };
     }
   },
 
-  // Optimize route
   optimizeRoute: async (pickup, dropoff, trafficCondition) => {
     try {
-      const response = await axios.post(`${AI_SERVICE_URL}/optimize-route`, {
+      return await api.post('/ai/optimize-route', {
         pickup,
         dropoff,
         trafficCondition,
       });
-      return response.data;
     } catch (error) {
       console.error('AI Service Error:', error);
-      throw error;
+      return { data: { routes: [], fallback: true } };
     }
   },
 
-  // Check AI service health
   checkHealth: async () => {
     try {
-      const response = await axios.get(`${AI_SERVICE_URL}/health`);
-      return response.data;
+      return await api.get('/ai/health');
     } catch (error) {
-      return { status: 'offline' };
+      return { data: { status: 'offline' } };
     }
   },
 };

@@ -6,6 +6,7 @@ import VehicleManagement from './admin/VehicleManagement';
 import UserManagement from './admin/UserManagement';
 import Analytics from './admin/Analytics';
 import Settings from './admin/Settings';
+import AIPredictions from './admin/AIPredictions'; // ✅ NEW IMPORT
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ const AdminDashboard = () => {
     revenue: 0,
     maintenanceDue: 0,
   });
-  const [activeTab, setActiveTab] = useState('overview'); // ✅ Default to 'overview' not 'vehicles'
+  const [activeTab, setActiveTab] = useState('overview'); // ✅ Default view
 
   const fullName = localStorage.getItem('fullName') || 'Admin';
 
@@ -68,11 +69,13 @@ const AdminDashboard = () => {
         return <UserManagement />;
       case 'analytics':
         return <Analytics />;
+      case 'ai':                              // ✅ NEW TAB CASE
+        return <AIPredictions />;            // ✅ LOAD AI PAGE
       case 'settings':
         return <Settings />;
       case 'overview':
       default:
-        return renderOverview(); // ✅ Show overview by default
+        return renderOverview();
     }
   };
 
@@ -83,6 +86,7 @@ const AdminDashboard = () => {
         <p className="text-white/50">Monitor your entire fleet operations</p>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-4">
@@ -90,9 +94,7 @@ const AdminDashboard = () => {
               <p className="text-white/60 text-sm mb-1">Total Fleet</p>
               <p className="text-4xl font-bold text-accent-green">{stats.totalFleet}</p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-cyan to-accent-blue flex items-center justify-center">
-              🚗
-            </div>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-cyan to-accent-blue flex items-center justify-center">🚗</div>
           </div>
         </div>
 
@@ -102,9 +104,7 @@ const AdminDashboard = () => {
               <p className="text-white/60 text-sm mb-1">Active Trips</p>
               <p className="text-4xl font-bold text-accent-cyan">{stats.activeTrips}</p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-green to-accent-cyan flex items-center justify-center">
-              📍
-            </div>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-green to-accent-cyan flex items-center justify-center">📍</div>
           </div>
         </div>
 
@@ -114,9 +114,7 @@ const AdminDashboard = () => {
               <p className="text-white/60 text-sm mb-1">Total Revenue</p>
               <p className="text-4xl font-bold text-accent-purple">₹{stats.revenue.toFixed(2)}</p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-purple to-accent-pink flex items-center justify-center">
-              💰
-            </div>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-purple to-accent-pink flex items-center justify-center">💰</div>
           </div>
         </div>
 
@@ -126,18 +124,17 @@ const AdminDashboard = () => {
               <p className="text-white/60 text-sm mb-1">Maintenance Due</p>
               <p className="text-4xl font-bold text-accent-pink">{stats.maintenanceDue}</p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-pink to-accent-purple flex items-center justify-center">
-              ⚠️
-            </div>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-pink to-accent-purple flex items-center justify-center">⚠️</div>
           </div>
         </div>
       </div>
 
+      {/* Two Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="glass-card p-6">
           <h3 className="text-xl font-bold text-white mb-4">Fleet Status</h3>
           <div className="space-y-3">
-            {vehicles.slice(0, 5).map((vehicle) => (
+            {vehicles.slice(0, 5).map(vehicle => (
               <div key={vehicle.id} className="flex items-center justify-between p-4 bg-dark-700/40 rounded-xl">
                 <div>
                   <p className="font-semibold text-white">{vehicle.vehicleNumber}</p>
@@ -154,7 +151,7 @@ const AdminDashboard = () => {
         <div className="glass-card p-6">
           <h3 className="text-xl font-bold text-white mb-4">Recent Bookings</h3>
           <div className="space-y-3">
-            {bookings.slice(0, 5).map((booking) => (
+            {bookings.slice(0, 5).map(booking => (
               <div key={booking.id} className="flex items-center justify-between p-4 bg-dark-700/40 rounded-xl">
                 <div>
                   <p className="font-semibold text-white">Booking #{booking.id}</p>
@@ -189,13 +186,12 @@ const AdminDashboard = () => {
                 <p className="text-sm text-white/70">Welcome,</p>
                 <p className="text-sm font-semibold text-white">{fullName}</p>
               </div>
-              <button onClick={handleLogout} className="btn-secondary">
-                Logout
-              </button>
+              <button onClick={handleLogout} className="btn-secondary">Logout</button>
             </div>
           </div>
         </div>
 
+        {/* ✅ TABS INCLUDING AI TAB */}
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex gap-2 pb-3">
             {[
@@ -203,6 +199,7 @@ const AdminDashboard = () => {
               { id: 'vehicles', label: 'Vehicles' },
               { id: 'users', label: 'Users' },
               { id: 'analytics', label: 'Analytics' },
+              { id: 'ai', label: 'AI Predictions' }, // ✅ NEW TAB
               { id: 'settings', label: 'Settings' },
             ].map(tab => (
               <button

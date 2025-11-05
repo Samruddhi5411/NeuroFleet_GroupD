@@ -1,7 +1,5 @@
 package com.example.neurofleetbackkendD.security;
 
-
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,31 +29,28 @@ public class JwtFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-    	
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            String role = jwtUtil.extractRole(token);
             
-            //now for that role it will validate the token 
-           // and if no existing user has been authenticated yet for this request
-            if (role != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            try {
+                String username = jwtUtil.extractUsername(token);
+                String role = jwtUtil.extractRole(token);
                 
-            	// creates a spring security authentication 1. Principal i.e. role(User) 2. Credentials ( here it is null because we have already authenticted via JWT) 
-            	//3. authorities : means spring will recognize what the user can access(hasAuthority("User")
-            	UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(
-                        role, 
-                        null, 
-                        Collections.singleton(new SimpleGrantedAuthority(role)) //   .requestMatchers("/api/products").hasAuthority("USER") defined it securityconfig
-                    );
-            	
-            	//sets the user authentication in the spring security context
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                
-                SecurityContextHolder.getContext().setAuthentication(authToken); // It will tell spring security that this request is from an authenticated user ,
-                                                                                 //and spring knows who the user is and what they are allowed to do
+                if (username != null && role != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                            username, 
+                            null, 
+                            Collections.singleton(new SimpleGrantedAuthority(role))
+                        );
+                    
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
+            } catch (Exception e) {
+                System.err.println("JWT Error: " + e.getMessage());
             }
         }
 

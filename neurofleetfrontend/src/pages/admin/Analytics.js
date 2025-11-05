@@ -1,20 +1,52 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { ChartIcon, TrendingUpIcon, RevenueIcon } from '../../components/Icons';
-import { askAI } from "../../services/aiService.js";
-
-const handleAskAI = async () => {
-  const result = await askAI("Check vehicle engine health");
-  console.log("AI Response:", result);
-};
 
 const Analytics = () => {
-  const chartData = {
+  const [analytics, setAnalytics] = useState({
+    totalRevenue: 0,
+    totalBookings: 0,
+    fleetUtilization: 0
+  });
+
+  const [chartData, setChartData] = useState({
     bookings: [12, 19, 15, 25, 22, 30, 28],
     revenue: [1200, 1900, 1500, 2500, 2200, 3000, 2800],
     fleet: [85, 88, 82, 90, 87, 92, 89],
-  };
+  });
 
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  useEffect(() => {
+    loadAnalytics();
+  }, []);
+
+  const loadAnalytics = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:8080/api/admin/analytics/dashboard', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setAnalytics({
+        totalRevenue: response.data.totalRevenue || 15200,
+        totalBookings: response.data.activeTrips || 151,
+        fleetUtilization: 88
+      });
+
+      // Simulate weekly data
+      const baseBookings = response.data.activeTrips || 20;
+      const baseRevenue = response.data.totalRevenue || 2000;
+
+      setChartData({
+        bookings: Array.from({ length: 7 }, () => Math.floor(baseBookings + Math.random() * 10)),
+        revenue: Array.from({ length: 7 }, () => Math.floor(baseRevenue + Math.random() * 500)),
+        fleet: Array.from({ length: 7 }, () => Math.floor(80 + Math.random() * 15))
+      });
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -26,12 +58,13 @@ const Analytics = () => {
         <p className="text-white/50">Track performance metrics and trends</p>
       </div>
 
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-white/60 text-sm font-semibold mb-1">Total Revenue</p>
-              <p className="text-3xl font-bold text-accent-green">₹15,200</p>
+              <p className="text-3xl font-bold text-accent-green">${analytics.totalRevenue.toLocaleString()}</p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-green to-accent-cyan flex items-center justify-center">
               <RevenueIcon size="md" className="text-white" />
@@ -47,7 +80,7 @@ const Analytics = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-white/60 text-sm font-semibold mb-1">Total Bookings</p>
-              <p className="text-3xl font-bold text-accent-cyan">151</p>
+              <p className="text-3xl font-bold text-accent-cyan">{analytics.totalBookings}</p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-cyan to-accent-blue flex items-center justify-center">
               <ChartIcon size="md" className="text-white" />
@@ -63,7 +96,7 @@ const Analytics = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-white/60 text-sm font-semibold mb-1">Fleet Utilization</p>
-              <p className="text-3xl font-bold text-accent-purple">88%</p>
+              <p className="text-3xl font-bold text-accent-purple">{analytics.fleetUtilization}%</p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-purple to-accent-pink flex items-center justify-center">
               <TrendingUpIcon size="md" className="text-white" />
@@ -76,6 +109,7 @@ const Analytics = () => {
         </div>
       </div>
 
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="glass-card p-6">
           <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
@@ -156,10 +190,10 @@ const Analytics = () => {
           <h3 className="text-xl font-bold text-white mb-4">Top Performing Vehicles</h3>
           <div className="space-y-3">
             {[
-              { id: 'NH 32', model: 'Tesla Model S', trips: 45, revenue: 4500 },
-              { id: 'NH 50', model: 'Ford Explorer', trips: 38, revenue: 3800 },
-              { id: 'NH 60', model: 'Tesla Model 3', trips: 36, revenue: 3600 },
-              { id: 'NH 65', model: 'Ford Transit', trips: 32, revenue: 3200 },
+              { id: 'MH-01-AB-1000', model: 'Maruti Swift', trips: 45, revenue: 4500 },
+              { id: 'DL-02-CD-2000', model: 'Hyundai Creta', trips: 38, revenue: 3800 },
+              { id: 'KA-12-EF-3000', model: 'Tata Nexon EV', trips: 36, revenue: 3600 },
+              { id: 'MH-14-GH-4000', model: 'Toyota Fortuner', trips: 32, revenue: 3200 },
             ].map((vehicle, index) => (
               <div key={vehicle.id} className="flex items-center justify-between p-4 bg-dark-700/40 rounded-xl border border-white/5 hover:border-white/10 transition-all">
                 <div className="flex items-center gap-3">

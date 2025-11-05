@@ -32,17 +32,21 @@ public class SecurityConfig {
                 CorsConfiguration config = new CorsConfiguration();
                 config.setAllowedOrigins(List.of("http://localhost:3000"));
                 config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+                config.setAllowedHeaders(List.of("*"));
                 config.setExposedHeaders(List.of("Authorization"));
                 config.setAllowCredentials(true);
                 return config;
             }))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/h2-console/**").permitAll()  // ✅ Fixed
-                .requestMatchers("/api/user").hasAuthority("USER")
-                .requestMatchers("/api/admin").hasAuthority("ADMIN")
-                .requestMatchers("/api/products/**").hasAnyAuthority("USER", "ADMIN")
+                .requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
+                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                .requestMatchers("/api/manager/**").hasAnyAuthority("MANAGER", "ADMIN")
+                .requestMatchers("/api/driver/**").hasAuthority("DRIVER")
+                .requestMatchers("/api/customer/**").hasAuthority("CUSTOMER")
+                .requestMatchers("/api/vehicles/**").hasAnyAuthority("ADMIN", "MANAGER", "CUSTOMER", "DRIVER")
+                .requestMatchers("/api/bookings/**").hasAnyAuthority("ADMIN", "MANAGER", "CUSTOMER")
+                .requestMatchers("/api/maintenance/**").hasAnyAuthority("ADMIN", "MANAGER")
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
