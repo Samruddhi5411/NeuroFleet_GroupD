@@ -3,44 +3,44 @@ import { RouteIcon, LocationIcon, CalendarIcon } from '../../components/Icons';
 
 const MyTrips = () => {
   const [trips] = useState([
-    { 
-      id: 1, 
-      pickup: '123 Main St, New York', 
-      dropoff: '456 Park Ave, New York', 
-      time: '2025-10-24T10:00:00', 
+    {
+      id: 1,
+      pickup: '123 Main St, New York',
+      dropoff: '456 Park Ave, New York',
+      time: '2025-10-24T10:00:00',
       status: 'SCHEDULED',
       customer: 'Alice Customer',
       vehicle: 'Tesla Model S - NF-001',
       distance: 5.2,
       fare: 52.00
     },
-    { 
-      id: 2, 
-      pickup: '789 Broadway, New York', 
-      dropoff: '321 5th Ave, New York', 
-      time: '2025-10-24T14:00:00', 
+    {
+      id: 2,
+      pickup: '789 Broadway, New York',
+      dropoff: '321 5th Ave, New York',
+      time: '2025-10-24T14:00:00',
       status: 'IN_PROGRESS',
       customer: 'Bob Customer',
       vehicle: 'Ford Explorer - NF-005',
       distance: 3.8,
       fare: 38.00
     },
-    { 
-      id: 3, 
-      pickup: '555 Madison Ave, New York', 
-      dropoff: '777 Lexington Ave, New York', 
-      time: '2025-10-23T16:00:00', 
+    {
+      id: 3,
+      pickup: '555 Madison Ave, New York',
+      dropoff: '777 Lexington Ave, New York',
+      time: '2025-10-23T16:00:00',
       status: 'COMPLETED',
       customer: 'Carol Customer',
       vehicle: 'Toyota Camry - NF-003',
       distance: 7.1,
       fare: 71.00
     },
-    { 
-      id: 4, 
-      pickup: '100 Wall St, New York', 
-      dropoff: '200 Broadway, New York', 
-      time: '2025-10-24T18:00:00', 
+    {
+      id: 4,
+      pickup: '100 Wall St, New York',
+      dropoff: '200 Broadway, New York',
+      time: '2025-10-24T18:00:00',
       status: 'SCHEDULED',
       customer: 'David Customer',
       vehicle: 'Honda Accord - NF-004',

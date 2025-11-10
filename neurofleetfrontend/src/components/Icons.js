@@ -1,6 +1,5 @@
 import React from 'react';
 
-
 const iconConfig = {
   size: {
     sm: 16,

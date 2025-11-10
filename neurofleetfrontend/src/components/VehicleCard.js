@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-
 const VehicleCard = ({ vehicle, onEdit, onDelete, isCompact }) => {
   const [prevTelemetry, setPrevTelemetry] = useState({
     speed: vehicle.speed,
@@ -25,7 +24,7 @@ const VehicleCard = ({ vehicle, onEdit, onDelete, isCompact }) => {
         fuel: vehicle.fuelLevel,
       });
     }
-  }, [vehicle, prevTelemetry.speed, prevTelemetry.battery, prevTelemetry.fuel]); // ✅ Added dependencies
+  }, [vehicle]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -223,8 +222,8 @@ const VehicleCard = ({ vehicle, onEdit, onDelete, isCompact }) => {
           <div className="glass-card-hover p-3">
             <p className="text-xs text-white/50 mb-1">Health Score</p>
             <p className={`text-lg font-bold ${vehicle.healthScore >= 90 ? 'text-accent-green' :
-              vehicle.healthScore >= 70 ? 'text-accent-cyan' :
-                'text-accent-purple'
+                vehicle.healthScore >= 70 ? 'text-accent-cyan' :
+                  'text-accent-purple'
               }`}>
               {vehicle.healthScore || 100}%
             </p>

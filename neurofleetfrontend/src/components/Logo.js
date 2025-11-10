@@ -1,6 +1,5 @@
 import React from 'react';
 
-
 const Logo = ({ size = 'md', animate = true, showText = true }) => {
   const sizes = {
     sm: { icon: 'w-10 h-10', text: 'text-lg' },

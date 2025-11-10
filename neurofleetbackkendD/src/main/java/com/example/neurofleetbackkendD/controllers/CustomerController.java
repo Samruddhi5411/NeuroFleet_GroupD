@@ -1,13 +1,10 @@
 package com.example.neurofleetbackkendD.controllers;
 
-
 import com.example.neurofleetbackkendD.model.Booking;
 import com.example.neurofleetbackkendD.model.User;
 import com.example.neurofleetbackkendD.model.Vehicle;
 import com.example.neurofleetbackkendD.model.enums.VehicleStatus;
-import com.example.neurofleetbackkendD.model.enums.VehicleType;
-import com.example.neurofleetbackkendD.repository.BookingRepository;
-import com.example.neurofleetbackkendD.repository.UserRepository;
+import com.example.neurofleetbackkendD.model.enums.PaymentMethod;
 import com.example.neurofleetbackkendD.service.BookingService;
 import com.example.neurofleetbackkendD.service.UserService;
 import com.example.neurofleetbackkendD.service.VehicleService;
@@ -20,7 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/customer")
@@ -37,7 +34,7 @@ public class CustomerController {
     @Autowired
     private UserService userService;
 
-    // ============ My Bookings ============
+    // ============ MY BOOKINGS ============
     @GetMapping("/bookings")
     public ResponseEntity<List<Booking>> getMyBookings(Authentication auth) {
         String username = auth.getName();
@@ -61,9 +58,52 @@ public class CustomerController {
             
             booking.setCustomer(customer);
             Booking created = bookingService.createBooking(booking);
-            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "message", "Booking created successfully! Waiting for manager approval.",
+                "booking", created
+            ));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ============ PAYMENT SYSTEM ============
+    @PostMapping("/bookings/{id}/pay")
+    public ResponseEntity<?> processPayment(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> paymentData,
+            Authentication auth) {
+        try {
+            String paymentMethodStr = paymentData.get("paymentMethod");
+            PaymentMethod paymentMethod = PaymentMethod.valueOf(paymentMethodStr.toUpperCase());
+            
+            Booking updated = bookingService.processPayment(id, paymentMethod);
+            return ResponseEntity.ok(Map.of(
+                "message", "Payment successful! Booking confirmed.",
+                "booking", updated,
+                "transactionId", updated.getPaymentTransactionId()
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ============ VEHICLE TRACKING ============
+    @GetMapping("/bookings/{id}/track")
+    public ResponseEntity<?> trackVehicle(@PathVariable Long id, Authentication auth) {
+        try {
+            Booking booking = bookingService.getBookingById(id)
+                    .orElseThrow(() -> new RuntimeException("Booking not found"));
+            
+            return ResponseEntity.ok(Map.of(
+                "currentLatitude", booking.getCurrentLatitude() != null ? booking.getCurrentLatitude() : 0.0,
+                "currentLongitude", booking.getCurrentLongitude() != null ? booking.getCurrentLongitude() : 0.0,
+                "distanceFromCustomer", booking.getDistanceFromCustomer() != null ? booking.getDistanceFromCustomer() : 0.0,
+                "vehicleNumber", booking.getVehicle() != null ? booking.getVehicle().getVehicleNumber() : "N/A",
+                "status", booking.getStatus().toString()
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -73,11 +113,11 @@ public class CustomerController {
             Booking updated = bookingService.updateBookingStatus(id, "CANCELLED");
             return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // ============ Available Vehicles ============
+    // ============ AVAILABLE VEHICLES (Only show truly AVAILABLE) ============
     @GetMapping("/vehicles")
     public ResponseEntity<List<Vehicle>> getAvailableVehicles() {
         return ResponseEntity.ok(vehicleService.getVehiclesByStatus(VehicleStatus.AVAILABLE));
@@ -90,17 +130,7 @@ public class CustomerController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/vehicles/type/{type}")
-    public ResponseEntity<List<Vehicle>> getVehiclesByType(@PathVariable String type) {
-        return ResponseEntity.ok(vehicleService.getVehiclesByType(VehicleType.valueOf(type)));
-    }
-
-    @GetMapping("/vehicles/electric")
-    public ResponseEntity<List<Vehicle>> getElectricVehicles() {
-        return ResponseEntity.ok(vehicleService.getElectricVehicles());
-    }
-
-    // ============ Profile Management ============
+    // ============ PROFILE MANAGEMENT ============
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(Authentication auth) {
         String username = auth.getName();
@@ -123,7 +153,7 @@ public class CustomerController {
             User saved = userService.updateUser(user.getId(), user);
             return ResponseEntity.ok(saved);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }

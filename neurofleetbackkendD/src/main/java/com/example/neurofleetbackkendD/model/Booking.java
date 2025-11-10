@@ -1,18 +1,15 @@
 package com.example.neurofleetbackkendD.model;
 
-
-
-
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-
 import com.example.neurofleetbackkendD.model.enums.BookingStatus;
+import com.example.neurofleetbackkendD.model.enums.PaymentStatus;
+import com.example.neurofleetbackkendD.model.enums.PaymentMethod;
 
 @Entity
 @Table(name = "bookings")
 public class Booking {
-	 @Enumerated(EnumType.STRING)
-	    private BookingStatus bookingStatus;
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -39,10 +36,31 @@ public class Booking {
     private Double dropoffLongitude;
     private Double estimatedDistance;
     private Integer estimatedDuration;
-    private Double totalPrice;
+    private Double totalPrice;  // in INR (₹)
     
     @Enumerated(EnumType.STRING)
-    private BookingStatus status = BookingStatus.PENDING;
+    private BookingStatus status = BookingStatus.PENDING_APPROVAL;
+    
+    // ===== NEW PAYMENT FIELDS =====
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+    
+    @Enumerated(EnumType.STRING)
+    private PaymentMethod paymentMethod;
+    
+    private String paymentTransactionId;
+    private LocalDateTime paymentCompletedAt;
+    
+    // ===== APPROVAL FIELDS =====
+    private LocalDateTime approvedAt;
+    private Long approvedBy;  // Manager user ID
+    private String approvalNotes;
+    private String rejectionReason;
+    
+    // ===== TRACKING FIELDS =====
+    private Double currentLatitude;
+    private Double currentLongitude;
+    private Double distanceFromCustomer;  // in KM
     
     private String routeData;
     
@@ -52,10 +70,10 @@ public class Booking {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Constructors
+    // ===== CONSTRUCTORS =====
     public Booking() {}
 
-    // Getters and Setters
+    // ===== GETTERS AND SETTERS =====
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -104,6 +122,48 @@ public class Booking {
     public BookingStatus getStatus() { return status; }
     public void setStatus(BookingStatus status) { this.status = status; }
 
+    // ===== NEW PAYMENT GETTERS/SETTERS =====
+    public PaymentStatus getPaymentStatus() { return paymentStatus; }
+    public void setPaymentStatus(PaymentStatus paymentStatus) { this.paymentStatus = paymentStatus; }
+
+    public PaymentMethod getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(PaymentMethod paymentMethod) { this.paymentMethod = paymentMethod; }
+
+    public String getPaymentTransactionId() { return paymentTransactionId; }
+    public void setPaymentTransactionId(String paymentTransactionId) { 
+        this.paymentTransactionId = paymentTransactionId; 
+    }
+
+    public LocalDateTime getPaymentCompletedAt() { return paymentCompletedAt; }
+    public void setPaymentCompletedAt(LocalDateTime paymentCompletedAt) { 
+        this.paymentCompletedAt = paymentCompletedAt; 
+    }
+
+    // ===== APPROVAL GETTERS/SETTERS =====
+    public LocalDateTime getApprovedAt() { return approvedAt; }
+    public void setApprovedAt(LocalDateTime approvedAt) { this.approvedAt = approvedAt; }
+
+    public Long getApprovedBy() { return approvedBy; }
+    public void setApprovedBy(Long approvedBy) { this.approvedBy = approvedBy; }
+
+    public String getApprovalNotes() { return approvalNotes; }
+    public void setApprovalNotes(String approvalNotes) { this.approvalNotes = approvalNotes; }
+
+    public String getRejectionReason() { return rejectionReason; }
+    public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
+
+    // ===== TRACKING GETTERS/SETTERS =====
+    public Double getCurrentLatitude() { return currentLatitude; }
+    public void setCurrentLatitude(Double currentLatitude) { this.currentLatitude = currentLatitude; }
+
+    public Double getCurrentLongitude() { return currentLongitude; }
+    public void setCurrentLongitude(Double currentLongitude) { this.currentLongitude = currentLongitude; }
+
+    public Double getDistanceFromCustomer() { return distanceFromCustomer; }
+    public void setDistanceFromCustomer(Double distanceFromCustomer) { 
+        this.distanceFromCustomer = distanceFromCustomer; 
+    }
+
     public String getRouteData() { return routeData; }
     public void setRouteData(String routeData) { this.routeData = routeData; }
 
@@ -118,4 +178,3 @@ public class Booking {
         this.updatedAt = LocalDateTime.now();
     }
 }
-

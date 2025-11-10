@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const VehicleModal = ({ vehicle, onClose, onSave }) => {
+const VehicleModal = ({ isOpen, vehicle, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     vehicleNumber: '',
     model: '',
@@ -39,8 +39,26 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
         healthScore: vehicle.healthScore || 100,
         speed: vehicle.speed || 0,
       });
+    } else if (isOpen) {
+      setFormData({
+        vehicleNumber: '',
+        model: '',
+        manufacturer: '',
+        type: 'SEDAN',
+        capacity: 5,
+        isElectric: false,
+        status: 'AVAILABLE',
+        latitude: 40.7128,
+        longitude: -74.0060,
+        batteryLevel: 100,
+        fuelLevel: 100,
+        mileage: 0,
+        healthScore: 100,
+        speed: 0,
+      });
+      setErrors({});
     }
-  }, [vehicle]);
+  }, [vehicle, isOpen]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -105,6 +123,8 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
       setLoading(false);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
