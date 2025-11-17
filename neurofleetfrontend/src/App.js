@@ -5,6 +5,7 @@ import PortalSelectionPage from './pages/PortalSelectionPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import AdminDashboard from './pages/AdminDashboardNew';
+import ProtectedRoute from "./components/ProtectedRoute";
 import ManagerDashboard from './pages/ManagerDashboardNew';
 import DriverDashboard from './pages/DriverDashboardNew';
 import CustomerDashboard from './pages/CustomerDashboardNew';
@@ -21,7 +22,18 @@ function App() {
           <Route path="/portals" element={<PortalSelectionPage />} />
           <Route path="/login/:role" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          {/* <Route path="/admin/dashboard" element={<AdminDashboard />} /> */}
+             <Route
+  path="/admin/dashboard"
+  element={
+    <ProtectedRoute allowedRoles={["ADMIN"]}>
+      <AdminDashboard />
+    </ProtectedRoute>
+  }
+/>
+
+
+
           <Route path="/manager/dashboard" element={<ManagerDashboard />} />
           <Route path="/manager/fleet-inventory" element={<FleetInventory />} />
           <Route path="/manager/route-optimization" element={<RouteOptimization />} />

@@ -1,111 +1,178 @@
+//package com.example.neurofleetbackkendD.controllers;
+//
+//
+//
+//import com.example.neurofleetbackkendD.model.User;
+//import com.example.neurofleetbackkendD.service.AuthService;
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.http.ResponseEntity;
+//import org.springframework.web.bind.annotation.*;
+//import java.util.HashMap;
+//import java.util.Map;
+//import java.util.Optional;
+//
+//@RestController
+//@RequestMapping("/api/auth")
+//@CrossOrigin(origins = "http://localhost:3000")
+//public class AuthController {
+//    
+//    @Autowired
+//    private AuthService authService;
+//    
+//    @PostMapping("/signup")
+//    public ResponseEntity<?> register(@RequestBody User user) {
+//        try {
+//            User registeredUser = authService.register(user);
+//            Map<String, Object> response = new HashMap<>();
+//            response.put("message", "User registered successfully");
+//            response.put("userId", registeredUser.getId());
+//            return ResponseEntity.ok(response);
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+//        }
+//    }
+//    
+//    @PostMapping("/login")
+//    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
+//        String username = credentials.get("username");
+//        String password = credentials.get("password");
+//        
+//        Optional<User> userOpt = authService.authenticate(username, password);
+//        
+//        if (userOpt.isPresent()) {
+//            User user = userOpt.get();
+//            Map<String, Object> response = new HashMap<>();
+//            response.put("token", "dummy-jwt-token-" + user.getId());
+//            response.put("role", user.getRole().toString());
+//            response.put("username", user.getUsername());
+//            response.put("fullName", user.getFullName());
+//            return ResponseEntity.ok(response);
+//        }
+//        
+//        return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
+//    }
+//}
+
 package com.example.neurofleetbackkendD.controllers;
 
-
-
+import com.example.neurofleetbackkendD.model.User;
+import com.example.neurofleetbackkendD.security.JwtUtil;
+import com.example.neurofleetbackkendD.service.AuthService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
-
-import com.example.neurofleetbackkendD.model.User;
-import com.example.neurofleetbackkendD.model.enums.UserRole;
-import com.example.neurofleetbackkendD.repository.UserRepository;
-import com.example.neurofleetbackkendD.security.JwtUtil;
-
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*") // Allow all origins for testing
 public class AuthController {
     
     @Autowired
-    private UserRepository userRepository;
+    private AuthService authService;
     
     @Autowired
     private JwtUtil jwtUtil;
     
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    @PostMapping("/signup")
+    public ResponseEntity<?> register(@RequestBody User user) {
+        try {
+            User registeredUser = authService.register(user);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "User registered successfully");
+            response.put("userId", registeredUser.getId());
+            response.put("username", registeredUser.getUsername());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
     
-    /**
-     * LOGIN - Fixed generateToken call
-     */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User loginRequest) {
-        Optional<User> optionalUser = userRepository.findByUsername(loginRequest.getUsername());
-
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-
-            if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-                // FIX: Pass role as STRING using .name() or .toString()
-                String token = jwtUtil.generateToken( user.getUsername() , user.getRole().name());
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
+        try {
+            String username = credentials.get("username");
+            String password = credentials.get("password");
+            
+            System.out.println("Login attempt for user: " + username);
+            
+            Optional<User> userOpt = authService.authenticate(username, password);
+            
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
                 
-                Map<String, String> response = new HashMap<>();
+                // Generate JWT token
+                String token = jwtUtil.generateToken(user.getUsername(), user.getRole().toString());
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
                 response.put("token", token);
-                response.put("role", user.getRole().name());
+                response.put("role", user.getRole().toString());
                 response.put("username", user.getUsername());
                 response.put("fullName", user.getFullName());
+                response.put("userId", user.getId());
+                response.put("email", user.getEmail());
                 
-                System.out.println("✅ User logged in: " + user.getUsername());
+                System.out.println("Login successful for: " + username);
                 return ResponseEntity.ok(response);
             }
+            
+            System.out.println("Login failed - Invalid credentials for: " + username);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "Invalid username or password");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+            
+        } catch (Exception e) {
+            System.err.println("Login error: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "Login failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("message", "Invalid username or password"));
     }
     
-    /**
-     * REGISTER/SIGNUP
-     */
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        // Check username
-        Optional<User> existingUser = userRepository.findByUsername(user.getUsername());
-        if (existingUser.isPresent()) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Username already exists"));
-        }
-        
-        // Check email
-        if (user.getEmail() != null && !user.getEmail().isEmpty()) {
-            Optional<User> existingEmail = userRepository.findByEmail(user.getEmail());
-            if (existingEmail.isPresent()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("message", "Email already registered"));
+    @GetMapping("/validate")
+    public ResponseEntity<?> validateToken(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                String username = jwtUtil.extractUsername(token);
+                
+                response.put("success", true);
+                response.put("valid", true);
+                response.put("username", username);
+                return ResponseEntity.ok(response);
             }
+            
+            response.put("success", false);
+            response.put("valid", false);
+            response.put("error", "Invalid or missing token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("valid", false);
+            response.put("error", "Token validation failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
-
-        // Encode password
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        
-        // Set default role if not provided
-        if (user.getRole() == null) {
-            user.setRole(UserRole.CUSTOMER);
-        }
-
-        User savedUser = userRepository.save(user);
-        
-        System.out.println("✅ New user registered: " + savedUser.getUsername());
-        
-        return ResponseEntity.ok(Map.of(
-            "message", "User registered successfully",
-            "username", savedUser.getUsername(),
-            "role", savedUser.getRole().name()
-        ));
     }
     
-    /**
-     * SIGNUP - Alias for register
-     */
-    @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody User user) {
-        return register(user);
+    @GetMapping("/test")
+    public ResponseEntity<?> testEndpoint() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "working");
+        response.put("message", "Auth endpoint is accessible");
+        return ResponseEntity.ok(response);
     }
 }

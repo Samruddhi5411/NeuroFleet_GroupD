@@ -1,162 +1,300 @@
 package com.example.neurofleetbackkendD.service;
 
-import com.example.neurofleetbackkendD.model.Booking;
-import com.example.neurofleetbackkendD.model.Vehicle;
+import com.example.neurofleetbackkendD.model.*;
 import com.example.neurofleetbackkendD.model.enums.BookingStatus;
 import com.example.neurofleetbackkendD.model.enums.PaymentStatus;
-import com.example.neurofleetbackkendD.model.enums.PaymentMethod;
+import com.example.neurofleetbackkendD.model.enums.UserRole;
 import com.example.neurofleetbackkendD.model.enums.VehicleStatus;
-import com.example.neurofleetbackkendD.repository.BookingRepository;
-import com.example.neurofleetbackkendD.repository.VehicleRepository;
+import com.example.neurofleetbackkendD.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Arrays;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
-
+    
     @Autowired
     private BookingRepository bookingRepository;
     
     @Autowired
-    private VehicleRepository vehicleRepository;
-
-    // ============ BASIC CRUD OPERATIONS ============
+    private UserRepository userRepository;
     
+    @Autowired
+    private VehicleRepository vehicleRepository;
+    
+    // Customer creates booking
+    @Transactional
+    public Booking createBooking(Booking booking) {
+        // Validate vehicle availability
+        Vehicle vehicle = vehicleRepository.findById(booking.getVehicle().getId())
+            .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+        
+        if (vehicle.getStatus() != VehicleStatus.AVAILABLE) {
+            throw new RuntimeException("Vehicle is not available");
+        }
+        
+        booking.setStatus(BookingStatus.PENDING);
+        booking.setPaymentStatus(PaymentStatus.UNPAID);
+        booking.setCreatedAt(LocalDateTime.now());
+        
+        // Calculate price based on distance (if coordinates provided)
+        if (booking.getPickupLatitude() != null && booking.getDropoffLatitude() != null) {
+            double distance = calculateDistance(
+                booking.getPickupLatitude(), booking.getPickupLongitude(),
+                booking.getDropoffLatitude(), booking.getDropoffLongitude()
+            );
+            booking.setTotalPrice(distance * 15.0); // ₹15 per km
+        }
+        
+        return bookingRepository.save(booking);
+    }
+    
+    // Manager approves and assigns driver
+    @Transactional
+    public Booking managerApproveAndAssignDriver(Long bookingId, Long managerId, 
+                                                  Long driverId, String notes) {
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+        
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new RuntimeException("Booking is not in pending state");
+        }
+        
+        User manager = userRepository.findById(managerId)
+            .orElseThrow(() -> new RuntimeException("Manager not found"));
+        
+        if (manager.getRole() != UserRole.MANAGER && manager.getRole() != UserRole.ADMIN) {
+            throw new RuntimeException("Only managers can approve bookings");
+        }
+        
+        User driver = userRepository.findById(driverId)
+            .orElseThrow(() -> new RuntimeException("Driver not found"));
+        
+        if (driver.getRole() != UserRole.DRIVER) {
+            throw new RuntimeException("Selected user is not a driver");
+        }
+        
+        if (!driver.getActive()) {
+            throw new RuntimeException("Driver is not active");
+        }
+        
+        booking.setStatus(BookingStatus.DRIVER_ASSIGNED);
+        booking.setApprovedByManager(manager);
+        booking.setDriver(driver);
+        booking.setManagerNotes(notes);
+        booking.setApprovedAt(LocalDateTime.now());
+        
+        return bookingRepository.save(booking);
+    }
+    
+    // Driver accepts booking
+    @Transactional
+    public Booking driverAcceptBooking(Long bookingId, Long driverId) {
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+        
+        if (booking.getDriver() == null || !booking.getDriver().getId().equals(driverId)) {
+            throw new RuntimeException("This booking is not assigned to you");
+        }
+        
+        if (booking.getStatus() != BookingStatus.DRIVER_ASSIGNED) {
+            throw new RuntimeException("Booking is not in assigned state");
+        }
+        
+        booking.setStatus(BookingStatus.DRIVER_ACCEPTED);
+        booking.setDriverAcceptedAt(LocalDateTime.now());
+        
+        return bookingRepository.save(booking);
+    }
+    
+    // Driver rejects booking
+    @Transactional
+    public Booking driverRejectBooking(Long bookingId, Long driverId, String reason) {
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+        
+        if (booking.getDriver() == null || !booking.getDriver().getId().equals(driverId)) {
+            throw new RuntimeException("This booking is not assigned to you");
+        }
+        
+        if (booking.getStatus() != BookingStatus.DRIVER_ASSIGNED) {
+            throw new RuntimeException("Cannot reject booking in current state");
+        }
+        
+        booking.setStatus(BookingStatus.PENDING);
+        booking.setDriver(null);
+        booking.setDriverNotes("Rejected: " + reason);
+        
+        return bookingRepository.save(booking);
+    }
+    
+    // Customer makes payment
+    @Transactional
+    public Booking processPayment(Long bookingId, String paymentMethod) {
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+        
+        if (booking.getStatus() != BookingStatus.DRIVER_ACCEPTED) {
+            throw new RuntimeException("Booking not ready for payment");
+        }
+        
+        booking.setPaymentStatus(PaymentStatus.PAID);
+        booking.setPaymentMethod(paymentMethod);
+        booking.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase());
+        booking.setStatus(BookingStatus.CONFIRMED);
+        
+        // Mark vehicle as IN_USE
+        Vehicle vehicle = booking.getVehicle();
+        vehicle.setStatus(VehicleStatus.IN_USE);
+        vehicle.setCurrentDriver(booking.getDriver());
+        vehicleRepository.save(vehicle);
+        
+        return bookingRepository.save(booking);
+    }
+    
+    // Driver starts trip
+    @Transactional
+    public Booking startTrip(Long bookingId, Long driverId) {
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+        
+        if (booking.getDriver() == null || !booking.getDriver().getId().equals(driverId)) {
+            throw new RuntimeException("Unauthorized");
+        }
+        
+        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+            throw new RuntimeException("Booking is not confirmed");
+        }
+        
+        booking.setStatus(BookingStatus.IN_PROGRESS);
+        booking.setStartTime(LocalDateTime.now());
+        
+        return bookingRepository.save(booking);
+    }
+    
+    // Driver completes trip
+    @Transactional
+    public Booking completeTrip(Long bookingId, Long driverId) {
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+        
+        if (booking.getDriver() == null || !booking.getDriver().getId().equals(driverId)) {
+            throw new RuntimeException("Unauthorized");
+        }
+        
+        if (booking.getStatus() != BookingStatus.IN_PROGRESS) {
+            throw new RuntimeException("Trip is not in progress");
+        }
+        
+        booking.setStatus(BookingStatus.COMPLETED);
+        booking.setEndTime(LocalDateTime.now());
+        booking.setCompletedAt(LocalDateTime.now());
+        
+        // Release vehicle and driver
+        Vehicle vehicle = booking.getVehicle();
+        vehicle.setStatus(VehicleStatus.AVAILABLE);
+        vehicle.setCurrentDriver(null);
+        vehicleRepository.save(vehicle);
+        
+        return bookingRepository.save(booking);
+    }
+    
+    // Cancel booking (customer)
+    @Transactional
+    public Booking cancelBooking(Long bookingId, Long customerId, String reason) {
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+        
+        if (!booking.getCustomer().getId().equals(customerId)) {
+            throw new RuntimeException("Unauthorized: Not your booking");
+        }
+        
+        // Only allow cancellation for certain statuses
+        List<BookingStatus> cancellableStatuses = Arrays.asList(
+            BookingStatus.PENDING,
+            BookingStatus.DRIVER_ASSIGNED,
+            BookingStatus.DRIVER_ACCEPTED,
+            BookingStatus.CONFIRMED
+        );
+        
+        if (!cancellableStatuses.contains(booking.getStatus())) {
+            throw new RuntimeException("Cannot cancel booking in current state: " + booking.getStatus());
+        }
+        
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking.setCancellationReason(reason);
+        booking.setCancelledAt(LocalDateTime.now());
+        
+        // Release vehicle if assigned
+        if (booking.getVehicle() != null) {
+            Vehicle vehicle = booking.getVehicle();
+            if (vehicle.getStatus() == VehicleStatus.IN_USE) {
+                vehicle.setStatus(VehicleStatus.AVAILABLE);
+                vehicle.setCurrentDriver(null);
+                vehicleRepository.save(vehicle);
+            }
+        }
+        
+        // Process refund if payment was made
+        if (booking.getPaymentStatus() == PaymentStatus.PAID) {
+            booking.setPaymentStatus(PaymentStatus.REFUNDED);
+        }
+        
+        return bookingRepository.save(booking);
+    }
+    
+    // Get bookings for manager review
+    public List<Booking> getPendingBookingsForManager() {
+        return bookingRepository.findByStatus(BookingStatus.PENDING);
+    }
+    
+    // Get driver's bookings
+    public List<Booking> getDriverBookings(Long driverId) {
+        return bookingRepository.findByDriverId(driverId);
+    }
+    
+    // Get driver's active booking
+    public Optional<Booking> getDriverActiveBooking(Long driverId) {
+        List<BookingStatus> activeStatuses = Arrays.asList(
+            BookingStatus.DRIVER_ASSIGNED,
+            BookingStatus.DRIVER_ACCEPTED,
+            BookingStatus.CONFIRMED,
+            BookingStatus.IN_PROGRESS
+        );
+        
+        List<Booking> bookings = bookingRepository.findByDriverId(driverId);
+        return bookings.stream()
+            .filter(b -> activeStatuses.contains(b.getStatus()))
+            .findFirst();
+    }
+    
+    // Get customer's bookings
+    public List<Booking> getCustomerBookings(Long customerId) {
+        return bookingRepository.findByCustomerId(customerId);
+    }
+    
+    // Get all bookings
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
     }
-
+    
+    // Get booking by ID
     public Optional<Booking> getBookingById(Long id) {
         return bookingRepository.findById(id);
     }
-
-    public List<Booking> getCustomerBookings(String username) {
-        return bookingRepository.findByCustomerUsername(username);
-    }
-
-    @Transactional
-    public Booking createBooking(Booking booking) {
-        // Set initial status to PENDING_APPROVAL
-        booking.setStatus(BookingStatus.PENDING_APPROVAL);
-        booking.setPaymentStatus(PaymentStatus.PENDING);
-        
-        // Vehicle remains AVAILABLE until manager approves
-        // No vehicle status change here!
-        
-        return bookingRepository.save(booking);
-    }
-
-    // ============ MANAGER APPROVAL SYSTEM ============
     
-    @Transactional
-    public Booking approveBooking(Long bookingId, Long managerId, String notes) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-        
-        if (booking.getStatus() != BookingStatus.PENDING_APPROVAL) {
-            throw new RuntimeException("Booking is not pending approval");
-        }
-        
-        // Update booking status
-        booking.setStatus(BookingStatus.APPROVED);
-        booking.setPaymentStatus(PaymentStatus.PENDING);
-        booking.setApprovedAt(LocalDateTime.now());
-        booking.setApprovedBy(managerId);
-        booking.setApprovalNotes(notes);
-        
-        // Reserve vehicle (set to MAINTENANCE to indicate "reserved")
-        if (booking.getVehicle() != null) {
-            Vehicle vehicle = vehicleRepository.findById(booking.getVehicle().getId())
-                    .orElseThrow(() -> new RuntimeException("Vehicle not found"));
-            vehicle.setStatus(VehicleStatus.MAINTENANCE);  // Reserved state
-            vehicleRepository.save(vehicle);
-        }
-        
-        return bookingRepository.save(booking);
+    // Get bookings by vehicle
+    public List<Booking> getBookingsByVehicle(Long vehicleId) {
+        return bookingRepository.findByVehicleId(vehicleId);
     }
     
-    @Transactional
-    public Booking rejectBooking(Long bookingId, Long managerId, String reason) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-        
-        booking.setStatus(BookingStatus.REJECTED);
-        booking.setRejectionReason(reason);
-        booking.setApprovedBy(managerId);
-        booking.setApprovedAt(LocalDateTime.now());
-        
-        // Vehicle remains AVAILABLE
-        
-        return bookingRepository.save(booking);
-    }
-
-    // ============ PAYMENT SYSTEM ============
-    
-    @Transactional
-    public Booking processPayment(Long bookingId, PaymentMethod paymentMethod) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-        
-        if (booking.getStatus() != BookingStatus.APPROVED) {
-            throw new RuntimeException("Booking must be approved before payment");
-        }
-        
-        // Generate transaction ID
-        String transactionId = "TXN" + UUID.randomUUID().toString().substring(0, 12).toUpperCase();
-        
-        // Update payment details
-        booking.setPaymentMethod(paymentMethod);
-        booking.setPaymentTransactionId(transactionId);
-        booking.setPaymentStatus(PaymentStatus.COMPLETED);
-        booking.setPaymentCompletedAt(LocalDateTime.now());
-        
-        // Update booking status to CONFIRMED
-        booking.setStatus(BookingStatus.CONFIRMED);
-        
-        // Change vehicle status to IN_USE
-        if (booking.getVehicle() != null) {
-            Vehicle vehicle = vehicleRepository.findById(booking.getVehicle().getId())
-                    .orElseThrow(() -> new RuntimeException("Vehicle not found"));
-            vehicle.setStatus(VehicleStatus.IN_USE);
-            vehicleRepository.save(vehicle);
-        }
-        
-        return bookingRepository.save(booking);
-    }
-
-    // ============ TRACKING SYSTEM ============
-    
-    @Transactional
-    public Booking updateVehicleLocation(Long bookingId, Double latitude, Double longitude) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-        
-        booking.setCurrentLatitude(latitude);
-        booking.setCurrentLongitude(longitude);
-        
-        // Calculate distance from customer (using Haversine formula)
-        if (booking.getPickupLatitude() != null && booking.getPickupLongitude() != null) {
-            double distance = calculateDistance(
-                booking.getPickupLatitude(), 
-                booking.getPickupLongitude(),
-                latitude, 
-                longitude
-            );
-            booking.setDistanceFromCustomer(distance);
-        }
-        
-        return bookingRepository.save(booking);
-    }
-    
-    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        // Haversine formula
+    // Calculate distance using Haversine formula
+    private double calculateDistance(Double lat1, Double lon1, Double lat2, Double lon2) {
         final int R = 6371; // Radius of the earth in km
         
         double latDistance = Math.toRadians(lat2 - lat1);
@@ -165,100 +303,7 @@ public class BookingService {
                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
                 * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
-    }
-
-    // ============ STATUS MANAGEMENT ============
-    
-    @Transactional
-    public Booking updateBookingStatus(Long id, String status) {
-        Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found with id: " + id));
         
-        BookingStatus newStatus = BookingStatus.valueOf(status.toUpperCase());
-        booking.setStatus(newStatus);
-        
-        // Update vehicle status based on booking status
-        if (booking.getVehicle() != null) {
-            Vehicle vehicle = vehicleRepository.findById(booking.getVehicle().getId())
-                    .orElseThrow(() -> new RuntimeException("Vehicle not found"));
-            
-            switch (newStatus) {
-                case IN_PROGRESS:
-                    vehicle.setStatus(VehicleStatus.IN_USE);
-                    break;
-                case COMPLETED:
-                case CANCELLED:
-                case REJECTED:
-                    vehicle.setStatus(VehicleStatus.AVAILABLE);
-                    break;
-                default:
-                    break;
-            }
-            vehicleRepository.save(vehicle);
-        }
-        
-        return bookingRepository.save(booking);
-    }
-
-    // ============ QUERY METHODS ============
-    
-    public List<Booking> getPendingApprovalBookings() {
-        return bookingRepository.findByStatus(BookingStatus.PENDING_APPROVAL);
-    }
-    
-    public List<Booking> getApprovedBookings() {
-        return bookingRepository.findByStatus(BookingStatus.APPROVED);
-    }
-    
-    public long getActiveTripsCount() {
-        return bookingRepository.findAll().stream()
-                .filter(b -> b.getStatus() == BookingStatus.IN_PROGRESS)
-                .count();
-    }
-
-    public double getTotalRevenue() {
-        return bookingRepository.findAll().stream()
-                .filter(b -> b.getStatus() == BookingStatus.COMPLETED && 
-                            b.getPaymentStatus() == PaymentStatus.COMPLETED)
-                .mapToDouble(booking -> booking.getTotalPrice() != null ? booking.getTotalPrice() : 0.0)
-                .sum();
-    }
-
-    @Transactional
-    public Booking updateBooking(Long id, Booking bookingDetails) {
-        Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-        
-        booking.setStatus(bookingDetails.getStatus());
-        booking.setStartTime(bookingDetails.getStartTime());
-        booking.setEndTime(bookingDetails.getEndTime());
-        booking.setPickupLocation(bookingDetails.getPickupLocation());
-        booking.setDropoffLocation(bookingDetails.getDropoffLocation());
-        
-        return bookingRepository.save(booking);
-    }
-
-    @Transactional
-    public void deleteBooking(Long id) {
-        bookingRepository.deleteById(id);
-    }
-
-    public List<Booking> getDriverBookings(String username) {
-        return bookingRepository.findByDriverUsername(username);
-    }
-
-    public List<Booking> getActiveDriverTrips(String username) {
-        return bookingRepository.findByDriverUsername(username).stream()
-            .filter(b -> b.getStatus() == BookingStatus.IN_PROGRESS)
-            .collect(Collectors.toList());
-    }
-
-    public List<Booking> getBookingsByStatus(BookingStatus status) {
-        return bookingRepository.findByStatus(status);
-    }
-
-    public List<Booking> getBookingsByVehicle(Long vehicleId) {
-        return bookingRepository.findByVehicleId(vehicleId);
+        return R * c; // Distance in km
     }
 }

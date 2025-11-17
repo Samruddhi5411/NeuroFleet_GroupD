@@ -308,9 +308,9 @@ const Settings = () => {
             <div key={role} className="glass-card p-6">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                 <span className={`px-3 py-1 rounded-full text-sm font-bold ${role === 'ADMIN' ? 'bg-accent-pink/20 text-accent-pink' :
-                    role === 'MANAGER' ? 'bg-accent-cyan/20 text-accent-cyan' :
-                      role === 'DRIVER' ? 'bg-accent-blue/20 text-accent-blue' :
-                        'bg-accent-green/20 text-accent-green'
+                  role === 'MANAGER' ? 'bg-accent-cyan/20 text-accent-cyan' :
+                    role === 'DRIVER' ? 'bg-accent-blue/20 text-accent-blue' :
+                      'bg-accent-green/20 text-accent-green'
                   }`}>
                   {role}
                 </span>
@@ -402,8 +402,8 @@ const Settings = () => {
           <button
             onClick={() => setActiveTab('general')}
             className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${activeTab === 'general'
-                ? 'bg-gradient-to-r from-accent-cyan to-accent-blue text-white shadow-lg shadow-accent-cyan/30'
-                : 'text-white/70 hover:text-white hover:bg-white/5'
+              ? 'bg-gradient-to-r from-accent-cyan to-accent-blue text-white shadow-lg shadow-accent-cyan/30'
+              : 'text-white/70 hover:text-white hover:bg-white/5'
               }`}
           >
             General Settings
@@ -411,8 +411,8 @@ const Settings = () => {
           <button
             onClick={() => setActiveTab('credentials')}
             className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${activeTab === 'credentials'
-                ? 'bg-gradient-to-r from-accent-pink to-accent-purple text-white shadow-lg shadow-accent-pink/30'
-                : 'text-white/70 hover:text-white hover:bg-white/5'
+              ? 'bg-gradient-to-r from-accent-pink to-accent-purple text-white shadow-lg shadow-accent-pink/30'
+              : 'text-white/70 hover:text-white hover:bg-white/5'
               }`}
           >
             <LogoutIcon size="sm" />

@@ -4,6 +4,7 @@ import VehicleRecommendationCard from '../../components/VehicleRecommendationCar
 import BookingCalendar from '../../components/BookingCalendar';
 import './CustomerBooking.css';
 
+
 const CustomerBooking = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);

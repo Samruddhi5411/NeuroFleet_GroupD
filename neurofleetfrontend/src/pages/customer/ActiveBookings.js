@@ -21,7 +21,12 @@ const ActiveBookings = () => {
     try {
       const response = await bookingService.getCustomerBookings(username);
       const activeBookings = response.data.filter(b =>
-        b.status === 'PENDING' || b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS'
+        b.status === 'PENDING_MANAGER_APPROVAL' ||
+        b.status === 'PENDING' ||
+        b.status === 'CONFIRMED' ||
+        b.status === 'DRIVER_ASSIGNED' ||
+        b.status === 'IN_PROGRESS' ||
+        b.status === 'TRIP_STARTED'
       );
       setBookings(activeBookings);
     } catch (error) {
@@ -50,20 +55,38 @@ const ActiveBookings = () => {
 
   const getStatusStyle = (status) => {
     const statusMap = {
+      'PENDING_MANAGER_APPROVAL': 'status-maintenance',
       'PENDING': 'status-maintenance',
       'CONFIRMED': 'status-available',
+      'DRIVER_ASSIGNED': 'status-available',
       'IN_PROGRESS': 'status-in-use',
+      'TRIP_STARTED': 'status-in-use',
     };
     return statusMap[status] || 'status-maintenance';
   };
 
   const getStatusIcon = (status) => {
     const iconMap = {
+      'PENDING_MANAGER_APPROVAL': '⏳',
       'PENDING': '⏳',
       'CONFIRMED': '✅',
+      'DRIVER_ASSIGNED': '👨‍✈️',
       'IN_PROGRESS': '🚗',
+      'TRIP_STARTED': '🚗',
     };
     return iconMap[status] || '📋';
+  };
+
+  const getStatusLabel = (status) => {
+    const labelMap = {
+      'PENDING_MANAGER_APPROVAL': 'Awaiting Approval',
+      'PENDING': 'Pending',
+      'CONFIRMED': 'Confirmed',
+      'DRIVER_ASSIGNED': 'Driver Assigned',
+      'IN_PROGRESS': 'In Progress',
+      'TRIP_STARTED': 'Trip Started',
+    };
+    return labelMap[status] || status.replace(/_/g, ' ');
   };
 
   const formatDateTime = (dateTime) => {
@@ -130,9 +153,9 @@ const ActiveBookings = () => {
               </p>
             </div>
             <div className="glass-card p-6">
-              <p className="text-white/60 text-sm font-semibold mb-2">Upcoming</p>
+              <p className="text-white/60 text-sm font-semibold mb-2">Awaiting Approval</p>
               <p className="text-4xl font-bold text-accent-purple">
-                {bookings.filter(b => b.status === 'CONFIRMED' || b.status === 'PENDING').length}
+                {bookings.filter(b => b.status === 'PENDING_MANAGER_APPROVAL' || b.status === 'PENDING').length}
               </p>
             </div>
           </div>
@@ -149,7 +172,7 @@ const ActiveBookings = () => {
                         </h4>
                         <span className={`status-badge ${getStatusStyle(booking.status)}`}>
                           <span className="w-2 h-2 rounded-full bg-current animate-pulse"></span>
-                          {getStatusIcon(booking.status)} {booking.status}
+                          {getStatusIcon(booking.status)} {getStatusLabel(booking.status)}
                         </span>
                         {booking.status === 'CONFIRMED' && (
                           <span className="bg-gradient-to-r from-accent-cyan to-accent-blue text-white px-3 py-1 rounded-full text-xs font-bold">

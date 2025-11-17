@@ -303,8 +303,8 @@ const RouteOptimization = () => {
                 key={index}
                 onClick={() => setSelectedRoute(route)}
                 className={`p-4 rounded-xl cursor-pointer transition-all ${selectedRoute?.routeId === route.routeId
-                    ? 'bg-gradient-to-br from-accent-green/20 to-accent-cyan/20 border-2 border-accent-green'
-                    : 'bg-dark-700/40 border border-white/10 hover:border-accent-green/50'
+                  ? 'bg-gradient-to-br from-accent-green/20 to-accent-cyan/20 border-2 border-accent-green'
+                  : 'bg-dark-700/40 border border-white/10 hover:border-accent-green/50'
                   }`}
               >
                 <div className="flex items-center justify-between mb-3">
@@ -374,9 +374,9 @@ const RouteOptimization = () => {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-white font-semibold">Load #{load.loadId}</span>
                   <span className={`px-2 py-1 rounded text-xs font-bold ${load.status === 'DELIVERED' ? 'bg-accent-green/20 text-accent-green' :
-                      load.status === 'IN_TRANSIT' ? 'bg-accent-cyan/20 text-accent-cyan' :
-                        load.status === 'ASSIGNED' ? 'bg-accent-purple/20 text-accent-purple' :
-                          'bg-white/10 text-white/70'
+                    load.status === 'IN_TRANSIT' ? 'bg-accent-cyan/20 text-accent-cyan' :
+                      load.status === 'ASSIGNED' ? 'bg-accent-purple/20 text-accent-purple' :
+                        'bg-white/10 text-white/70'
                     }`}>
                     {load.status}
                   </span>
@@ -393,8 +393,8 @@ const RouteOptimization = () => {
                   <div className="flex justify-between">
                     <span className="text-white/60">Priority:</span>
                     <span className={`font-bold ${load.priority === 'URGENT' ? 'text-red-400' :
-                        load.priority === 'HIGH' ? 'text-orange-400' :
-                          'text-white'
+                      load.priority === 'HIGH' ? 'text-orange-400' :
+                        'text-white'
                       }`}>
                       {load.priority}
                     </span>
@@ -424,8 +424,8 @@ const RouteOptimization = () => {
                     {route.optimizationType}
                   </div>
                   <span className={`px-2 py-1 rounded text-xs font-bold ${route.status === 'COMPLETED' ? 'bg-accent-green/20 text-accent-green' :
-                      route.status === 'ACTIVE' ? 'bg-accent-cyan/20 text-accent-cyan' :
-                        'bg-white/10 text-white/70'
+                    route.status === 'ACTIVE' ? 'bg-accent-cyan/20 text-accent-cyan' :
+                      'bg-white/10 text-white/70'
                     }`}>
                     {route.status}
                   </span>

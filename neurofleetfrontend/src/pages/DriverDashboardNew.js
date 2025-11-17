@@ -35,7 +35,7 @@ const DriverDashboardNew = () => {
   return (
     <div className="min-h-screen bg-gradient-dark relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-mesh opacity-20"></div>
-
+      
       <nav className="relative bg-dark-800/40 backdrop-blur-glass border-b border-white/10 shadow-glass">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
@@ -78,10 +78,11 @@ const DriverDashboardNew = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${activeTab === tab.id
-                      ? 'bg-gradient-to-r from-accent-green to-accent-cyan text-white shadow-lg shadow-accent-green/30'
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${
+                    activeTab === tab.id 
+                      ? 'bg-gradient-to-r from-accent-green to-accent-cyan text-white shadow-lg shadow-accent-green/30' 
                       : 'text-white/70 hover:text-white hover:bg-white/5'
-                    }`}
+                  }`}
                 >
                   <TabIcon size="sm" />
                   {tab.label}

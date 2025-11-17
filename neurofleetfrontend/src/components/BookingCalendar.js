@@ -123,8 +123,8 @@ const BookingCalendar = ({ vehicle, onClose, onBookingComplete }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3>Booking Confirmed!</h3>
-            <p>Your booking has been successfully created.</p>
+            <h3>Booking Request Submitted!</h3>
+            <p>Your booking request has been sent for manager approval. You'll be notified once it's confirmed.</p>
           </div>
         ) : bookingStatus === 'error' ? (
           <div className="booking-error">

@@ -21,7 +21,17 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
-
+// Handle responses
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 export const authService = {
   login: (username, password) =>
     api.post('/auth/login', { username, password }),
@@ -54,6 +64,18 @@ export const bookingService = {
   checkAvailability: (request) => api.post('/customer/bookings/availability', request),
 };
 
+export const managerService = {
+  getPendingBookings: () => api.get('/manager/bookings/pending'),
+  approveBooking: (id) => api.put(`/manager/bookings/${id}/approve`),
+  assignDriver: (bookingId, driverId) => api.put(`/manager/bookings/${bookingId}/assign-driver?driverId=${driverId}`),
+  getAvailableDrivers: () => api.get('/manager/drivers/available'),
+};
+
+export const driverService = {
+  getAssignedBookings: (username) => api.get(`/driver/bookings?username=${username}`),
+  startTrip: (bookingId) => api.put(`/driver/bookings/${bookingId}/start-trip`),
+};
+
 export const supportService = {
   getAllTickets: () => api.get('/admin/support/tickets'),
   getCustomerTickets: (username) => api.get(`/customer/support/tickets?username=${username}`),
@@ -68,7 +90,7 @@ export const maintenanceService = {
   getById: (id) => api.get(`/maintenance/${id}`),
   getByVehicle: (vehicleId) => api.get(`/maintenance/vehicle/${vehicleId}`),
   getPredictive: () => api.get('/maintenance/predictive'),
-  create: (maintenance) => api.post('/admin/maintenance', maintenance),
+  // create: (maintenance) => api.post('/admin/maintenance', maintenance),
   update: (id, maintenance) => api.put(`/admin/maintenance/${id}`, maintenance),
 };
 
@@ -77,6 +99,19 @@ export const userService = {
   getByRole: (role) => api.get(`/admin/users/role/${role}`),
   getById: (id) => api.get(`/admin/users/${id}`),
   toggleActive: (id) => api.put(`/admin/users/${id}/toggle-active`),
+};
+
+export const analyticsService = {
+  getKPIMetrics: () => api.get('/analytics/kpi'),
+  getFleetDistribution: () => api.get('/analytics/fleet-distribution'),
+  getHourlyActivity: () => api.get('/analytics/hourly-activity'),
+  getDailyTrends: (days) => api.get(`/analytics/daily-trends?days=${days || 7}`),
+  getVehiclePerformance: () => api.get('/analytics/vehicle-performance'),
+  downloadFleetReport: () => api.get('/analytics/reports/fleet/csv', { responseType: 'blob' }),
+  downloadBookingsReport: () => api.get('/analytics/reports/bookings/csv', { responseType: 'blob' }),
+  downloadRevenueReport: () => api.get('/analytics/reports/revenue/csv', { responseType: 'blob' }),
+  downloadTripsReport: () => api.get('/analytics/reports/trips/csv', { responseType: 'blob' }),
+  downloadSummaryReport: () => api.get('/analytics/reports/summary/csv', { responseType: 'blob' }),
 };
 
 export default api;

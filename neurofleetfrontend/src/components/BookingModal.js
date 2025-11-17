@@ -92,8 +92,8 @@ const BookingModal = ({ isOpen, onClose, onBook, vehicle }) => {
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-accent-green to-accent-cyan flex items-center justify-center">
               <CheckIcon size="xl" className="text-white" />
             </div>
-            <h2 className="text-3xl font-bold text-white mb-2">Booking Confirmed!</h2>
-            <p className="text-white/70 mb-4">Your vehicle has been successfully booked.</p>
+            <h2 className="text-3xl font-bold text-white mb-2">Booking Request Submitted!</h2>
+            <p className="text-white/70 mb-4">Your booking request has been sent for manager approval. You'll be notified once confirmed.</p>
             <div className="glass-card p-6 bg-accent-green/10 border-accent-green/30">
               <div className="space-y-2 text-left">
                 <div className="flex justify-between">

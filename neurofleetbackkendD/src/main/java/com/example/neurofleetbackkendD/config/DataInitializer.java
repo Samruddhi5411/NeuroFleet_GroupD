@@ -1,34 +1,20 @@
 package com.example.neurofleetbackkendD.config;
 
-
-
-
-
-import com.example.neurofleetbackkendD.model.User;
-import com.example.neurofleetbackkendD.model.Vehicle;
-import com.example.neurofleetbackkendD.model.enums.MaintenanceStatus;
-import com.example.neurofleetbackkendD.model.enums.MaintenanceType;
-import com.example.neurofleetbackkendD.model.enums.Priority;
-import com.example.neurofleetbackkendD.model.enums.UserRole;
-import com.example.neurofleetbackkendD.model.enums.VehicleStatus;
-import com.example.neurofleetbackkendD.model.enums.VehicleType;
-import com.example.neurofleetbackkendD.model.Maintenance;
-import com.example.neurofleetbackkendD.repository.UserRepository;
-import com.example.neurofleetbackkendD.repository.VehicleRepository;
-import com.example.neurofleetbackkendD.repository.BookingRepository;
-import com.example.neurofleetbackkendD.repository.MaintenanceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import com.example.neurofleetbackkendD.model.*;
+import com.example.neurofleetbackkendD.model.enums.*;
+import com.example.neurofleetbackkendD.repository.*;
+
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Random;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
-
+    
     @Autowired
     private UserRepository userRepository;
     
@@ -36,204 +22,238 @@ public class DataInitializer implements CommandLineRunner {
     private VehicleRepository vehicleRepository;
     
     @Autowired
-    private MaintenanceRepository maintenanceRepository;
-    
-    @Autowired
     private PasswordEncoder passwordEncoder;
-
+    
     @Override
     public void run(String... args) throws Exception {
-        // Skip if data already exists
+        // Check if data already exists
         if (userRepository.count() > 0) {
-            System.out.println("✅ Data already exists. Skipping initialization.");
+            System.out.println("⚠️ Data already exists, skipping initialization");
             return;
         }
-
-        System.out.println("🚀 Creating sample data...");
         
-        createUsers();
-        createVehicles();
-        createMaintenance();
+        System.out.println("🚀 Initializing NeuroFleetX Database...");
         
-        System.out.println("✅ Sample data created successfully!");
-    }
-
-    private void createUsers() {
-        // Admin
+        // Create Admin
         User admin = new User();
         admin.setUsername("admin");
         admin.setPassword(passwordEncoder.encode("admin123"));
-        admin.setFullName("Administrator");
-        admin.setEmail("admin@neurofleet.com");
+        admin.setFullName("System Administrator");
+        admin.setEmail("admin@neurofleetx.com");
         admin.setPhone("+91-9876543210");
         admin.setRole(UserRole.ADMIN);
+        admin.setActive(true);
         userRepository.save(admin);
         
-        // Manager
-        User manager = new User();
-        manager.setUsername("manager");
-        manager.setPassword(passwordEncoder.encode("manager123"));
-        manager.setFullName("Rajesh Kumar");
-        manager.setEmail("manager@neurofleet.com");
-        manager.setPhone("+91-9876543211");
-        manager.setRole(UserRole.MANAGER);
-        userRepository.save(manager);
+        // Create Managers
+        for (int i = 1; i <= 3; i++) {
+            User manager = new User();
+            manager.setUsername("manager" + i);
+            manager.setPassword(passwordEncoder.encode("manager123"));
+            manager.setFullName("Fleet Manager " + i);
+            manager.setEmail("manager" + i + "@neurofleetx.com");
+            manager.setPhone("+91-98765432" + (10 + i));
+            manager.setRole(UserRole.MANAGER);
+            manager.setActive(true);
+            userRepository.save(manager);
+        }
         
-        // Drivers (Indian names)
-        String[] driverNames = {"Amit Sharma", "Vikram Singh", "Rohan Patel", "Arjun Verma", "Sunil Yadav"};
-        for (int i = 0; i < driverNames.length; i++) {
+        // Create Drivers (20 drivers)
+        String[] driverNames = {
+            "Rajesh Kumar", "Amit Singh", "Suresh Patel", "Vijay Sharma", 
+            "Prakash Reddy", "Ramesh Yadav", "Ashok Verma", "Manoj Gupta",
+            "Santosh Kumar", "Dinesh Singh", "Rakesh Joshi", "Anil Mehta",
+            "Sanjay Desai", "Ravi Kapoor", "Mukesh Agarwal", "Deepak Nair",
+            "Kiran Kumar", "Ganesh Rao", "Mahesh Iyer", "Sunil Menon"
+        };
+        
+        for (int i = 1; i <= 20; i++) {
             User driver = new User();
-            driver.setUsername("driver" + (i + 1));
+            driver.setUsername("driver" + i);
             driver.setPassword(passwordEncoder.encode("driver123"));
-            driver.setFullName(driverNames[i]);
-            driver.setEmail("driver" + (i + 1) + "@neurofleet.com");
-            driver.setPhone("+91-987654321" + i);
+            driver.setFullName(driverNames[i-1]);
+            driver.setEmail("driver" + i + "@neurofleetx.com");
+            driver.setPhone("+91-" + (9000000000L + i));
             driver.setRole(UserRole.DRIVER);
-            driver.setLicenseNumber("MH-12-2020-" + (100000 + i));
-            driver.setLicenseExpiry(LocalDateTime.now().plusYears(5));
-            driver.setIsAvailable(true);
+            driver.setActive(true);
             userRepository.save(driver);
         }
         
-        // Customers (Indian names)
-        String[] customerNames = {"Priya Desai", "Sneha Mehta", "Anjali Joshi", "Kavita Reddy", "Deepak Shah"};
-        for (int i = 0; i < customerNames.length; i++) {
+        // Create Customers (15 customers)
+        String[] customerNames = {
+            "Priya Sharma", "Anita Desai", "Neha Patel", "Pooja Singh", "Kavita Reddy",
+            "Sneha Gupta", "Divya Kumar", "Anjali Verma", "Ritu Agarwal", "Swati Joshi",
+            "Meera Nair", "Lakshmi Iyer", "Geeta Menon", "Sunita Rao", "Rekha Kapoor"
+        };
+        
+        for (int i = 1; i <= 15; i++) {
             User customer = new User();
-            customer.setUsername("customer" + (i + 1));
+            customer.setUsername("customer" + i);
             customer.setPassword(passwordEncoder.encode("customer123"));
-            customer.setFullName(customerNames[i]);
-            customer.setEmail("customer" + (i + 1) + "@example.com");
-            customer.setPhone("+91-987654322" + i);
+            customer.setFullName(customerNames[i-1]);
+            customer.setEmail("customer" + i + "@neurofleetx.com");
+            customer.setPhone("+91-" + (8000000000L + i));
             customer.setRole(UserRole.CUSTOMER);
+            customer.setActive(true);
             userRepository.save(customer);
         }
         
-        System.out.println("✅ Created " + userRepository.count() + " users");
+        // Create Vehicles from All Over India (50 vehicles)
+        createVehiclesAllIndia();
+        
+        System.out.println("✅ Database initialization completed!");
+        System.out.println("\n📝 Test Credentials:");
+        System.out.println("================================");
+        System.out.println("🔐 Admin:    admin / admin123");
+        System.out.println("👨‍💼 Manager:  manager1 / manager123");
+        System.out.println("🚗 Driver:   driver1 / driver123");
+        System.out.println("👤 Customer: customer1 / customer123");
+        System.out.println("================================\n");
+        System.out.println("📊 Statistics:");
+        System.out.println("   Total Users: " + userRepository.count());
+        System.out.println("   Total Vehicles: " + vehicleRepository.count());
+        System.out.println("   Drivers: 20");
+        System.out.println("   Customers: 15");
+        System.out.println("   Managers: 3");
     }
-
-    private void createVehicles() {
-        // Vehicle 1 - Mumbai
-        Vehicle v1 = new Vehicle();
-        v1.setVehicleNumber("MH-01-AB-1000");
-        v1.setModel("Maruti Swift");
-        v1.setManufacturer("Maruti Suzuki");
-        v1.setType(VehicleType.SEDAN);
-        v1.setCapacity(5);
-        v1.setIsElectric(false);
-        v1.setStatus(VehicleStatus.AVAILABLE);
-        v1.setFuelLevel(75.0);
-        v1.setLatitude(19.0760); // Mumbai
-        v1.setLongitude(72.8777);
-        v1.setSpeed(0.0);
-        v1.setMileage(25000);
-        v1.setHealthScore(92.0);
-        v1.setKmsSinceService(2000);
-        vehicleRepository.save(v1);
+    
+    private void createVehiclesAllIndia() {
+        Random random = new Random();
         
-        // Vehicle 2 - Delhi
-        Vehicle v2 = new Vehicle();
-        v2.setVehicleNumber("DL-02-CD-2000");
-        v2.setModel("Hyundai Creta");
-        v2.setManufacturer("Hyundai");
-        v2.setType(VehicleType.SUV);
-        v2.setCapacity(7);
-        v2.setIsElectric(false);
-        v2.setStatus(VehicleStatus.AVAILABLE);
-        v2.setFuelLevel(80.0);
-        v2.setLatitude(28.7041); // Delhi
-        v2.setLongitude(77.1025);
-        v2.setSpeed(0.0);
-        v2.setMileage(30000);
-        v2.setHealthScore(88.0);
-        v2.setKmsSinceService(3000);
-        vehicleRepository.save(v2);
+        // Indian Cities with GPS Coordinates
+        Object[][] cities = {
+            // City, Latitude, Longitude
+            {"Mumbai", 19.0760, 72.8777},
+            {"Delhi", 28.7041, 77.1025},
+            {"Bangalore", 12.9716, 77.5946},
+            {"Hyderabad", 17.3850, 78.4867},
+            {"Chennai", 13.0827, 80.2707},
+            {"Kolkata", 22.5726, 88.3639},
+            {"Pune", 18.5204, 73.8567},
+            {"Ahmedabad", 23.0225, 72.5714},
+            {"Jaipur", 26.9124, 75.7873},
+            {"Lucknow", 26.8467, 80.9462},
+            {"Chandigarh", 30.7333, 76.7794},
+            {"Kochi", 9.9312, 76.2673},
+            {"Indore", 22.7196, 75.8577},
+            {"Nagpur", 21.1458, 79.0882},
+            {"Surat", 21.1702, 72.8311},
+            {"Bhopal", 23.2599, 77.4126},
+            {"Coimbatore", 11.0168, 76.9558},
+            {"Vadodara", 22.3072, 73.1812},
+            {"Visakhapatnam", 17.6868, 83.2185},
+            {"Thiruvananthapuram", 8.5241, 76.9366}
+        };
         
-        // Vehicle 3 - Bangalore (Electric)
-        Vehicle v3 = new Vehicle();
-        v3.setVehicleNumber("KA-12-EF-3000");
-        v3.setModel("Tata Nexon EV");
-        v3.setManufacturer("Tata Motors");
-        v3.setType(VehicleType.SUV);
-        v3.setCapacity(5);
-        v3.setIsElectric(true);
-        v3.setStatus(VehicleStatus.AVAILABLE);
-        v3.setBatteryLevel(95.0);
-        v3.setLatitude(12.9716); // Bangalore
-        v3.setLongitude(77.5946);
-        v3.setSpeed(0.0);
-        v3.setMileage(15000);
-        v3.setHealthScore(98.0);
-        v3.setKmsSinceService(1000);
-        vehicleRepository.save(v3);
+        String[] manufacturers = {
+            "Tata", "Mahindra", "Maruti Suzuki", "Hyundai", "Honda", 
+            "Toyota", "Ford", "Volkswagen", "Renault", "Nissan"
+        };
         
-        // Vehicle 4 - Pune
-        Vehicle v4 = new Vehicle();
-        v4.setVehicleNumber("MH-14-GH-4000");
-        v4.setModel("Toyota Fortuner");
-        v4.setManufacturer("Toyota");
-        v4.setType(VehicleType.SUV);
-        v4.setCapacity(7);
-        v4.setIsElectric(false);
-        v4.setStatus(VehicleStatus.IN_USE);
-        v4.setFuelLevel(60.0);
-        v4.setLatitude(18.5204); // Pune
-        v4.setLongitude(73.8567);
-        v4.setSpeed(45.0);
-        v4.setMileage(50000);
-        v4.setHealthScore(85.0);
-        v4.setKmsSinceService(4500);
-        vehicleRepository.save(v4);
+        String[][] modelsPerType = {
+            // SEDAN models
+            {"Dzire", "City", "Verna", "Ciaz", "Rapid"},
+            // SUV models
+            {"Creta", "Seltos", "XUV500", "Fortuner", "Scorpio"},
+            // VAN models
+            {"Innova", "Ertiga", "Marazzo", "Carnival", "Traveller"},
+            // TRUCK models
+            {"407", "407 Plus", "Eicher Pro", "Tata Ultra", "Ashok Leyland"},
+            // BUS models
+            {"Starbus", "Citybus", "Tourist Bus", "School Bus", "Express"},
+            // BIKE models
+            {"Royal Enfield", "Pulsar", "Apache", "FZ", "Duke"}
+        };
         
-        // Vehicle 5 - Chennai
-        Vehicle v5 = new Vehicle();
-        v5.setVehicleNumber("TN-43-KL-5000");
-        v5.setModel("Honda City");
-        v5.setManufacturer("Honda");
-        v5.setType(VehicleType.SEDAN);
-        v5.setCapacity(5);
-        v5.setIsElectric(false);
-        v5.setStatus(VehicleStatus.MAINTENANCE);
-        v5.setFuelLevel(30.0);
-        v5.setLatitude(13.0827); // Chennai
-        v5.setLongitude(80.2707);
-        v5.setSpeed(0.0);
-        v5.setMileage(60000);
-        v5.setHealthScore(65.0);
-        v5.setKmsSinceService(6000);
-        vehicleRepository.save(v5);
+        VehicleType[] types = VehicleType.values();
         
-        System.out.println("✅ Created " + vehicleRepository.count() + " vehicles");
+        int vehicleCounter = 1;
+        
+        for (Object[] city : cities) {
+            String cityName = (String) city[0];
+            Double baseLat = (Double) city[1];
+            Double baseLon = (Double) city[2];
+            
+            // Create 2-3 vehicles per city
+            int vehiclesInCity = 2 + random.nextInt(2);
+            
+            for (int i = 0; i < vehiclesInCity && vehicleCounter <= 50; i++) {
+                Vehicle vehicle = new Vehicle();
+                
+                // Generate vehicle number in Indian format
+                String stateCode = getStateCode(cityName);
+                vehicle.setVehicleNumber(stateCode + "-" + 
+                    String.format("%02d", random.nextInt(99) + 1) + "-" +
+                    (char)('A' + random.nextInt(26)) + (char)('A' + random.nextInt(26)) + "-" +
+                    String.format("%04d", random.nextInt(9999) + 1));
+                
+                // Random type
+                VehicleType type = types[random.nextInt(types.length)];
+                vehicle.setType(type);
+                
+                // Manufacturer and Model
+                vehicle.setManufacturer(manufacturers[random.nextInt(manufacturers.length)]);
+                vehicle.setModel(modelsPerType[type.ordinal()][random.nextInt(5)]);
+                
+                // Capacity based on type
+                switch (type) {
+                    case SEDAN: vehicle.setCapacity(4 + random.nextInt(2)); break;
+                    case SUV: vehicle.setCapacity(5 + random.nextInt(3)); break;
+                    case VAN: vehicle.setCapacity(7 + random.nextInt(5)); break;
+                    case TRUCK: vehicle.setCapacity(2); break;
+                    case BUS: vehicle.setCapacity(30 + random.nextInt(20)); break;
+                    case BIKE: vehicle.setCapacity(2); break;
+                }
+                
+                // Electric vehicles (30% chance)
+                vehicle.setIsElectric(random.nextDouble() < 0.3);
+                
+                // Status
+                VehicleStatus[] statuses = VehicleStatus.values();
+                vehicle.setStatus(statuses[random.nextInt(statuses.length)]);
+                
+                // GPS coordinates (slight variation from city center)
+                vehicle.setLatitude(baseLat + (random.nextDouble() - 0.5) * 0.1);
+                vehicle.setLongitude(baseLon + (random.nextDouble() - 0.5) * 0.1);
+                
+                // Battery and Fuel
+                vehicle.setBatteryLevel(vehicle.getIsElectric() ? 
+                    (70 + random.nextInt(31)) : 100);
+                vehicle.setFuelLevel(!vehicle.getIsElectric() ? 
+                    (60 + random.nextInt(41)) : 0);
+                
+                // Health and Mileage
+                vehicle.setHealthScore(75 + random.nextInt(26));
+                vehicle.setMileage(random.nextInt(100000));
+                vehicle.setSpeed(vehicle.getStatus() == VehicleStatus.IN_USE ? 
+                    (20.0 + random.nextDouble() * 60) : 0.0);
+                
+                vehicle.setCreatedAt(LocalDateTime.now().minusDays(random.nextInt(365)));
+                vehicle.setLastUpdated(LocalDateTime.now());
+                
+                vehicleRepository.save(vehicle);
+                vehicleCounter++;
+            }
+        }
     }
-    private void createMaintenance() {
-        List<Vehicle> vehicles = vehicleRepository.findAll();
-        if (vehicles.isEmpty()) return;
-        
-        // Maintenance 1
-        Maintenance m1 = new Maintenance();
-        m1.setVehicle(vehicles.get(0));
-        m1.setIssueType(MaintenanceType.OIL_CHANGE);
-        m1.setDescription("Routine oil change required");
-        m1.setStatus(MaintenanceStatus.PENDING);
-        m1.setPriority(Priority.MEDIUM);
-        m1.setIsPredictive(true);
-        m1.setPredictedDaysToFailure(15);
-        m1.setScheduledDate(LocalDateTime.now().plusDays(10));
-        m1.setEstimatedCost(2000.0);
-        maintenanceRepository.save(m1);
-        
-        // Maintenance 2
-        Maintenance m2 = new Maintenance();
-        m2.setVehicle(vehicles.get(4));
-        m2.setIssueType(MaintenanceType.ENGINE);
-        m2.setDescription("Engine diagnostic required");
-        m2.setStatus(MaintenanceStatus.IN_PROGRESS);
-        m2.setPriority(Priority.HIGH);
-        m2.setIsPredictive(true);
-        m2.setPredictedDaysToFailure(5);
-        m2.setScheduledDate(LocalDateTime.now().plusDays(2));
-        m2.setEstimatedCost(8000.0);
-        maintenanceRepository.save(m2);
-        
-        System.out.println("✅ Created " + maintenanceRepository.count() + " maintenance records");
+    
+    private String getStateCode(String city) {
+        switch (city) {
+            case "Mumbai": case "Pune": return "MH"; // Maharashtra
+            case "Delhi": return "DL"; // Delhi
+            case "Bangalore": return "KA"; // Karnataka
+            case "Hyderabad": return "TS"; // Telangana
+            case "Chennai": case "Coimbatore": return "TN"; // Tamil Nadu
+            case "Kolkata": return "WB"; // West Bengal
+            case "Ahmedabad": case "Surat": case "Vadodara": return "GJ"; // Gujarat
+            case "Jaipur": return "RJ"; // Rajasthan
+            case "Lucknow": return "UP"; // Uttar Pradesh
+            case "Chandigarh": return "CH"; // Chandigarh
+            case "Kochi": case "Thiruvananthapuram": return "KL"; // Kerala
+            case "Indore": case "Bhopal": return "MP"; // Madhya Pradesh
+            case "Nagpur": return "MH"; // Maharashtra
+            case "Visakhapatnam": return "AP"; // Andhra Pradesh
+            default: return "XX";
+        }
     }
 }

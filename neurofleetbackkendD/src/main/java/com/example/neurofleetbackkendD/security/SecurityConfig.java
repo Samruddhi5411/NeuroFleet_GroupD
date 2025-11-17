@@ -16,21 +16,21 @@ import org.springframework.web.cors.CorsConfiguration;
 
 @Configuration
 public class SecurityConfig {
-
+    
     private final JwtFilter jwtFilter;
     private final UserDetailsService userDetailsService;
-
+    
     public SecurityConfig(JwtFilter jwtFilter, UserDetailsService userDetailsService) {
         this.jwtFilter = jwtFilter;
         this.userDetailsService = userDetailsService;
     }
-
+    
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(request -> {
                 CorsConfiguration config = new CorsConfiguration();
-                config.setAllowedOrigins(List.of("http://localhost:3000"));
+                config.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001"));
                 config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 config.setAllowedHeaders(List.of("*"));
                 config.setExposedHeaders(List.of("Authorization"));
@@ -39,28 +39,45 @@ public class SecurityConfig {
             }))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
-                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-                .requestMatchers("/api/manager/**").hasAnyAuthority("MANAGER", "ADMIN")
-                .requestMatchers("/api/driver/**").hasAuthority("DRIVER")
-                .requestMatchers("/api/customer/**").hasAuthority("CUSTOMER")
-                .requestMatchers("/api/vehicles/**").hasAnyAuthority("ADMIN", "MANAGER", "CUSTOMER", "DRIVER")
-                .requestMatchers("/api/bookings/**").hasAnyAuthority("ADMIN", "MANAGER", "CUSTOMER")
-                .requestMatchers("/api/maintenance/**").hasAnyAuthority("ADMIN", "MANAGER")
+                // Public endpoints
+                .requestMatchers("/api/auth/**", "/h2-console/**", "/error", "/api/test/**").permitAll()
+                
+                // Admin endpoints - Using hasAuthority with exact role name
+                .requestMatchers("/api/admin/**", "/api/dashboard/**", 
+                                "/api/urban-mobility/**", "/api/analytics/**").hasAuthority("ADMIN")
+                
+                // Manager endpoints
+                .requestMatchers("/api/manager/**", "/api/dashboard/manager/**").hasAnyAuthority("MANAGER", "ADMIN")
+                
+                // Driver endpoints
+                .requestMatchers("/api/driver/**", "/api/dashboard/driver/**").hasAuthority("DRIVER")
+                
+                // Customer endpoints
+                .requestMatchers("/api/customer/**", "/api/dashboard/customer/**", 
+                                "/api/recommendations/**").hasAuthority("CUSTOMER")
+                
+                // Shared endpoints - all authenticated users
+                .requestMatchers("/api/vehicles/**").authenticated()
+                .requestMatchers("/api/bookings/**").authenticated()
+                .requestMatchers("/api/maintenance/**").authenticated()
+                .requestMatchers("/api/routes/**").authenticated()
+                .requestMatchers("/api/telemetry/**").authenticated()
+                
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .headers(headers -> headers.frameOptions().disable());
-
+        
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        
         return http.build();
     }
-
+    
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
-
+    
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

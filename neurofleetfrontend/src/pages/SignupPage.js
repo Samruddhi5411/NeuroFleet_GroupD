@@ -1,130 +1,221 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/api';
 import Logo from '../components/Logo';
 
-const PortalSelectionPage = () => {
+const SignupPage = () => {
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    fullName: '',
+    phone: '',
+    role: 'CUSTOMER',
+  });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const portals = [
-    {
-      title: 'Admin Portal',
-      icon: '🧠',
-      description: 'Complete system control & analytics',
-      role: 'admin',
-      glowColor: 'red',
-    },
-    {
-      title: 'Manager Portal',
-      icon: '🧩',
-      description: 'Fleet operations & management',
-      role: 'manager',
-      glowColor: 'yellow',
-    },
-    {
-      title: 'Driver Portal',
-      icon: '🚗',
-      description: 'Trips & route management',
-      role: 'driver',
-      glowColor: 'blue',
-    },
-    {
-      title: 'Customer Portal',
-      icon: '👤',
-      description: 'Vehicle booking & preferences',
-      role: 'customer',
-      glowColor: 'purple',
-    },
+  const roles = [
+    { value: 'CUSTOMER', label: 'Customer', icon: '👤', color: 'from-green-500 to-green-700' },
+    { value: 'DRIVER', label: 'Driver', icon: '🚗', color: 'from-cyan-500 to-cyan-700' },
+    { value: 'MANAGER', label: 'Manager', icon: '🧩', color: 'from-blue-500 to-blue-700' },
+    { value: 'ADMIN', label: 'Admin', icon: '🧠', color: 'from-purple-500 to-purple-700' },
   ];
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      // First signup the user
+      await authService.signup(formData);
+      setSuccess(true);
+
+      // Then automatically login with the same credentials
+      try {
+        const loginResponse = await authService.login(formData.username, formData.password);
+        const { token, role: userRole, username, fullName } = loginResponse.data;
+
+        // Store auth data
+        localStorage.setItem('token', token);
+        localStorage.setItem('role', userRole);
+        localStorage.setItem('username', username);
+        localStorage.setItem('fullName', fullName);
+
+        // Redirect to appropriate dashboard based on role
+        setTimeout(() => {
+          navigate(`/${userRole.toLowerCase()}/dashboard`);
+        }, 1500);
+      } catch (loginErr) {
+        // If auto-login fails, redirect to login page
+        setTimeout(() => {
+          navigate(`/login/${formData.role.toLowerCase()}`);
+        }, 2000);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-950 via-green-950 to-emerald-900">
-      {/* Subtle background pattern */}
-      <div className="absolute inset-0 opacity-10" style={{
-        backgroundImage: `radial-gradient(circle at 2px 2px, rgba(16, 185, 129, 0.15) 1px, transparent 0)`,
-        backgroundSize: '40px 40px'
-      }}></div>
-
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-emerald-800/50 backdrop-blur-sm border-b border-emerald-600/30 shadow-lg z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Logo size="medium" />
-          <button
-            onClick={() => navigate('/')}
-            className="text-emerald-200 hover:text-emerald-100 transition duration-300 font-medium"
-          >
-            ← Back to Home
-          </button>
-        </div>
-      </nav>
-
-      <div className="relative pt-32 pb-20 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h1 className="text-5xl font-bold mb-4 text-emerald-100">
-              Select Your Portal
-            </h1>
-            <p className="text-xl text-emerald-200">
-              Choose your role to access the platform
-            </p>
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: '#0A0F0D' }}>
+      <div className="max-w-md w-full">
+        <div className="backdrop-blur-xl rounded-2xl p-8" style={{ backgroundColor: 'rgba(18, 33, 27, 0.8)', border: '2px solid rgba(16, 185, 129, 0.3)', boxShadow: '0 8px 32px 0 rgba(0, 255, 156, 0.1)' }}>
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <Logo size="medium" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-12">
-            {portals.map((portal, index) => {
-              const borderColors = {
-                red: 'border-red-500/60 hover:border-red-400',
-                yellow: 'border-yellow-400/60 hover:border-yellow-300',
-                blue: 'border-blue-500/60 hover:border-blue-400',
-                purple: 'border-purple-500/60 hover:border-purple-400',
-              };
-              
-              const shadowColors = {
-                red: 'shadow-red-500/50 hover:shadow-red-400/70',
-                yellow: 'shadow-yellow-400/50 hover:shadow-yellow-300/70',
-                blue: 'shadow-blue-500/50 hover:shadow-blue-400/70',
-                purple: 'shadow-purple-500/50 hover:shadow-purple-400/70',
-              };
-              
-              return (
-                <div
-                  key={index}
-                  className="relative group cursor-pointer"
-                  onClick={() => navigate(`/login/${portal.role}`)}
-                >
-                  {/* Corner glow effects */}
-                  <div className={`absolute -top-1 -left-1 w-8 h-8 rounded-tl-2xl border-t-4 border-l-4 ${borderColors[portal.glowColor]} transition-all duration-300`}></div>
-                  <div className={`absolute -top-1 -right-1 w-8 h-8 rounded-tr-2xl border-t-4 border-r-4 ${borderColors[portal.glowColor]} transition-all duration-300`}></div>
-                  <div className={`absolute -bottom-1 -left-1 w-8 h-8 rounded-bl-2xl border-b-4 border-l-4 ${borderColors[portal.glowColor]} transition-all duration-300`}></div>
-                  <div className={`absolute -bottom-1 -right-1 w-8 h-8 rounded-br-2xl border-b-4 border-r-4 ${borderColors[portal.glowColor]} transition-all duration-300`}></div>
-                  
-                  <div className={`h-full p-8 bg-emerald-900/60 backdrop-blur-sm border-2 ${borderColors[portal.glowColor]} rounded-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col shadow-2xl ${shadowColors[portal.glowColor]}`}>
-                    <div className="text-7xl mb-6 text-center transform group-hover:scale-110 transition duration-300">
-                      {portal.icon}
-                    </div>
-                    <h3 className="text-2xl font-bold text-center mb-3 text-emerald-100">
-                      {portal.title}
-                    </h3>
-                    <p className="text-center mb-6 text-emerald-200/70 flex-grow">
-                      {portal.description}
-                    </p>
-                    <button className="w-full py-3 rounded-lg font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-all duration-300 hover:shadow-lg hover:shadow-emerald-400/50">
-                      Access Portal
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold mb-2" style={{ color: '#FFFFFF' }}>Create Account</h2>
+            <p style={{ color: '#E0E0E0' }}>Join NeuroFleetX Platform</p>
           </div>
 
-          <div className="text-center">
-            <p className="text-lg mb-4 text-emerald-200">
-              Don't have an account?{' '}
+          {/* Messages */}
+          {error && (
+            <div className="px-4 py-3 rounded-lg mb-6" style={{ backgroundColor: 'rgba(255, 82, 82, 0.15)', border: '1px solid #FF5252', color: '#FF5252' }}>
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="px-4 py-3 rounded-lg mb-6" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10B981', color: '#00FF9C' }}>
+              Registration successful! Redirecting to your dashboard...
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: '#E0E0E0' }}>
+                Full Name
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Your full name"
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: '#E0E0E0' }}>
+                Username
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Choose a username"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: '#E0E0E0' }}>
+                Email
+              </label>
+              <input
+                type="email"
+                className="input-field"
+                placeholder="your@email.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: '#E0E0E0' }}>
+                Phone (Optional)
+              </label>
+              <input
+                type="tel"
+                className="input-field"
+                placeholder="Your phone number"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: '#E0E0E0' }}>
+                Password
+              </label>
+              <input
+                type="password"
+                className="input-field"
+                placeholder="Create a strong password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: '#E0E0E0' }}>
+                Select Your Role
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {roles.map((role) => (
+                  <button
+                    key={role.value}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, role: role.value })}
+                    className={`p-3 rounded-lg border-2 transition duration-300`}
+                    style={formData.role === role.value
+                      ? { background: 'linear-gradient(135deg, #064E3B 0%, #10B981 100%)', color: '#FFFFFF', borderColor: '#00FF9C', boxShadow: '0 0 20px rgba(0, 255, 156, 0.3)' }
+                      : { backgroundColor: 'rgba(18, 33, 27, 0.6)', borderColor: 'rgba(16, 185, 129, 0.3)', color: '#E0E0E0' }
+                    }
+                  >
+                    <div className="text-2xl mb-1">{role.icon}</div>
+                    <div className="text-sm font-semibold">{role.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-4 rounded-lg font-semibold text-lg transition duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              style={{ background: 'linear-gradient(135deg, #064E3B 0%, #10B981 100%)', color: '#FFFFFF', boxShadow: '0 0 30px rgba(0, 255, 156, 0.4)' }}
+            >
+              {loading ? 'Creating Account...' : 'Sign Up'}
+            </button>
+          </form>
+
+          {/* Footer Links */}
+          <div className="mt-6 text-center space-y-3">
+            <button
+              onClick={() => navigate('/portals')}
+              className="text-sm transition duration-300"
+              style={{ color: '#E0E0E0' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#00FF9C'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#E0E0E0'}
+            >
+              ← Back to Portals
+            </button>
+            <div>
               <button
-                onClick={() => navigate('/signup')}
-                className="font-semibold text-emerald-400 hover:text-emerald-300 transition duration-300 underline"
+                onClick={() => navigate(`/login/${formData.role.toLowerCase()}`)}
+                className="text-sm font-semibold transition duration-300"
+                style={{ color: '#00FF9C' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#10B981'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#00FF9C'}
               >
-                Sign up now
+                Already have an account? Sign in
               </button>
-            </p>
+            </div>
           </div>
         </div>
       </div>
@@ -132,4 +223,4 @@ const PortalSelectionPage = () => {
   );
 };
 
-export default PortalSelectionPage;
+export default SignupPage;

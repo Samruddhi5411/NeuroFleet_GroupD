@@ -65,9 +65,15 @@ const MapBoundsAdjuster = ({ vehicles }) => {
   const map = useMap();
 
   useEffect(() => {
-    if (vehicles.length > 0) {
-      const bounds = vehicles.map(v => [v.latitude, v.longitude]);
-      map.fitBounds(bounds, { padding: [50, 50] });
+    if (vehicles && vehicles.length > 0 && map) {
+      try {
+        const bounds = vehicles.map(v => [v.latitude, v.longitude]);
+        if (bounds.length > 0) {
+          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+        }
+      } catch (error) {
+        console.error('Error adjusting map bounds:', error);
+      }
     }
   }, [vehicles, map]);
 
@@ -79,24 +85,45 @@ const LiveVehicleMapStreet = () => {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-    loadVehicleLocations();
+    // Ensure map is ready before loading data
+    const timer = setTimeout(() => {
+      setMapReady(true);
+      loadVehicleLocations();
+    }, 100);
+
     const interval = setInterval(() => {
       loadVehicleLocations();
       setLastUpdate(new Date());
     }, 5000); // Update every 5 seconds
-    return () => clearInterval(interval);
+
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, []);
 
   const loadVehicleLocations = async () => {
     try {
       const response = await vehicleService.getAllForCustomer();
+      console.log('Loaded vehicles:', response.data); // Debug log
+
       // Filter vehicles with GPS coordinates and valid status
       const vehiclesWithGPS = response.data.filter(
         v => v.latitude && v.longitude &&
           (v.status === 'AVAILABLE' || v.status === 'IN_USE')
       );
+
+      console.log('Vehicles with GPS:', vehiclesWithGPS); // Debug log
+
+      // If no vehicles with GPS, log a warning
+      if (vehiclesWithGPS.length === 0) {
+        console.warn('No vehicles with GPS coordinates found. You may need to initialize GPS.');
+        console.warn('Run: POST http://localhost:8083/api/admin/vehicles/initialize-gps');
+      }
+
       setVehicles(vehiclesWithGPS);
       setLoading(false);
     } catch (error) {
@@ -118,10 +145,20 @@ const LiveVehicleMapStreet = () => {
     }
   };
 
-  const defaultCenter = [40.7128, -74.0060]; // New York City
-  const defaultZoom = 13;
+  // Calculate center from vehicle locations, fallback to NYC
+  const getMapCenter = () => {
+    if (vehicles.length > 0) {
+      const avgLat = vehicles.reduce((sum, v) => sum + v.latitude, 0) / vehicles.length;
+      const avgLng = vehicles.reduce((sum, v) => sum + v.longitude, 0) / vehicles.length;
+      return [avgLat, avgLng];
+    }
+    return [40.7128, -74.0060]; // New York City fallback
+  };
 
-  if (loading) {
+  const mapCenter = getMapCenter();
+  const defaultZoom = vehicles.length === 0 ? 13 : 12;
+
+  if (loading || !mapReady) {
     return (
       <div className="live-map-street-container">
         <div className="loading-container">
@@ -154,75 +191,79 @@ const LiveVehicleMapStreet = () => {
       </div>
 
       <div className="map-container-wrapper">
-        <MapContainer
-          center={defaultCenter}
-          zoom={defaultZoom}
-          style={{ height: '600px', width: '100%', borderRadius: '12px' }}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+        {mapReady && (
+          <MapContainer
+            key={`map-${vehicles.length}`}
+            center={mapCenter}
+            zoom={defaultZoom}
+            style={{ height: '600px', width: '100%', borderRadius: '12px' }}
+            scrollWheelZoom={true}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
 
-          <MapBoundsAdjuster vehicles={vehicles} />
+            {vehicles.length > 0 && <MapBoundsAdjuster vehicles={vehicles} />}
 
-          {vehicles.map((vehicle) => (
-            <Marker
-              key={vehicle.id}
-              position={[vehicle.latitude, vehicle.longitude]}
-              icon={createVehicleIcon(vehicle.type, vehicle.status)}
-              eventHandlers={{
-                click: () => setSelectedVehicle(vehicle),
-              }}
-            >
-              <Popup>
-                <div className="vehicle-popup">
-                  <div className="popup-header">
-                    <strong>{vehicle.manufacturer} {vehicle.model}</strong>
-                    <span
-                      className="status-badge-small"
-                      style={{ backgroundColor: getStatusColor(vehicle.status) }}
-                    >
-                      {vehicle.status}
-                    </span>
+            {vehicles.map((vehicle) => (
+              <Marker
+                key={vehicle.id}
+                position={[vehicle.latitude, vehicle.longitude]}
+                icon={createVehicleIcon(vehicle.type, vehicle.status)}
+                eventHandlers={{
+                  click: () => setSelectedVehicle(vehicle),
+                }}
+              >
+                <Popup>
+                  <div className="vehicle-popup">
+                    <div className="popup-header">
+                      <strong>{vehicle.manufacturer} {vehicle.model}</strong>
+                      <span
+                        className="status-badge-small"
+                        style={{ backgroundColor: getStatusColor(vehicle.status) }}
+                      >
+                        {vehicle.status}
+                      </span>
+                    </div>
+                    <div className="popup-details">
+                      <div className="popup-row">
+                        <span>Vehicle #:</span>
+                        <span>{vehicle.vehicleNumber}</span>
+                      </div>
+                      <div className="popup-row">
+                        <span>Type:</span>
+                        <span>{vehicle.type}</span>
+                      </div>
+                      <div className="popup-row">
+                        <span>Capacity:</span>
+                        <span>{vehicle.capacity} seats</span>
+                      </div>
+                      {vehicle.speed !== null && vehicle.speed > 0 && (
+                        <div className="popup-row">
+                          <span>Speed:</span>
+                          <span className="speed-text">{vehicle.speed.toFixed(0)} mph</span>
+                        </div>
+                      )}
+                      {vehicle.isElectric && vehicle.batteryLevel && (
+                        <div className="popup-row">
+                          <span>Battery:</span>
+                          <span>{vehicle.batteryLevel}%</span>
+                        </div>
+                      )}
+                      {!vehicle.isElectric && vehicle.fuelLevel && (
+                        <div className="popup-row">
+                          <span>Fuel:</span>
+                          <span>{vehicle.fuelLevel}%</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="popup-details">
-                    <div className="popup-row">
-                      <span>Vehicle #:</span>
-                      <span>{vehicle.vehicleNumber}</span>
-                    </div>
-                    <div className="popup-row">
-                      <span>Type:</span>
-                      <span>{vehicle.type}</span>
-                    </div>
-                    <div className="popup-row">
-                      <span>Capacity:</span>
-                      <span>{vehicle.capacity} seats</span>
-                    </div>
-                    {vehicle.speed !== null && vehicle.speed > 0 && (
-                      <div className="popup-row">
-                        <span>Speed:</span>
-                        <span className="speed-text">{vehicle.speed.toFixed(0)} mph</span>
-                      </div>
-                    )}
-                    {vehicle.isElectric && vehicle.batteryLevel && (
-                      <div className="popup-row">
-                        <span>Battery:</span>
-                        <span>{vehicle.batteryLevel}%</span>
-                      </div>
-                    )}
-                    {!vehicle.isElectric && vehicle.fuelLevel && (
-                      <div className="popup-row">
-                        <span>Fuel:</span>
-                        <span>{vehicle.fuelLevel}%</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        )}
       </div>
 
       {selectedVehicle && (

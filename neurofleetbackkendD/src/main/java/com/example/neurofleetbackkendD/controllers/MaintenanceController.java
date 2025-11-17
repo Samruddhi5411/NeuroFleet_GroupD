@@ -1,86 +1,75 @@
 package com.example.neurofleetbackkendD.controllers;
 
-import com.example.neurofleetbackkendD.model.Maintenance;
-import com.example.neurofleetbackkendD.repository.MaintenanceRepository;
+import com.example.neurofleetbackkendD.model.MaintenanceRecord;
+import com.example.neurofleetbackkendD.model.enums.MaintenanceStatus;
+
 import com.example.neurofleetbackkendD.service.MaintenanceService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/maintenance")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:3000")
 public class MaintenanceController {
-
+    
     @Autowired
     private MaintenanceService maintenanceService;
-
-    // Get all maintenance records
+    
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
-    public ResponseEntity<List<Maintenance>> getAllMaintenance() {
-        System.out.println("📋 GET /api/maintenance - Fetching all maintenance");
-        return ResponseEntity.ok(maintenanceService.getAllMaintenance());
+    public ResponseEntity<List<MaintenanceRecord>> getAllRecords() {
+        return ResponseEntity.ok(maintenanceService.getAllRecords());
     }
-
-    // Get maintenance by ID
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
-    public ResponseEntity<Maintenance> getMaintenanceById(@PathVariable Long id) {
-        System.out.println("🔍 GET /api/maintenance/" + id);
-        return maintenanceService.getMaintenanceById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // Get maintenance by vehicle
-    @GetMapping("/vehicle/{vehicleId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
-    public ResponseEntity<List<Maintenance>> getByVehicle(@PathVariable Long vehicleId) {
-        System.out.println("🔍 GET /api/maintenance/vehicle/" + vehicleId);
-        return ResponseEntity.ok(maintenanceService.getMaintenanceByVehicle(vehicleId));
-    }
-
-    // Get predictive maintenance
+    
     @GetMapping("/predictive")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
-    public ResponseEntity<List<Maintenance>> getPredictive() {
-        System.out.println("🤖 GET /api/maintenance/predictive - AI predictions");
-        return ResponseEntity.ok(maintenanceService.getPredictiveMaintenance());
+    public ResponseEntity<List<MaintenanceRecord>> getPredictiveRecords() {
+        return ResponseEntity.ok(maintenanceService.getPredictiveRecords());
     }
-
-    // Create maintenance
-    @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
-    public ResponseEntity<Maintenance> createMaintenance(@RequestBody Maintenance maintenance) {
-        System.out.println("➕ POST /api/maintenance - Creating record");
-        return ResponseEntity.ok(maintenanceService.createMaintenance(maintenance));
+    
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<MaintenanceRecord>> getRecordsByStatus(
+            @PathVariable MaintenanceStatus status) {
+        return ResponseEntity.ok(maintenanceService.getRecordsByStatus(status));
     }
-
-    // Update maintenance
+    
+//    @PostMapping
+//    public ResponseEntity<MaintenanceRecord> createRecord(
+//            @RequestBody MaintenanceRecord record) {
+//        return ResponseEntity.ok(maintenanceService.createRecord(record));
+//    }
+//    
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
-    public ResponseEntity<Maintenance> updateMaintenance(@PathVariable Long id, @RequestBody Maintenance maintenance) {
-        System.out.println("✏️ PUT /api/maintenance/" + id);
+    public ResponseEntity<?> updateRecord(@PathVariable Long id, 
+                                         @RequestBody MaintenanceRecord record) {
         try {
-            Maintenance updated = maintenanceService.updateMaintenance(id, maintenance);
-            return ResponseEntity.ok(updated);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(maintenanceService.updateRecord(id, record));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-
-    // Delete maintenance
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<Void> deleteMaintenance(@PathVariable Long id) {
-        System.out.println("🗑️ DELETE /api/maintenance/" + id);
-        maintenanceService.deleteMaintenance(id);
-        return ResponseEntity.ok().build();
+    
+    @PostMapping("/predict/{vehicleId}")
+    public ResponseEntity<?> predictForVehicle(@PathVariable Long vehicleId) {
+        try {
+            MaintenanceRecord prediction = 
+                maintenanceService.predictMaintenanceForVehicle(vehicleId);
+            return ResponseEntity.ok(prediction);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    @PostMapping("/run-predictive-analysis")
+    public ResponseEntity<?> runPredictiveAnalysis() {
+        try {
+            maintenanceService.runPredictiveMaintenance();
+            return ResponseEntity.ok(Map.of("message", "Predictive analysis completed"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }
