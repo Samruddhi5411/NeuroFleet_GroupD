@@ -18,12 +18,7 @@ public class NeurofleetbackkendDApplication {
         System.out.println("📡 Server running on: http://localhost:8083");
         System.out.println("📝 API Base URL: http://localhost:8083/api");
         System.out.println("═══════════════════════════════════════════════════");
-        System.out.println("🔐 Test Credentials:");
-        System.out.println("   Admin:    admin / admin123");
-        System.out.println("   Manager:  manager1 / manager123");
-        System.out.println("   Driver:   driver1 / driver123");
-        System.out.println("   Customer: customer1 / customer123");
-        System.out.println("═══════════════════════════════════════════════════");
+   System.out.println("🚗🚗");
     }
     
 //    @Bean
