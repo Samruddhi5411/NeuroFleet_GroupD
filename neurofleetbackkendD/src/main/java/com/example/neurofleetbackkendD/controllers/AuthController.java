@@ -69,7 +69,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*") // Allow all origins for testing
+@CrossOrigin(origins = "*") 
 public class AuthController {
     
     @Autowired

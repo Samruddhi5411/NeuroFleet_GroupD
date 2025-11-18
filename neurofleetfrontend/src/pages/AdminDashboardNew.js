@@ -45,9 +45,14 @@ const AdminDashboardNew = () => {
         maintenanceService.getAll(),
       ]);
 
+    
       setVehicles(vehiclesRes.data);
       setBookings(bookingsRes.data);
       setMaintenance(maintenanceRes.data);
+
+      console.log('Vehicles:', vehiclesRes.data);
+      console.log('Bookings:', bookingsRes.data);
+      console.log('Maintenance:', maintenanceRes.data);
 
       setStats({
         totalFleet: vehiclesRes.data.length,
@@ -58,8 +63,7 @@ const AdminDashboardNew = () => {
     } catch (error) {
       console.error('Error loading data:', error);
     }
-  };
-
+};
   const handleLogout = () => {
     localStorage.clear();
     navigate('/');

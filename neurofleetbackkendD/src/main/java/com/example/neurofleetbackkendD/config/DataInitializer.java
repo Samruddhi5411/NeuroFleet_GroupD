@@ -10,6 +10,8 @@ import com.example.neurofleetbackkendD.model.enums.*;
 import com.example.neurofleetbackkendD.repository.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 @Component
@@ -22,18 +24,46 @@ public class DataInitializer implements CommandLineRunner {
     private VehicleRepository vehicleRepository;
     
     @Autowired
+    private BookingRepository bookingRepository;
+    
+    @Autowired
+    private MaintenanceRepository maintenanceRepository;
+    
+    @Autowired
     private PasswordEncoder passwordEncoder;
+    
+    private Random random = new Random();
     
     @Override
     public void run(String... args) throws Exception {
         // Check if data already exists
-        if (userRepository.count() > 0) {
+        if (userRepository.count() > 0 && vehicleRepository.count() > 0) {
             System.out.println("⚠️ Data already exists, skipping initialization");
+            
+            // But check if bookings/maintenance exist
+            if (bookingRepository.count() == 0) {
+                System.out.println("📝 Creating bookings and maintenance records...");
+                createBookingsAndMaintenance();
+            }
             return;
         }
         
         System.out.println("🚀 Initializing NeuroFleetX Database...");
         
+        // Create Users
+        createUsers();
+        
+        // Create Vehicles from All Over India (50 vehicles)
+        createVehiclesAllIndia();
+        
+        // Create Bookings and Maintenance Records
+        createBookingsAndMaintenance();
+        
+        System.out.println("✅ Database initialization completed!");
+        printSummary();
+    }
+    
+    private void createUsers() {
         // Create Admin
         User admin = new User();
         admin.setUsername("admin");
@@ -97,32 +127,11 @@ public class DataInitializer implements CommandLineRunner {
             customer.setActive(true);
             userRepository.save(customer);
         }
-        
-        // Create Vehicles from All Over India (50 vehicles)
-        createVehiclesAllIndia();
-        
-        System.out.println("✅ Database initialization completed!");
-        System.out.println("\n📝 Test Credentials:");
-        System.out.println("================================");
-        System.out.println("🔐 Admin:    admin / admin123");
-        System.out.println("👨‍💼 Manager:  manager1 / manager123");
-        System.out.println("🚗 Driver:   driver1 / driver123");
-        System.out.println("👤 Customer: customer1 / customer123");
-        System.out.println("================================\n");
-        System.out.println("📊 Statistics:");
-        System.out.println("   Total Users: " + userRepository.count());
-        System.out.println("   Total Vehicles: " + vehicleRepository.count());
-        System.out.println("   Drivers: 20");
-        System.out.println("   Customers: 15");
-        System.out.println("   Managers: 3");
     }
     
     private void createVehiclesAllIndia() {
-        Random random = new Random();
-        
         // Indian Cities with GPS Coordinates
         Object[][] cities = {
-            // City, Latitude, Longitude
             {"Mumbai", 19.0760, 72.8777},
             {"Delhi", 28.7041, 77.1025},
             {"Bangalore", 12.9716, 77.5946},
@@ -151,17 +160,11 @@ public class DataInitializer implements CommandLineRunner {
         };
         
         String[][] modelsPerType = {
-            // SEDAN models
             {"Dzire", "City", "Verna", "Ciaz", "Rapid"},
-            // SUV models
             {"Creta", "Seltos", "XUV500", "Fortuner", "Scorpio"},
-            // VAN models
             {"Innova", "Ertiga", "Marazzo", "Carnival", "Traveller"},
-            // TRUCK models
             {"407", "407 Plus", "Eicher Pro", "Tata Ultra", "Ashok Leyland"},
-            // BUS models
             {"Starbus", "Citybus", "Tourist Bus", "School Bus", "Express"},
-            // BIKE models
             {"Royal Enfield", "Pulsar", "Apache", "FZ", "Duke"}
         };
         
@@ -174,28 +177,23 @@ public class DataInitializer implements CommandLineRunner {
             Double baseLat = (Double) city[1];
             Double baseLon = (Double) city[2];
             
-            // Create 2-3 vehicles per city
             int vehiclesInCity = 2 + random.nextInt(2);
             
             for (int i = 0; i < vehiclesInCity && vehicleCounter <= 50; i++) {
                 Vehicle vehicle = new Vehicle();
                 
-                // Generate vehicle number in Indian format
                 String stateCode = getStateCode(cityName);
                 vehicle.setVehicleNumber(stateCode + "-" + 
                     String.format("%02d", random.nextInt(99) + 1) + "-" +
                     (char)('A' + random.nextInt(26)) + (char)('A' + random.nextInt(26)) + "-" +
                     String.format("%04d", random.nextInt(9999) + 1));
                 
-                // Random type
                 VehicleType type = types[random.nextInt(types.length)];
                 vehicle.setType(type);
                 
-                // Manufacturer and Model
                 vehicle.setManufacturer(manufacturers[random.nextInt(manufacturers.length)]);
                 vehicle.setModel(modelsPerType[type.ordinal()][random.nextInt(5)]);
                 
-                // Capacity based on type
                 switch (type) {
                     case SEDAN: vehicle.setCapacity(4 + random.nextInt(2)); break;
                     case SUV: vehicle.setCapacity(5 + random.nextInt(3)); break;
@@ -205,24 +203,19 @@ public class DataInitializer implements CommandLineRunner {
                     case BIKE: vehicle.setCapacity(2); break;
                 }
                 
-                // Electric vehicles (30% chance)
                 vehicle.setIsElectric(random.nextDouble() < 0.3);
                 
-                // Status
                 VehicleStatus[] statuses = VehicleStatus.values();
                 vehicle.setStatus(statuses[random.nextInt(statuses.length)]);
                 
-                // GPS coordinates (slight variation from city center)
                 vehicle.setLatitude(baseLat + (random.nextDouble() - 0.5) * 0.1);
                 vehicle.setLongitude(baseLon + (random.nextDouble() - 0.5) * 0.1);
                 
-                // Battery and Fuel
                 vehicle.setBatteryLevel(vehicle.getIsElectric() ? 
                     (70 + random.nextInt(31)) : 100);
                 vehicle.setFuelLevel(!vehicle.getIsElectric() ? 
                     (60 + random.nextInt(41)) : 0);
                 
-                // Health and Mileage
                 vehicle.setHealthScore(75 + random.nextInt(26));
                 vehicle.setMileage(random.nextInt(100000));
                 vehicle.setSpeed(vehicle.getStatus() == VehicleStatus.IN_USE ? 
@@ -237,23 +230,170 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
     
+    private void createBookingsAndMaintenance() {
+        List<Vehicle> vehicles = vehicleRepository.findAll();
+        List<User> customers = userRepository.findByRole(UserRole.CUSTOMER);
+        List<User> drivers = userRepository.findByRole(UserRole.DRIVER);
+        List<User> managers = userRepository.findByRole(UserRole.MANAGER);
+        
+        if (vehicles.isEmpty() || customers.isEmpty() || drivers.isEmpty()) {
+            System.out.println("⚠️ Cannot create bookings - missing vehicles, customers, or drivers");
+            return;
+        }
+        
+        User manager = managers.isEmpty() ? null : managers.get(0);
+        
+        // Create 100 Bookings
+        String[] indianCities = {
+            "Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", 
+            "Kolkata", "Pune", "Ahmedabad", "Jaipur", "Lucknow"
+        };
+        
+        BookingStatus[] statuses = {
+            BookingStatus.COMPLETED, BookingStatus.IN_PROGRESS, 
+            BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CANCELLED
+        };
+        
+        for (int i = 0; i < 100; i++) {
+            Booking booking = new Booking();
+            
+            booking.setCustomer(customers.get(random.nextInt(customers.size())));
+            booking.setVehicle(vehicles.get(random.nextInt(vehicles.size())));
+            
+            if (random.nextBoolean()) {
+                booking.setDriver(drivers.get(random.nextInt(drivers.size())));
+            }
+            
+            booking.setApprovedByManager(manager);
+            
+            LocalDateTime createdAt = LocalDateTime.now().minusDays(random.nextInt(60));
+            booking.setCreatedAt(createdAt);
+            booking.setStartTime(createdAt.plusHours(random.nextInt(48)));
+            booking.setEndTime(booking.getStartTime().plusHours(2 + random.nextInt(6)));
+            
+            String pickupCity = indianCities[random.nextInt(indianCities.length)];
+            String dropoffCity = indianCities[random.nextInt(indianCities.length)];
+            
+            booking.setPickupLocation(pickupCity + " Station");
+            booking.setDropoffLocation(dropoffCity + " Airport");
+            booking.setPickupLatitude(18.0 + random.nextDouble() * 15);
+            booking.setPickupLongitude(72.0 + random.nextDouble() * 16);
+            booking.setDropoffLatitude(18.0 + random.nextDouble() * 15);
+            booking.setDropoffLongitude(72.0 + random.nextDouble() * 16);
+            
+            booking.setTotalPrice(500.0 + random.nextDouble() * 4500.0);
+            
+            BookingStatus status = statuses[random.nextInt(statuses.length)];
+            booking.setStatus(status);
+            
+            if (status == BookingStatus.COMPLETED) {
+                booking.setPaymentStatus(PaymentStatus.PAID);
+                booking.setCompletedAt(booking.getEndTime().plusMinutes(15));
+                booking.setApprovedAt(createdAt.plusHours(1));
+                booking.setDriverAcceptedAt(createdAt.plusHours(2));
+            } else if (status == BookingStatus.IN_PROGRESS) {
+                booking.setPaymentStatus(PaymentStatus.PAID);
+                booking.setApprovedAt(createdAt.plusHours(1));
+                booking.setDriverAcceptedAt(createdAt.plusHours(2));
+            } else if (status == BookingStatus.CONFIRMED) {
+                booking.setPaymentStatus(PaymentStatus.PAID);
+                booking.setApprovedAt(createdAt.plusHours(1));
+            } else if (status == BookingStatus.CANCELLED) {
+                booking.setPaymentStatus(PaymentStatus.REFUNDED);
+                booking.setCancellationReason("Customer requested cancellation");
+                booking.setCancelledAt(createdAt.plusHours(3));
+            } else {
+                booking.setPaymentStatus(PaymentStatus.UNPAID);
+            }
+            
+            booking.setPaymentMethod(random.nextBoolean() ? "UPI" : "Credit Card");
+            
+            bookingRepository.save(booking);
+        }
+        
+        System.out.println("✅ Created " + bookingRepository.count() + " bookings");
+        
+        // Create Maintenance Records
+        String[] issueTypes = {
+            "Engine Oil Change", "Tire Replacement", "Brake Pad Service", 
+            "Battery Check", "AC Repair", "Transmission Service",
+            "Suspension Check", "Wheel Alignment", "Engine Diagnostic"
+        };
+        
+        MaintenancePriority[] priorities = {
+            MaintenancePriority.LOW, MaintenancePriority.MEDIUM, 
+            MaintenancePriority.HIGH, MaintenancePriority.CRITICAL
+        };
+        
+        MaintenanceStatus[] maintenanceStatuses = {
+            MaintenanceStatus.PENDING, MaintenanceStatus.IN_PROGRESS, MaintenanceStatus.COMPLETED
+        };
+        
+        for (int i = 0; i < 30; i++) {
+            MaintenanceRecord record = new MaintenanceRecord();
+            record.setVehicle(vehicles.get(random.nextInt(vehicles.size())));
+            record.setIssueType(issueTypes[random.nextInt(issueTypes.length)]);
+            record.setDescription("Scheduled maintenance check for vehicle");
+            record.setPriority(priorities[random.nextInt(priorities.length)]);
+            record.setStatus(maintenanceStatuses[random.nextInt(maintenanceStatuses.length)]);
+            record.setEstimatedCost(1000.0 + random.nextDouble() * 9000.0);
+            record.setMechanicAssigned("Mechanic " + (random.nextInt(10) + 1));
+            record.setCreatedAt(LocalDateTime.now().minusDays(random.nextInt(60)));
+            record.setScheduledDate(LocalDateTime.now().plusDays(random.nextInt(15)));
+            
+            // 40% are predictive AI alerts
+            if (random.nextDouble() < 0.4) {
+                record.setIsPredictive(true);
+                record.setRiskScore(40 + random.nextInt(60));
+                record.setPredictedDaysToFailure(5 + random.nextInt(25));
+            } else {
+                record.setIsPredictive(false);
+            }
+            
+            if (record.getStatus() == MaintenanceStatus.COMPLETED) {
+                record.setCompletedDate(LocalDateTime.now().minusDays(random.nextInt(30)));
+            }
+            
+            maintenanceRepository.save(record);
+        }
+        
+        System.out.println("✅ Created " + maintenanceRepository.count() + " maintenance records");
+    }
+    
     private String getStateCode(String city) {
         switch (city) {
-            case "Mumbai": case "Pune": return "MH"; // Maharashtra
-            case "Delhi": return "DL"; // Delhi
-            case "Bangalore": return "KA"; // Karnataka
-            case "Hyderabad": return "TS"; // Telangana
-            case "Chennai": case "Coimbatore": return "TN"; // Tamil Nadu
-            case "Kolkata": return "WB"; // West Bengal
-            case "Ahmedabad": case "Surat": case "Vadodara": return "GJ"; // Gujarat
-            case "Jaipur": return "RJ"; // Rajasthan
-            case "Lucknow": return "UP"; // Uttar Pradesh
-            case "Chandigarh": return "CH"; // Chandigarh
-            case "Kochi": case "Thiruvananthapuram": return "KL"; // Kerala
-            case "Indore": case "Bhopal": return "MP"; // Madhya Pradesh
-            case "Nagpur": return "MH"; // Maharashtra
-            case "Visakhapatnam": return "AP"; // Andhra Pradesh
+            case "Mumbai": case "Pune": case "Nagpur": return "MH";
+            case "Delhi": return "DL";
+            case "Bangalore": return "KA";
+            case "Hyderabad": return "TS";
+            case "Chennai": case "Coimbatore": return "TN";
+            case "Kolkata": return "WB";
+            case "Ahmedabad": case "Surat": case "Vadodara": return "GJ";
+            case "Jaipur": return "RJ";
+            case "Lucknow": return "UP";
+            case "Chandigarh": return "CH";
+            case "Kochi": case "Thiruvananthapuram": return "KL";
+            case "Indore": case "Bhopal": return "MP";
+            case "Visakhapatnam": return "AP";
             default: return "XX";
         }
+    }
+    
+    private void printSummary() {
+        System.out.println("\n📝 Test Credentials:");
+        System.out.println("================================");
+        System.out.println("🔐 Admin:    admin / admin123");
+        System.out.println("👨‍💼 Manager:  manager1 / manager123");
+        System.out.println("🚗 Driver:   driver1 / driver123");
+        System.out.println("👤 Customer: customer1 / customer123");
+        System.out.println("================================\n");
+        System.out.println("📊 Statistics:");
+        System.out.println("   Total Users: " + userRepository.count());
+        System.out.println("   Total Vehicles: " + vehicleRepository.count());
+        System.out.println("   Total Bookings: " + bookingRepository.count());
+        System.out.println("   Total Maintenance: " + maintenanceRepository.count());
+        System.out.println("   Drivers: 20");
+        System.out.println("   Customers: 15");
+        System.out.println("   Managers: 3");
     }
 }

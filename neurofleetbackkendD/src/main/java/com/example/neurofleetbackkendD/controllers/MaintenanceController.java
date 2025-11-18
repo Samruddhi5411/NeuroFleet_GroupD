@@ -13,12 +13,23 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/maintenance")
+@RequestMapping("/api")
 @CrossOrigin(origins = "http://localhost:3000")
 public class MaintenanceController {
     
     @Autowired
     private MaintenanceService maintenanceService;
+    
+    
+    @GetMapping("/admin/maintenance")
+    public ResponseEntity<List<MaintenanceRecord>> getAdminMaintenance() {
+        return ResponseEntity.ok(maintenanceService.getAllRecords());
+    }
+    
+    @GetMapping("/maintenance")
+    public ResponseEntity<List<MaintenanceRecord>> getAllRecords1() {
+        return ResponseEntity.ok(maintenanceService.getAllRecords());
+    }
     
     @GetMapping
     public ResponseEntity<List<MaintenanceRecord>> getAllRecords() {
@@ -35,6 +46,7 @@ public class MaintenanceController {
             @PathVariable MaintenanceStatus status) {
         return ResponseEntity.ok(maintenanceService.getRecordsByStatus(status));
     }
+  
     
 //    @PostMapping
 //    public ResponseEntity<MaintenanceRecord> createRecord(

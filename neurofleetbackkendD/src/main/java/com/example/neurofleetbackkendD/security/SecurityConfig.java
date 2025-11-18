@@ -42,9 +42,11 @@ public class SecurityConfig {
                 // Public endpoints
                 .requestMatchers("/api/auth/**", "/h2-console/**", "/error", "/api/test/**").permitAll()
                 
-                // Admin endpoints - Using hasAuthority with exact role name
-                .requestMatchers("/api/admin/**", "/api/dashboard/**", 
-                                "/api/urban-mobility/**", "/api/analytics/**").hasAuthority("ADMIN")
+                // **FIX: Allow analytics endpoints for ADMIN**
+                .requestMatchers("/api/analytics/**").hasAuthority("ADMIN")
+                
+                // Admin endpoints
+                .requestMatchers("/api/admin/**", "/api/dashboard/**", "/api/urban-mobility/**").hasAuthority("ADMIN")
                 
                 // Manager endpoints
                 .requestMatchers("/api/manager/**", "/api/dashboard/manager/**").hasAnyAuthority("MANAGER", "ADMIN")
@@ -56,12 +58,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/customer/**", "/api/dashboard/customer/**", 
                                 "/api/recommendations/**").hasAuthority("CUSTOMER")
                 
-                // Shared endpoints - all authenticated users
+                // Shared endpoints
                 .requestMatchers("/api/vehicles/**").authenticated()
                 .requestMatchers("/api/bookings/**").authenticated()
                 .requestMatchers("/api/maintenance/**").authenticated()
-                .requestMatchers("/api/routes/**").authenticated()
-                .requestMatchers("/api/telemetry/**").authenticated()
+             
                 
                 .anyRequest().authenticated()
             )

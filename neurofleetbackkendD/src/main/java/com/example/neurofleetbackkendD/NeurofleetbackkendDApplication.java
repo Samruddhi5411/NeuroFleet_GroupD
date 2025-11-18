@@ -15,7 +15,7 @@ public class NeurofleetbackkendDApplication {
         SpringApplication.run(NeurofleetbackkendDApplication.class, args);
         System.out.println("═══════════════════════════════════════════════════");
         System.out.println("🚀 NeuroFleetX Backend Started Successfully!");
-        System.out.println("📡 Server running on: http://localhost:8080");
+        System.out.println("📡 Server running on: http://localhost:8083");
         System.out.println("📝 API Base URL: http://localhost:8083/api");
         System.out.println("═══════════════════════════════════════════════════");
         System.out.println("🔐 Test Credentials:");
