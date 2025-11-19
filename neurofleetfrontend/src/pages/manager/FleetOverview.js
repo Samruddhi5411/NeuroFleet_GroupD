@@ -9,14 +9,30 @@ const FleetOverview = () => {
     loadVehicles();
   }, []);
 
-  const loadVehicles = async () => {
-    try {
-      const response = await vehicleService.getAll();
-      setVehicles(response.data);
-    } catch (error) {
-      console.error('Error loading vehicles:', error);
+  // const loadVehicles = async () => {
+  //   try {
+  //     const response = await vehicleService.getAll();
+  //     setVehicles(response.data);
+  //   } catch (error) {
+  //     console.error('Error loading vehicles:', error);
+  //   }
+  // };
+const loadVehicles = async () => {
+  try {
+    const role = localStorage.getItem('role');
+    let response;
+    
+    if (role === 'MANAGER') {
+      response = await vehicleService.getAllForManager();
+    } else {
+      response = await vehicleService.getAll();
     }
-  };
+    
+    setVehicles(response.data);
+  } catch (error) {
+    console.error('Error loading vehicles:', error);
+  }
+};
 
   const getStatusStyle = (status) => {
     const statusMap = {

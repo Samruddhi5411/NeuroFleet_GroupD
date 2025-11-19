@@ -37,12 +37,7 @@ public class BookingController {
         }
     }
     
-    // Manager gets pending bookings
-    @GetMapping("/manager/bookings/pending")
-    public ResponseEntity<List<Booking>> getPendingBookings() {
-        return ResponseEntity.ok(bookingService.getPendingBookingsForManager());
-    }
-    
+  
     // Manager approves and assigns driver
     @PostMapping("/manager/bookings/{id}/approve")
     public ResponseEntity<?> approveBooking(@PathVariable Long id,
@@ -122,9 +117,24 @@ public class BookingController {
         }
     }
     
-    // Customer cancels booking
+    // ✅ FIX: Change POST to PUT for cancel booking
+    @PutMapping("/customer/bookings/{id}/cancel")
+    public ResponseEntity<?> cancelBooking(@PathVariable Long id) {
+        try {
+            Booking booking = bookingService.getBookingById(id)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+            
+            Booking cancelled = bookingService.cancelBooking(id, booking.getCustomer().getId(), "Customer requested cancellation");
+            return ResponseEntity.ok(cancelled);
+        } catch (Exception e) {
+            System.err.println("❌ Error cancelling booking: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    // Also keep POST version for backward compatibility
     @PostMapping("/customer/bookings/{id}/cancel")
-    public ResponseEntity<?> cancelBooking(@PathVariable Long id,
+    public ResponseEntity<?> cancelBookingPost(@PathVariable Long id,
                                           @RequestParam String username,
                                           @RequestBody Map<String, String> request) {
         try {
@@ -153,19 +163,8 @@ public class BookingController {
         }
     }
     
-    // Get driver bookings
-    @GetMapping("/driver/bookings")
-    public ResponseEntity<?> getDriverBookings(@RequestParam String username) {
-        try {
-            User driver = authService.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Driver not found"));
-            
-            List<Booking> bookings = bookingService.getDriverBookings(driver.getId());
-            return ResponseEntity.ok(bookings);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
+    // ❌ REMOVED THIS DUPLICATE METHOD - Now only in DriverController
+    // Get driver bookings - DELETED FROM HERE
     
     // Get driver active booking
     @GetMapping("/driver/bookings/active")

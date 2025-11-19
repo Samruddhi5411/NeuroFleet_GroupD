@@ -20,11 +20,12 @@ const RouteOptimization = () => {
     vehicleId: '',
     startLocation: '',
     endLocation: '',
-    startLatitude: 40.7128,
-    startLongitude: -74.0060,
-    endLatitude: 40.7580,
-    endLongitude: -73.9855,
+    startLatitude: 34.0837,    // Kashmir (Srinagar)
+    startLongitude: 74.7973,
+    endLatitude: 8.0883,       // Kanyakumari
+    endLongitude: 77.5385,
   });
+
   const [optimizationResult, setOptimizationResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -247,10 +248,11 @@ const RouteOptimization = () => {
           <h3 className="text-xl font-bold text-white mb-4">Interactive Route Map</h3>
           <div className="rounded-xl overflow-hidden border border-white/20" style={{ height: '500px' }}>
             <MapContainer
-              center={[40.7128, -74.0060]}
-              zoom={12}
+              center={[21.0, 78.0]}  // Centre of India
+              zoom={5}               // Zoomed out to show entire India
               style={{ height: '100%', width: '100%' }}
             >
+
               <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; OpenStreetMap contributors'

@@ -29,6 +29,18 @@ public class VehicleController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @GetMapping("/manager/vehicles")
+    public ResponseEntity<?> getVehiclesForManager() {
+        try {
+            List<Vehicle> vehicles = vehicleService.getAllVehicles();
+            System.out.println("✅ Manager retrieved " + vehicles.size() + " vehicles");
+            return ResponseEntity.ok(vehicles);
+        } catch (Exception e) {
+            System.err.println("❌ Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
     
     @GetMapping("/customer/vehicles")
     public ResponseEntity<?> getAvailableVehicles() {

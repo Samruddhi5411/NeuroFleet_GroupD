@@ -51,10 +51,56 @@ public class BookingService {
             booking.setTotalPrice(distance * 15.0); // ₹15 per km
         }
         
+        System.out.println("✅ Creating booking for customer: " + booking.getCustomer().getFullName());
         return bookingRepository.save(booking);
     }
     
-    // Manager approves and assigns driver
+    // Manager approves booking (without driver assignment)
+    @Transactional
+    public Booking approveBooking(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+        
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new RuntimeException("Only pending bookings can be approved");
+        }
+        
+        booking.setStatus(BookingStatus.APPROVED);
+        booking.setApprovedAt(LocalDateTime.now());
+        
+        System.out.println("✅ Booking approved: " + bookingId);
+        return bookingRepository.save(booking);
+    }
+    
+    //  Assign driver to approved booking
+    @Transactional
+    public Booking assignDriverToBooking(Long bookingId, Long driverId) {
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+        
+        if (booking.getStatus() != BookingStatus.APPROVED) {
+            throw new RuntimeException("Booking must be approved before assigning driver");
+        }
+        
+        User driver = userRepository.findById(driverId)
+            .orElseThrow(() -> new RuntimeException("Driver not found"));
+        
+        if (driver.getRole() != UserRole.DRIVER) {
+            throw new RuntimeException("Selected user is not a driver");
+        }
+        
+        if (!driver.getActive()) {
+            throw new RuntimeException("Driver is not active");
+        }
+        
+        booking.setDriver(driver);
+        booking.setStatus(BookingStatus.DRIVER_ASSIGNED);
+        
+        System.out.println("✅ Driver " + driver.getFullName() + " assigned to booking " + bookingId);
+        return bookingRepository.save(booking);
+    }
+    
+    // Manager approves and assigns driver (OLD METHOD - Keep for backward compatibility)
     @Transactional
     public Booking managerApproveAndAssignDriver(Long bookingId, Long managerId, 
                                                   Long driverId, String notes) {
@@ -217,6 +263,7 @@ public class BookingService {
         // Only allow cancellation for certain statuses
         List<BookingStatus> cancellableStatuses = Arrays.asList(
             BookingStatus.PENDING,
+            BookingStatus.APPROVED,
             BookingStatus.DRIVER_ASSIGNED,
             BookingStatus.DRIVER_ACCEPTED,
             BookingStatus.CONFIRMED
@@ -250,7 +297,10 @@ public class BookingService {
     
     // Get bookings for manager review
     public List<Booking> getPendingBookingsForManager() {
-        return bookingRepository.findByStatus(BookingStatus.PENDING);
+        System.out.println("📋 Fetching pending bookings from database...");
+        List<Booking> bookings = bookingRepository.findByStatus(BookingStatus.PENDING);
+        System.out.println("✅ Found " + bookings.size() + " pending bookings");
+        return bookings;
     }
     
     // Get driver's bookings
@@ -272,7 +322,10 @@ public class BookingService {
             .filter(b -> activeStatuses.contains(b.getStatus()))
             .findFirst();
     }
-    
+ // Get driver's completed bookings
+    public List<Booking> getDriverCompletedBookings(Long driverId) {
+        return bookingRepository.findByDriverIdAndStatus(driverId, BookingStatus.COMPLETED);
+    }
     // Get customer's bookings
     public List<Booking> getCustomerBookings(Long customerId) {
         return bookingRepository.findByCustomerId(customerId);

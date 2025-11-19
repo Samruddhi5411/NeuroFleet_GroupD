@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +46,19 @@ public class AnalyticsController {
     public ResponseEntity<?> getFleetDistribution() {
         try {
             Map<String, Object> distribution = dashboardService.getFleetDistribution();
+            
+            // ✅ FIX: Transform data for Doughnut chart
+            @SuppressWarnings("unchecked")
+            Map<String, Long> typeDistribution = (Map<String, Long>) distribution.get("typeDistribution");
+            
+            if (typeDistribution != null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("labels", new ArrayList<>(typeDistribution.keySet()));
+                response.put("values", new ArrayList<>(typeDistribution.values()));
+                response.put("totalVehicles", distribution.get("totalVehicles"));
+                return ResponseEntity.ok(response);
+            }
+            
             return ResponseEntity.ok(distribution);
         } catch (Exception e) {
             System.err.println("❌ Error fetching fleet distribution: " + e.getMessage());
@@ -68,7 +83,14 @@ public class AnalyticsController {
     public ResponseEntity<?> getDailyTrends(@RequestParam(defaultValue = "7") int days) {
         try {
             Map<String, Object> trends = dashboardService.getDailyTrends(days);
-            return ResponseEntity.ok(trends);
+            
+            //  Transform 'dates' to 'labels' for frontend compatibility
+            Map<String, Object> response = new HashMap<>();
+            response.put("labels", trends.get("dates"));
+            response.put("bookings", trends.get("bookings"));
+            response.put("revenue", trends.get("revenue"));
+            
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("❌ Error fetching daily trends: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -127,19 +149,22 @@ public class AnalyticsController {
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("text/csv"));
-            headers.setContentDispositionFormData("attachment", 
-                "fleet-report-" + LocalDateTime.now() + ".csv");
+            headers.set("Content-Disposition", 
+                "attachment; filename=fleet-report-" + LocalDateTime.now() + ".csv");
+            
+            System.out.println("✅ Fleet report generated successfully");
             
             return ResponseEntity.ok()
                 .headers(headers)
-                .body(csv.getBytes());
+                .body(csv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 
         } catch (Exception e) {
             System.err.println("❌ Error generating fleet report: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     @GetMapping("/reports/bookings/csv")
     public ResponseEntity<byte[]> downloadBookingsReport() {
         try {
@@ -148,19 +173,22 @@ public class AnalyticsController {
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("text/csv"));
-            headers.setContentDispositionFormData("attachment", 
-                "bookings-report-" + LocalDateTime.now() + ".csv");
+            headers.set("Content-Disposition", 
+                "attachment; filename=bookings-report-" + LocalDateTime.now() + ".csv");
+            
+            System.out.println("✅ Bookings report generated successfully");
             
             return ResponseEntity.ok()
                 .headers(headers)
-                .body(csv.getBytes());
+                .body(csv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 
         } catch (Exception e) {
             System.err.println("❌ Error generating bookings report: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     @GetMapping("/reports/revenue/csv")
     public ResponseEntity<byte[]> downloadRevenueReport() {
         try {
@@ -170,19 +198,22 @@ public class AnalyticsController {
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("text/csv"));
-            headers.setContentDispositionFormData("attachment", 
-                "revenue-report-" + LocalDateTime.now() + ".csv");
+            headers.set("Content-Disposition", 
+                "attachment; filename=revenue-report-" + LocalDateTime.now() + ".csv");
+            
+            System.out.println("✅ Revenue report generated successfully");
             
             return ResponseEntity.ok()
                 .headers(headers)
-                .body(csv.getBytes());
+                .body(csv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 
         } catch (Exception e) {
             System.err.println("❌ Error generating revenue report: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     @GetMapping("/reports/trips/csv")
     public ResponseEntity<byte[]> downloadTripsReport() {
         try {
@@ -191,19 +222,22 @@ public class AnalyticsController {
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("text/csv"));
-            headers.setContentDispositionFormData("attachment", 
-                "trips-report-" + LocalDateTime.now() + ".csv");
+            headers.set("Content-Disposition", 
+                "attachment; filename=trips-report-" + LocalDateTime.now() + ".csv");
+            
+            System.out.println("✅ Trips report generated successfully");
             
             return ResponseEntity.ok()
                 .headers(headers)
-                .body(csv.getBytes());
+                .body(csv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 
         } catch (Exception e) {
             System.err.println("❌ Error generating trips report: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     @GetMapping("/reports/summary/csv")
     public ResponseEntity<byte[]> downloadSummaryReport() {
         try {
@@ -212,20 +246,21 @@ public class AnalyticsController {
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("text/csv"));
-            headers.setContentDispositionFormData("attachment", 
-                "summary-report-" + LocalDateTime.now() + ".csv");
+            headers.set("Content-Disposition", 
+                "attachment; filename=summary-report-" + LocalDateTime.now() + ".csv");
+            
+            System.out.println("✅ Summary report generated successfully");
             
             return ResponseEntity.ok()
                 .headers(headers)
-                .body(csv.getBytes());
+                .body(csv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 
         } catch (Exception e) {
             System.err.println("❌ Error generating summary report: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-    }
-    
-    // ========== CSV Generation Helper Methods ==========
+    }    // ========== CSV Generation Helper Methods ==========
     
     private String generateFleetCSV(Map<String, Object> data) {
         StringBuilder csv = new StringBuilder();

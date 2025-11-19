@@ -87,8 +87,8 @@ const Reports = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${report.status === 'Generated' ? 'bg-accent-green/20 text-accent-green' :
-                      report.status === 'Pending' ? 'bg-accent-cyan/20 text-accent-cyan' :
-                        'bg-accent-purple/20 text-accent-purple'
+                    report.status === 'Pending' ? 'bg-accent-cyan/20 text-accent-cyan' :
+                      'bg-accent-purple/20 text-accent-purple'
                     }`}>
                     {report.status}
                   </span>
@@ -108,3 +108,6 @@ const Reports = () => {
 };
 
 export default Reports;
+
+
+

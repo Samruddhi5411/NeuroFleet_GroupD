@@ -7,6 +7,7 @@ import java.util.List;
 
 @Repository
 public interface LoadRepository extends JpaRepository<Load, Long> {
-    List<Load> findByVehicleId(Long vehicleId);
     List<Load> findByStatus(String status);
+    List<Load> findByVehicleId(Long vehicleId);
+    List<Load> findByDriverId(Long driverId);
 }

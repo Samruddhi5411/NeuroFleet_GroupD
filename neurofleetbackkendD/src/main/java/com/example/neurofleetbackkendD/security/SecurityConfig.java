@@ -39,30 +39,42 @@ public class SecurityConfig {
             }))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
+                // ✅ Public endpoints
                 .requestMatchers("/api/auth/**", "/h2-console/**", "/error", "/api/test/**").permitAll()
                 
-                // **FIX: Allow analytics endpoints for ADMIN**
-                .requestMatchers("/api/analytics/**").hasAuthority("ADMIN")
+                // ✅ CRITICAL FIX: Specific routes BEFORE general /api/admin/**
+                // Routes and Loads - Manager and Admin
+                .requestMatchers("/api/routes/**").hasAnyAuthority("ADMIN", "MANAGER")
+                .requestMatchers("/api/loads/**").hasAnyAuthority("ADMIN", "MANAGER")
                 
-                // Admin endpoints
-                .requestMatchers("/api/admin/**", "/api/dashboard/**", "/api/urban-mobility/**").hasAuthority("ADMIN")
+                // Analytics - Manager and Admin
+                .requestMatchers("/api/analytics/**").hasAnyAuthority("ADMIN", "MANAGER")
                 
-                // Manager endpoints
-                .requestMatchers("/api/manager/**", "/api/dashboard/manager/**").hasAnyAuthority("MANAGER", "ADMIN")
+                // Vehicles - Manager and Admin
+                .requestMatchers("/api/admin/vehicles/**").hasAnyAuthority("ADMIN", "MANAGER")
+                .requestMatchers("/api/manager/vehicles/**").hasAnyAuthority("ADMIN", "MANAGER")
+                
+                // Manager specific endpoints
+                .requestMatchers("/api/manager/**").hasAnyAuthority("MANAGER", "ADMIN")
+                
+                // Admin endpoints (AFTER specific routes)
+                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                .requestMatchers("/api/dashboard/**").hasAuthority("ADMIN")
+                .requestMatchers("/api/urban-mobility/**").hasAuthority("ADMIN")
                 
                 // Driver endpoints
-                .requestMatchers("/api/driver/**", "/api/dashboard/driver/**").hasAuthority("DRIVER")
+                .requestMatchers("/api/driver/**").hasAuthority("DRIVER")
+                .requestMatchers("/api/dashboard/driver/**").hasAuthority("DRIVER")
                 
                 // Customer endpoints
-                .requestMatchers("/api/customer/**", "/api/dashboard/customer/**", 
-                                "/api/recommendations/**").hasAuthority("CUSTOMER")
+                .requestMatchers("/api/customer/**").hasAuthority("CUSTOMER")
+                .requestMatchers("/api/dashboard/customer/**").hasAuthority("CUSTOMER")
+                .requestMatchers("/api/recommendations/**").hasAuthority("CUSTOMER")
                 
                 // Shared endpoints
                 .requestMatchers("/api/vehicles/**").authenticated()
                 .requestMatchers("/api/bookings/**").authenticated()
                 .requestMatchers("/api/maintenance/**").authenticated()
-             
                 
                 .anyRequest().authenticated()
             )

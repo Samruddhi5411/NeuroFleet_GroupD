@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { RouteIcon, LocationIcon, CalendarIcon } from '../../components/Icons';
-import { driverService, bookingService } from '../../services/api';
+import { driverService } from '../../services/api';
 
 const MyTrips = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('active'); // ADD THIS
   const username = localStorage.getItem('username');
 
   useEffect(() => {
@@ -24,6 +25,32 @@ const MyTrips = () => {
     }
   };
 
+  const handleStartTrip = async (bookingId) => {
+    try {
+      const response = await driverService.startTrip(bookingId);
+      console.log('Trip started:', response.data);
+      alert('🚀 Trip started! Customer can now see your live location.');
+      fetchDriverBookings();
+    } catch (error) {
+      console.error('Error starting trip:', error);
+      alert('Error starting trip: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
+  const handleCompleteTrip = async (bookingId) => {
+    if (!window.confirm('Are you sure you want to complete this trip?')) return;
+
+    try {
+      const response = await driverService.completeTrip(bookingId);
+      console.log('Trip completed:', response.data);
+      alert(`✅ Trip completed! Payment of $${response.data.totalPrice?.toFixed(2)} added to your earnings.`);
+      fetchDriverBookings();
+    } catch (error) {
+      console.error('Error completing trip:', error);
+      alert('Error completing trip: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
   const getStatusStyle = (status) => {
     const statusMap = {
       'DRIVER_ASSIGNED': 'status-maintenance',
@@ -35,28 +62,12 @@ const MyTrips = () => {
     return statusMap[status] || 'status-maintenance';
   };
 
-  const handleStartTrip = async (bookingId) => {
-    try {
-      const response = await driverService.startTrip(bookingId);
-      console.log('Trip started:', response.data);
-      alert('Trip started successfully!');
-      fetchDriverBookings();
-    } catch (error) {
-      console.error('Error starting trip:', error);
-      alert('Error starting trip: ' + (error.response?.data?.message || error.message));
-    }
-  };
+  // ADD THESE FILTERS
+  const activeBookings = bookings.filter(b =>
+    ['DRIVER_ASSIGNED', 'IN_PROGRESS', 'CONFIRMED'].includes(b.status)
+  );
 
-  const handleCompleteTrip = async (bookingId) => {
-    try {
-      await bookingService.update(bookingId, { status: 'COMPLETED' });
-      alert('Trip completed successfully!');
-      fetchDriverBookings();
-    } catch (error) {
-      console.error('Error completing trip:', error);
-      alert('Error completing trip: ' + (error.response?.data?.message || error.message));
-    }
-  };
+  const completedBookings = bookings.filter(b => b.status === 'COMPLETED');
 
   if (loading) {
     return (
@@ -79,50 +90,77 @@ const MyTrips = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-white/60 text-sm font-semibold">Assigned Bookings</p>
+            <p className="text-white/60 text-sm font-semibold">Active Trips</p>
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-cyan to-accent-blue flex items-center justify-center">
               <RouteIcon size="sm" className="text-white" />
             </div>
           </div>
           <p className="text-3xl font-bold text-accent-cyan">
-            {bookings.length}
-          </p>
-        </div>
-
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-white/60 text-sm font-semibold">Active Trips</p>
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-green to-accent-cyan flex items-center justify-center">
-              <LocationIcon size="sm" className="text-white" />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-accent-green">
-            {bookings.filter(b => b.status === 'TRIP_STARTED' || b.status === 'IN_PROGRESS').length}
+            {activeBookings.length}
           </p>
         </div>
 
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-2">
             <p className="text-white/60 text-sm font-semibold">Completed</p>
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-green to-accent-cyan flex items-center justify-center">
+              <LocationIcon size="sm" className="text-white" />
+            </div>
+          </div>
+          <p className="text-3xl font-bold text-accent-green">
+            {completedBookings.length}
+          </p>
+        </div>
+
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-white/60 text-sm font-semibold">Total Bookings</p>
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-purple to-accent-pink flex items-center justify-center">
               <CalendarIcon size="sm" className="text-white" />
             </div>
           </div>
           <p className="text-3xl font-bold text-accent-purple">
-            {bookings.filter(b => b.status === 'COMPLETED').length}
+            {bookings.length}
           </p>
         </div>
       </div>
 
+      {/* ADD TABS */}
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={() => setActiveTab('active')}
+          className={`px-6 py-3 rounded-lg font-semibold transition-all ${activeTab === 'active'
+              ? 'bg-gradient-to-r from-accent-cyan to-accent-blue text-white shadow-lg'
+              : 'bg-dark-700/40 text-white/60 hover:text-white'
+            }`}
+        >
+          🚗 Active ({activeBookings.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('completed')}
+          className={`px-6 py-3 rounded-lg font-semibold transition-all ${activeTab === 'completed'
+              ? 'bg-gradient-to-r from-accent-green to-accent-cyan text-white shadow-lg'
+              : 'bg-dark-700/40 text-white/60 hover:text-white'
+            }`}
+        >
+          ✅ Completed ({completedBookings.length})
+        </button>
+      </div>
+
       <div className="glass-card p-6">
-        <h3 className="text-xl font-bold text-white mb-6">My Assigned Bookings</h3>
-        {bookings.length === 0 ? (
+        <h3 className="text-xl font-bold text-white mb-6">
+          {activeTab === 'active' ? 'Active Trips' : 'Completed Trips'}
+        </h3>
+
+        {(activeTab === 'active' ? activeBookings : completedBookings).length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-white/50 text-lg">No bookings assigned yet</p>
+            <p className="text-white/50 text-lg">
+              {activeTab === 'active' ? 'No active trips at the moment' : 'No completed trips yet'}
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
-            {bookings.map((booking) => (
+            {(activeTab === 'active' ? activeBookings : completedBookings).map((booking) => (
               <div key={booking.id} className="glass-card-hover p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -139,6 +177,9 @@ const MyTrips = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-accent-green font-bold text-2xl">${booking.totalPrice?.toFixed(2)}</p>
+                    {booking.paymentStatus === 'PAID' && (
+                      <span className="text-xs text-green-400">✓ Paid</span>
+                    )}
                   </div>
                 </div>
 
@@ -172,32 +213,34 @@ const MyTrips = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  {booking.status === 'DRIVER_ASSIGNED' && (
-                    <button
-                      onClick={() => handleStartTrip(booking.id)}
-                      className="flex-1 btn-primary"
-                    >
-                      🚀 Start Trip
-                    </button>
-                  )}
-                  {(booking.status === 'TRIP_STARTED' || booking.status === 'IN_PROGRESS') && (
-                    <button
-                      onClick={() => handleCompleteTrip(booking.id)}
-                      className="flex-1 btn-primary"
-                    >
-                      ✓ Complete Trip
-                    </button>
-                  )}
-                  {booking.status === 'COMPLETED' && (
-                    <button
-                      className="flex-1 btn-secondary cursor-default"
-                      disabled
-                    >
-                      ✓ Trip Completed
-                    </button>
-                  )}
-                </div>
+                {activeTab === 'active' && (
+                  <div className="flex gap-2">
+                    {booking.status === 'DRIVER_ASSIGNED' && (
+                      <button
+                        onClick={() => handleStartTrip(booking.id)}
+                        className="flex-1 btn-primary"
+                      >
+                        🚀 Start Trip
+                      </button>
+                    )}
+                    {booking.status === 'IN_PROGRESS' && (
+                      <button
+                        onClick={() => handleCompleteTrip(booking.id)}
+                        className="flex-1 btn-primary"
+                      >
+                        ✓ Complete Trip
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'completed' && booking.completedAt && (
+                  <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                    <p className="text-green-400 text-sm">
+                      ✓ Completed on {new Date(booking.completedAt).toLocaleString()}
+                    </p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

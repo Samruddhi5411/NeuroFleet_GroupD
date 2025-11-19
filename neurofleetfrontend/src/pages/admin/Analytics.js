@@ -42,12 +42,19 @@ const Analytics = () => {
   const loadAnalyticsData = async () => {
     try {
       setLoading(true);
+      console.log('📊 Loading analytics data...');
+
       const [kpi, trends, fleet, performance] = await Promise.all([
         analyticsService.getKPIMetrics(),
         analyticsService.getDailyTrends(7),
         analyticsService.getFleetDistribution(),
         analyticsService.getVehiclePerformance(),
       ]);
+
+      console.log('✅ KPI Data:', kpi.data);
+      console.log('✅ Trends Data:', trends.data);
+      console.log('✅ Fleet Data:', fleet.data);
+      console.log('✅ Performance Data:', performance.data);
 
       setKpiData(kpi.data);
       setDailyTrends(trends.data);
@@ -58,16 +65,22 @@ const Analytics = () => {
       const bookingStatuses = {
         labels: ['Completed', 'Active', 'Pending', 'Cancelled'],
         values: [
-          Math.floor(Math.random() * 50) + 30,  // Completed: 30-80
-          Math.floor(Math.random() * 20) + 10,  // Active: 10-30
-          Math.floor(Math.random() * 15) + 5,   // Pending: 5-20
-          Math.floor(Math.random() * 10) + 2,   // Cancelled: 2-12
+          Math.floor(Math.random() * 50) + 30,
+          Math.floor(Math.random() * 20) + 10,
+          Math.floor(Math.random() * 15) + 5,
+          Math.floor(Math.random() * 10) + 2,
         ],
       };
       setBookingStatusData(bookingStatuses);
+
+      console.log('✅ Analytics data loaded successfully');
     } catch (error) {
-      console.error('Error loading analytics data:', error);
-      alert('Failed to load analytics data. Please ensure you are logged in.');
+      console.error('❌ Error loading analytics data:', error);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+      }
+      alert('Failed to load analytics data: ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }
@@ -208,14 +221,14 @@ const Analytics = () => {
             Daily Bookings Trend
           </h3>
           <div className="h-80">
-            {dailyTrends && (
+            {dailyTrends && dailyTrends.labels && dailyTrends.labels.length > 0 ? (
               <Line
                 data={{
-                  labels: dailyTrends.labels || [],
+                  labels: dailyTrends.labels,
                   datasets: [
                     {
                       label: 'Bookings',
-                      data: dailyTrends.bookings || [],
+                      data: dailyTrends.bookings,
                       borderColor: 'rgb(34, 211, 238)',
                       backgroundColor: 'rgba(34, 211, 238, 0.1)',
                       tension: 0.4,
@@ -229,11 +242,19 @@ const Analytics = () => {
                     legend: { labels: { color: '#fff' } },
                   },
                   scales: {
-                    y: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    y: {
+                      ticks: { color: '#fff' },
+                      grid: { color: 'rgba(255,255,255,0.1)' },
+                      beginAtZero: true
+                    },
                     x: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
                   },
                 }}
               />
+            ) : (
+              <div className="flex items-center justify-center h-full text-white/50">
+                No booking trend data available
+              </div>
             )}
           </div>
         </div>

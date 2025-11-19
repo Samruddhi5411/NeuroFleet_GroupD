@@ -41,6 +41,7 @@ export const authService = {
 
 export const vehicleService = {
   getAll: () => api.get('/admin/vehicles'),
+  getAllForManager: () => api.get('/manager/vehicles'),
   getAllForCustomer: () => api.get('/customer/vehicles'),
   getById: (id) => api.get(`/vehicles/${id}`),
   create: (vehicle) => api.post('/admin/vehicles', vehicle),
@@ -62,6 +63,8 @@ export const bookingService = {
   getRecommended: (username) => api.get(`/customer/bookings/recommended?username=${username}`),
   searchVehicles: (username, filters) => api.post(`/customer/bookings/search?username=${username}`, filters),
   checkAvailability: (request) => api.post('/customer/bookings/availability', request),
+  notifyDriverOfPayment: (bookingId) =>
+    api.post(`/customer/bookings/${bookingId}/payment/notify-driver`),
 };
 
 export const managerService = {
@@ -72,10 +75,46 @@ export const managerService = {
 };
 
 export const driverService = {
-  getAssignedBookings: (username) => api.get(`/driver/bookings?username=${username}`),
-  startTrip: (bookingId) => api.put(`/driver/bookings/${bookingId}/start-trip`),
-};
+  // Get assigned bookings
+  getAssignedBookings: (username) =>
+    api.get(`/driver/bookings?username=${username}`),
 
+  // Start trip
+  startTrip: (bookingId) => {
+    const username = localStorage.getItem('username');
+    return api.put(`/driver/bookings/${bookingId}/start-trip?username=${username}`);
+  },
+
+  // Complete trip
+  completeTrip: (bookingId) => {
+    const username = localStorage.getItem('username');
+    return api.put(`/driver/bookings/${bookingId}/complete-trip?username=${username}`);
+  },
+
+  // Get driver profile
+  getProfile: () => {
+    const username = localStorage.getItem('username');
+    return api.get(`/driver/profile?username=${username}`);
+  },
+
+  // Update driver profile
+  updateProfile: (profileData) => {
+    const username = localStorage.getItem('username');
+    return api.put(`/driver/profile?username=${username}`, profileData);
+  },
+
+  // Get driver earnings
+  getEarnings: () => {
+    const username = localStorage.getItem('username');
+    return api.get(`/driver/earnings?username=${username}`);
+  },
+
+  // Update driver location (for live tracking)
+  updateLocation: (latitude, longitude) => {
+    const username = localStorage.getItem('username');
+    return api.put(`/driver/location?username=${username}`, { latitude, longitude });
+  },
+};
 export const supportService = {
   getAllTickets: () => api.get('/admin/support/tickets'),
   getCustomerTickets: (username) => api.get(`/customer/support/tickets?username=${username}`),
@@ -107,11 +146,23 @@ export const analyticsService = {
   getHourlyActivity: () => api.get('/analytics/hourly-activity'),
   getDailyTrends: (days) => api.get(`/analytics/daily-trends?days=${days || 7}`),
   getVehiclePerformance: () => api.get('/analytics/vehicle-performance'),
-  downloadFleetReport: () => api.get('/analytics/reports/fleet/csv', { responseType: 'blob' }),
-  downloadBookingsReport: () => api.get('/analytics/reports/bookings/csv', { responseType: 'blob' }),
-  downloadRevenueReport: () => api.get('/analytics/reports/revenue/csv', { responseType: 'blob' }),
-  downloadTripsReport: () => api.get('/analytics/reports/trips/csv', { responseType: 'blob' }),
-  downloadSummaryReport: () => api.get('/analytics/reports/summary/csv', { responseType: 'blob' }),
+
+  // ✅ FIX: Add responseType for blob downloads
+  downloadFleetReport: () => api.get('/analytics/reports/fleet/csv', {
+    responseType: 'blob'
+  }),
+  downloadBookingsReport: () => api.get('/analytics/reports/bookings/csv', {
+    responseType: 'blob'
+  }),
+  downloadRevenueReport: () => api.get('/analytics/reports/revenue/csv', {
+    responseType: 'blob'
+  }),
+  downloadTripsReport: () => api.get('/analytics/reports/trips/csv', {
+    responseType: 'blob'
+  }),
+  downloadSummaryReport: () => api.get('/analytics/reports/summary/csv', {
+    responseType: 'blob'
+  }),
 };
 
 export default api;

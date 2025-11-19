@@ -49,17 +49,24 @@ function MapUpdater({ center }) {
 const LiveMap = () => {
   const [vehicles, setVehicles] = useState([]);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
-  const [mapCenter, setMapCenter] = useState([40.7128, -74.0060]); // NYC default
+ const [mapCenter, setMapCenter] = useState([22.3511148, 78.6677428]); // India center
+
   const [connectionStatus, setConnectionStatus] = useState('Connecting...');
   const subscriptionRef = useRef(null);
 
   // Sample route coordinates (you can replace with real route data)
-  const routeCoordinates = [
-    [40.7128, -74.0060],
-    [40.7150, -74.0050],
-    [40.7180, -74.0030],
-    [40.7200, -74.0010],
-  ];
+ const routeCoordinates = [
+  [34.083656, 74.797371],   // Srinagar, Kashmir
+  [31.104815, 77.173401],   // Shimla
+  [28.704060, 77.102493],   // Delhi
+  [25.317644, 82.973915],   // Varanasi
+  [23.022505, 72.571365],   // Ahmedabad
+  [19.076090, 72.877426],   // Mumbai
+  [16.506174, 80.648015],   // Vijayawada
+  [13.082680, 80.270721],   // Chennai
+  [8.088306, 77.538452]     // Kanyakumari (final)
+];
+
 
   useEffect(() => {
     console.log('LiveMap: Initializing WebSocket connection...');

@@ -6,11 +6,12 @@ import com.example.neurofleetbackkendD.service.DashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/customer")
 @CrossOrigin(origins = "http://localhost:3000")
-public class CustomerController {
+public class CustomerDashboardController {
     
     @Autowired
     private DashboardService dashboardService;
@@ -24,24 +25,13 @@ public class CustomerController {
             User customer = authService.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
             
-            return ResponseEntity.ok(dashboardService.getCustomerDashboard(customer.getId()));
+            System.out.println("📊 Customer " + customer.getFullName() + " accessing dashboard...");
+            Map<String, Object> dashboard = dashboardService.getCustomerDashboard(customer.getId());
+            return ResponseEntity.ok(dashboard);
         } catch (Exception e) {
-            System.err.println("❌ Error fetching customer dashboard: " + e.getMessage());
-            return ResponseEntity.badRequest().body(
-                java.util.Map.of("error", e.getMessage())
-            );
-        }
-    }
-    
-    @GetMapping("/dashboard/{customerId}")
-    public ResponseEntity<?> getCustomerDashboardById(@PathVariable Long customerId) {
-        try {
-            return ResponseEntity.ok(dashboardService.getCustomerDashboard(customerId));
-        } catch (Exception e) {
-            System.err.println("❌ Error fetching customer dashboard: " + e.getMessage());
-            return ResponseEntity.badRequest().body(
-                java.util.Map.of("error", e.getMessage())
-            );
+            System.err.println("❌ Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }

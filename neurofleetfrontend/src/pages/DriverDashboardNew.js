@@ -4,8 +4,8 @@ import Logo from '../components/Logo';
 import MyTrips from './driver/MyTrips';
 import LiveMap from './driver/LiveMap';
 import Earnings from './driver/Earnings';
-import SupportChat from './driver/SupportChat';
-import { RouteIcon, LocationIcon, RevenueIcon, AlertIcon, LogoutIcon } from '../components/Icons';
+import DriverProfile from './driver/DriverProfile'; // ADD THIS IMPORT
+import { RouteIcon, LocationIcon, RevenueIcon, LogoutIcon } from '../components/Icons';
 
 const DriverDashboardNew = () => {
   const navigate = useNavigate();
@@ -19,14 +19,14 @@ const DriverDashboardNew = () => {
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'profile':
+        return <DriverProfile />;
       case 'trips':
         return <MyTrips />;
       case 'map':
         return <LiveMap />;
       case 'earnings':
         return <Earnings />;
-      case 'support':
-        return <SupportChat />;
       default:
         return <MyTrips />;
     }
@@ -35,7 +35,7 @@ const DriverDashboardNew = () => {
   return (
     <div className="min-h-screen bg-gradient-dark relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-mesh opacity-20"></div>
-      
+
       <nav className="relative bg-dark-800/40 backdrop-blur-glass border-b border-white/10 shadow-glass">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
@@ -67,28 +67,45 @@ const DriverDashboardNew = () => {
 
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex gap-2 pb-3">
-            {[
-              { id: 'trips', label: 'My Trips', icon: RouteIcon },
-              { id: 'map', label: 'Live Map', icon: LocationIcon },
-              { id: 'earnings', label: 'Earnings', icon: RevenueIcon },
-              { id: 'support', label: 'Support', icon: AlertIcon },
-            ].map(tab => {
-              const TabIcon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${
-                    activeTab === tab.id 
-                      ? 'bg-gradient-to-r from-accent-green to-accent-cyan text-white shadow-lg shadow-accent-green/30' 
-                      : 'text-white/70 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <TabIcon size="sm" />
-                  {tab.label}
-                </button>
-              );
-            })}
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${activeTab === 'profile'
+                  ? 'bg-gradient-to-r from-accent-purple to-accent-pink text-white shadow-lg shadow-accent-purple/30'
+                  : 'text-white/70 hover:text-white hover:bg-white/5'
+                }`}
+            >
+              👤 Profile
+            </button>
+            <button
+              onClick={() => setActiveTab('trips')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${activeTab === 'trips'
+                  ? 'bg-gradient-to-r from-accent-green to-accent-cyan text-white shadow-lg shadow-accent-green/30'
+                  : 'text-white/70 hover:text-white hover:bg-white/5'
+                }`}
+            >
+              <RouteIcon size="sm" />
+              My Trips
+            </button>
+            <button
+              onClick={() => setActiveTab('map')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${activeTab === 'map'
+                  ? 'bg-gradient-to-r from-accent-cyan to-accent-blue text-white shadow-lg shadow-accent-cyan/30'
+                  : 'text-white/70 hover:text-white hover:bg-white/5'
+                }`}
+            >
+              <LocationIcon size="sm" />
+              Live Map
+            </button>
+            <button
+              onClick={() => setActiveTab('earnings')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${activeTab === 'earnings'
+                  ? 'bg-gradient-to-r from-accent-green to-accent-cyan text-white shadow-lg shadow-accent-green/30'
+                  : 'text-white/70 hover:text-white hover:bg-white/5'
+                }`}
+            >
+              <RevenueIcon size="sm" />
+              Earnings
+            </button>
           </div>
         </div>
       </nav>

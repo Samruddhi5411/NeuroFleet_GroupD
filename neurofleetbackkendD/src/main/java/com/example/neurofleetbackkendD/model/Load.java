@@ -1,6 +1,7 @@
 package com.example.neurofleetbackkendD.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "loads")
@@ -10,17 +11,20 @@ public class Load {
     private Long id;
     
     private String loadId;
+    private Double weight;
+    private String destination;
+    private String priority; // URGENT, HIGH, NORMAL, LOW
+    private String status; // PENDING, ASSIGNED, IN_TRANSIT, DELIVERED
     
     @ManyToOne
     @JoinColumn(name = "vehicle_id")
     private Vehicle vehicle;
     
-    private Double weight;
-    private String origin;
-    private String destination;
+    @ManyToOne
+    @JoinColumn(name = "driver_id")
+    private User driver;
     
-    private String priority; // LOW, MEDIUM, HIGH, URGENT
-    private String status; // PENDING, ASSIGNED, IN_TRANSIT, DELIVERED
+    private LocalDateTime createdAt = LocalDateTime.now();
     
     // Getters and Setters
     public Long getId() { return id; }
@@ -29,14 +33,8 @@ public class Load {
     public String getLoadId() { return loadId; }
     public void setLoadId(String loadId) { this.loadId = loadId; }
     
-    public Vehicle getVehicle() { return vehicle; }
-    public void setVehicle(Vehicle vehicle) { this.vehicle = vehicle; }
-    
     public Double getWeight() { return weight; }
     public void setWeight(Double weight) { this.weight = weight; }
-    
-    public String getOrigin() { return origin; }
-    public void setOrigin(String origin) { this.origin = origin; }
     
     public String getDestination() { return destination; }
     public void setDestination(String destination) { this.destination = destination; }
@@ -46,4 +44,13 @@ public class Load {
     
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    
+    public Vehicle getVehicle() { return vehicle; }
+    public void setVehicle(Vehicle vehicle) { this.vehicle = vehicle; }
+    
+    public User getDriver() { return driver; }
+    public void setDriver(User driver) { this.driver = driver; }
+    
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { vehicleService } from '../services/api';
+
+
 
 // Fix for default marker icons in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -11,6 +13,7 @@ L.Icon.Default.mergeOptions({
   iconUrl: require('leaflet/dist/images/marker-icon.png'),
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
+
 
 // Custom vehicle marker icons
 const createVehicleIcon = (type, status) => {
@@ -152,8 +155,11 @@ const LiveVehicleMapStreet = () => {
       const avgLng = vehicles.reduce((sum, v) => sum + v.longitude, 0) / vehicles.length;
       return [avgLat, avgLng];
     }
-    return [40.7128, -74.0060]; // New York City fallback
+
+    // Kashmir → Kanyakumari midpoint
+    return [21.5, 76.5];
   };
+
 
   const mapCenter = getMapCenter();
   const defaultZoom = vehicles.length === 0 ? 13 : 12;

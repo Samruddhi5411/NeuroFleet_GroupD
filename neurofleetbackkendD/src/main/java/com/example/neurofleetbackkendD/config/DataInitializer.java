@@ -70,7 +70,7 @@ public class DataInitializer implements CommandLineRunner {
         admin.setPassword(passwordEncoder.encode("admin123"));
         admin.setFullName("System Administrator");
         admin.setEmail("admin@neurofleetx.com");
-        admin.setPhone("+91-9876543210");
+        admin.setPhoneNumber("+91-9876543210");
         admin.setRole(UserRole.ADMIN);
         admin.setActive(true);
         userRepository.save(admin);
@@ -82,7 +82,7 @@ public class DataInitializer implements CommandLineRunner {
             manager.setPassword(passwordEncoder.encode("manager123"));
             manager.setFullName("Fleet Manager " + i);
             manager.setEmail("manager" + i + "@neurofleetx.com");
-            manager.setPhone("+91-98765432" + (10 + i));
+            manager.setPhoneNumber("+91-98765432" + (10 + i));
             manager.setRole(UserRole.MANAGER);
             manager.setActive(true);
             userRepository.save(manager);
@@ -103,7 +103,7 @@ public class DataInitializer implements CommandLineRunner {
             driver.setPassword(passwordEncoder.encode("driver123"));
             driver.setFullName(driverNames[i-1]);
             driver.setEmail("driver" + i + "@neurofleetx.com");
-            driver.setPhone("+91-" + (9000000000L + i));
+            driver.setPhoneNumber("+91-" + (9000000000L + i));
             driver.setRole(UserRole.DRIVER);
             driver.setActive(true);
             userRepository.save(driver);
@@ -122,7 +122,7 @@ public class DataInitializer implements CommandLineRunner {
             customer.setPassword(passwordEncoder.encode("customer123"));
             customer.setFullName(customerNames[i-1]);
             customer.setEmail("customer" + i + "@neurofleetx.com");
-            customer.setPhone("+91-" + (8000000000L + i));
+            customer.setPhoneNumber("+91-" + (8000000000L + i));
             customer.setRole(UserRole.CUSTOMER);
             customer.setActive(true);
             userRepository.save(customer);

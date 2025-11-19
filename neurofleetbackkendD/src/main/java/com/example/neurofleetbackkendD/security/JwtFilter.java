@@ -30,8 +30,9 @@ public class JwtFilter extends OncePerRequestFilter {
                                     HttpServletResponse response, 
                                     FilterChain filterChain) throws ServletException, IOException {
         
-        // Skip JWT validation for auth endpoints
         String path = request.getRequestURI();
+        
+        // Skip JWT validation for public endpoints
         if (path.startsWith("/api/auth/") || path.startsWith("/error") || path.startsWith("/h2-console")) {
             filterChain.doFilter(request, response);
             return;
@@ -40,6 +41,7 @@ public class JwtFilter extends OncePerRequestFilter {
         final String authHeader = request.getHeader("Authorization");
         
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            System.out.println("⚠️ No valid Authorization header for: " + path);
             filterChain.doFilter(request, response);
             return;
         }
@@ -60,10 +62,14 @@ public class JwtFilter extends OncePerRequestFilter {
                         );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                    
+                    // ✅ DEBUG LOG
+                    System.out.println("✅ Authenticated: " + username + " | Authorities: " + userDetails.getAuthorities() + " | Path: " + path);
                 }
             }
         } catch (Exception e) {
-            System.err.println("JWT Filter Error: " + e.getMessage());
+            System.err.println("❌ JWT Filter Error for " + path + ": " + e.getMessage());
+            e.printStackTrace();
         }
         
         filterChain.doFilter(request, response);
