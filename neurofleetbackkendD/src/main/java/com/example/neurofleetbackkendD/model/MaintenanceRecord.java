@@ -36,7 +36,7 @@ public class MaintenanceRecord {
     private Double estimatedCost;
     private String mechanicAssigned;
     
-    // Getters and Setters
+  
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     

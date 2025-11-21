@@ -62,7 +62,7 @@ public class User {
     
     private LocalDateTime createdAt = LocalDateTime.now();
     
-    // Add getters and setters
+  
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
 

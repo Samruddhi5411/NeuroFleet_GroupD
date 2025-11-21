@@ -14,17 +14,14 @@ public class RouteController {
     @Autowired
     private AIService aiService;
     
-    /**
-     * Optimize route using AI + Dijkstra
-     */
+   
     @PostMapping("/optimize")
     public ResponseEntity<?> optimizeRoute(@RequestBody Map<String, Object> routeRequest) {
         try {
             System.out.println("🗺️ Optimizing route with AI...");
             
             Map<String, Object> optimizedRoute = aiService.optimizeRoute(routeRequest);
-            
-            // Wrap in response format expected by frontend
+          
             Map<String, Object> response = new HashMap<>();
             response.put("primaryRoute", optimizedRoute);
             response.put("alternativeRoutes", Arrays.asList(optimizedRoute));

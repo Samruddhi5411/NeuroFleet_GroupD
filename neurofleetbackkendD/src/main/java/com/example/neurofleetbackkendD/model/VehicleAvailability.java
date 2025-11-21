@@ -24,7 +24,7 @@ public class VehicleAvailability {
     @JoinColumn(name = "booking_id")
     private Booking booking;
     
-    // Getters and Setters
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     
@@ -53,4 +53,3 @@ public class VehicleAvailability {
     public Booking getBooking() { return booking; }
     public void setBooking(Booking booking) { this.booking = booking; }
 }
-//booking calendar

@@ -28,7 +28,7 @@ public class WebSocketController {
         return booking;
     }
     
-    // Send real-time notification
+    // send real-time notification
     public void sendNotification(String userId, Map<String, Object> notification) {
         messagingTemplate.convertAndSend("/queue/notifications-" + userId, notification);
     }

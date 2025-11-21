@@ -42,7 +42,7 @@ public class BookingService {
         booking.setPaymentStatus(PaymentStatus.UNPAID);
         booking.setCreatedAt(LocalDateTime.now());
         
-        // Calculate price based on distance (if coordinates provided)
+        // Calculate price based on distance
         if (booking.getPickupLatitude() != null && booking.getDropoffLatitude() != null) {
             double distance = calculateDistance(
                 booking.getPickupLatitude(), booking.getPickupLongitude(),
@@ -100,8 +100,7 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
     
-    // Manager approves and assigns driver (OLD METHOD - Keep for backward compatibility)
-    @Transactional
+    // Manager approves and assigns driver 
     public Booking managerApproveAndAssignDriver(Long bookingId, Long managerId, 
                                                   Long driverId, String notes) {
         Booking booking = bookingRepository.findById(bookingId)

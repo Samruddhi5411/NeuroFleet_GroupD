@@ -23,12 +23,8 @@ public class SupportController {
     @Autowired
     private AuthService authService;
     
-    // ========== CUSTOMER ENDPOINTS ==========
-    
-    /**
-     * Get customer's support tickets
-     * GET /api/customer/support/tickets?username=customer1
-     */
+  
+   
     @GetMapping("/api/customer/support/tickets")
     public ResponseEntity<?> getCustomerTickets(@RequestParam String username) {
         try {
@@ -45,11 +41,7 @@ public class SupportController {
         }
     }
     
-    /**
-     * Create support ticket
-     * POST /api/customer/support/tickets?username=customer1
-     * Body: { "subject": "Issue", "description": "...", "category": "GENERAL" }
-     */
+   
     @PostMapping("/api/customer/support/tickets")
     public ResponseEntity<?> createTicket(
             @RequestParam String username,
@@ -70,10 +62,7 @@ public class SupportController {
         }
     }
     
-    /**
-     * Get single ticket details
-     * GET /api/support/tickets/1
-     */
+  
     @GetMapping("/api/support/tickets/{id}")
     public ResponseEntity<?> getTicketById(@PathVariable Long id) {
         try {
@@ -84,21 +73,13 @@ public class SupportController {
         }
     }
     
-    // ========== ADMIN ENDPOINTS ==========
-    
-    /**
-     * Get all tickets (Admin)
-     * GET /api/admin/support/tickets
-     */
+  
     @GetMapping("/api/admin/support/tickets")
     public ResponseEntity<List<SupportTicket>> getAllTickets() {
         return ResponseEntity.ok(supportService.getAllTickets());
     }
     
-    /**
-     * Update ticket (Admin/Manager)
-     * PUT /api/support/tickets/1
-     */
+  
     @PutMapping("/api/support/tickets/{id}")
     public ResponseEntity<?> updateTicket(
             @PathVariable Long id,
@@ -113,10 +94,7 @@ public class SupportController {
         }
     }
     
-    /**
-     * Delete ticket
-     * DELETE /api/support/tickets/1
-     */
+ 
     @DeleteMapping("/api/support/tickets/{id}")
     public ResponseEntity<?> deleteTicket(@PathVariable Long id) {
         try {
@@ -127,10 +105,7 @@ public class SupportController {
         }
     }
     
-    /**
-     * Get tickets by status
-     * GET /api/support/tickets/status/OPEN
-     */
+  
     @GetMapping("/api/support/tickets/status/{status}")
     public ResponseEntity<List<SupportTicket>> getTicketsByStatus(@PathVariable TicketStatus status) {
         return ResponseEntity.ok(supportService.getTicketsByStatus(status));

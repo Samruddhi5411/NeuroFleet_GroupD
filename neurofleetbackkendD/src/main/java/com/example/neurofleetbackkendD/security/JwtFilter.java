@@ -32,7 +32,7 @@ public class JwtFilter extends OncePerRequestFilter {
         
         String path = request.getRequestURI();
         
-        // Skip JWT validation for public endpoints
+       
         if (path.startsWith("/api/auth/") || path.startsWith("/error") || path.startsWith("/h2-console")) {
             filterChain.doFilter(request, response);
             return;
@@ -63,7 +63,7 @@ public class JwtFilter extends OncePerRequestFilter {
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                     
-                    // ✅ DEBUG LOG
+             
                     System.out.println("✅ Authenticated: " + username + " | Authorities: " + userDetails.getAuthorities() + " | Path: " + path);
                 }
             }

@@ -24,7 +24,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         User user = userRepository.findByUsername(username)
             .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
         
-        // ✅ DEBUG LOG
+
         System.out.println("🔐 Loading user: " + username + " | Role: " + user.getRole().name() + " | Active: " + user.getActive());
         
         return new org.springframework.security.core.userdetails.User(
@@ -39,7 +39,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
     
     private Collection<? extends GrantedAuthority> getAuthorities(User user) {
-        // ✅ Use plain role name (ADMIN, MANAGER, DRIVER, CUSTOMER)
+       
         SimpleGrantedAuthority authority = new SimpleGrantedAuthority(user.getRole().name());
         System.out.println("🔑 Authority granted: " + authority.getAuthority());
         return Collections.singletonList(authority);

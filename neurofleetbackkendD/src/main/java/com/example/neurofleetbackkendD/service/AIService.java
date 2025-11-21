@@ -24,9 +24,7 @@ public class AIService {
     
     private final RestTemplate restTemplate = new RestTemplate();
     
-    /**
-     * Get AI-powered vehicle recommendations
-     */
+ 
     public Map<String, Object> getRecommendations(Long customerId) {
         return getRecommendations(customerId, new HashMap<>());
     }
@@ -62,9 +60,9 @@ public class AIService {
             vehicleRepository.findByStatus(VehicleStatus.AVAILABLE), searchFilters);
     }
     
-    /**
-     * Predict maintenance for a vehicle
-     */
+    
+     // Predict maintenance for a vehicle
+     
     public Map<String, Object> predictMaintenance(Map<String, Object> vehicleData) {
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -84,9 +82,9 @@ public class AIService {
         return generateFallbackPrediction(vehicleData);
     }
     
-    /**
-     * Analyze fleet maintenance
-     */
+    
+    // Analyze fleet maintenance
+     
     public Map<String, Object> analyzeFleetMaintenance() {
         try {
             String url = aiServiceUrl + "/api/ai/maintenance/analyze-fleet";
@@ -101,10 +99,9 @@ public class AIService {
         
         return generateFallbackFleetAnalysis();
     }
+   
+     //Optimize route using AI
     
-    /**
-     * Optimize route using AI
-     */
     public Map<String, Object> optimizeRoute(Map<String, Object> routeData) {
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -124,7 +121,7 @@ public class AIService {
         return generateFallbackRoute(routeData);
     }
     
-    // ========== HELPER METHODS ==========
+  
     
     private Map<String, Object> getFallbackRecommendations(
             Long customerId, List<Vehicle> vehicles, Map<String, Object> filters) {

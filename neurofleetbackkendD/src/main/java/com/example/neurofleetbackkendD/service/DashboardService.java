@@ -99,7 +99,7 @@ public class DashboardService {
         return dashboard;
     }
     
-    // ✅ MANAGER DASHBOARD
+    //MANAGER DASHBOARD
     public Map<String, Object> getManagerDashboard() {
         Map<String, Object> dashboard = new HashMap<>();
         
@@ -127,7 +127,7 @@ public class DashboardService {
         return dashboard;
     }
     
-    // ✅ DRIVER DASHBOARD
+    //  DRIVER DASHBOARD
     public Map<String, Object> getDriverDashboard(Long driverId) {
         Map<String, Object> dashboard = new HashMap<>();
         
@@ -185,7 +185,7 @@ public class DashboardService {
         return dashboard;
     }
     
-    // ✅ CUSTOMER DASHBOARD
+    //  CUSTOMER DASHBOARD
     public Map<String, Object> getCustomerDashboard(Long customerId) {
         Map<String, Object> dashboard = new HashMap<>();
         
@@ -236,7 +236,7 @@ public class DashboardService {
         return dashboard;
     }
     
-    // ✅ KPI METRICS (for Analytics)
+    // KPI METRICS (for Analytics)
     public Map<String, Object> getKPIMetrics() {
         Map<String, Object> kpi = new HashMap<>();
         
@@ -280,7 +280,7 @@ public class DashboardService {
         return kpi;
     }
     
-    // ✅ FLEET DISTRIBUTION
+    //  FLEET DISTRIBUTION
     public Map<String, Object> getFleetDistribution() {
         Map<String, Object> distribution = new HashMap<>();
         
@@ -311,7 +311,7 @@ public class DashboardService {
         return distribution;
     }
     
-    // ✅ HOURLY ACTIVITY
+    // HOURLY ACTIVITY
     public Map<String, Object> getHourlyActivity() {
         Map<String, Object> activity = new HashMap<>();
         
@@ -335,7 +335,7 @@ public class DashboardService {
         return activity;
     }
     
-    // ✅ DAILY TRENDS
+    //  DAILY TRENDS
     public Map<String, Object> getDailyTrends(int days) {
         Map<String, Object> trends = new HashMap<>();
         
@@ -379,7 +379,7 @@ public class DashboardService {
         return trends;
     }
     
-    // ✅ VEHICLE PERFORMANCE
+    //  VEHICLE PERFORMANCE
     public Map<String, Object> getVehiclePerformance() {
         Map<String, Object> performance = new HashMap<>();
         
