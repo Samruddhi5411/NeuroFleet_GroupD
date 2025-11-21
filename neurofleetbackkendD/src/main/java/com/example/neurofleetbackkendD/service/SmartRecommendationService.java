@@ -29,7 +29,7 @@ public class SmartRecommendationService {
     private VehicleAvailabilityRepository availabilityRepository;
     
     @Autowired
-    private AIIntegrationService aiService;
+    private AIService aiService;
     
     // Get smart vehicle recommendations for customer
     public Map<String, Object> getSmartRecommendations(Long customerId, Map<String, Object> filters) {

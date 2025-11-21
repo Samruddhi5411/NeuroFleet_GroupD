@@ -5,6 +5,7 @@ import com.example.neurofleetbackkendD.model.VehicleTelemetry;
 import com.example.neurofleetbackkendD.model.enums.VehicleStatus;
 import com.example.neurofleetbackkendD.repository.VehicleRepository;
 import com.example.neurofleetbackkendD.repository.VehicleTelemetryRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -12,25 +13,23 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Isolation;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 @Service
 public class VehicleTelemetryService {
-    
+	@Autowired
+	private VehicleTelemetryRepository telemetryRepository;
     @Autowired
     private VehicleRepository vehicleRepository;
     
-    @Autowired
-    private VehicleTelemetryRepository telemetryRepository;
-    
     private Random random = new Random();
     
-    /**
-     * Simulate telemetry updates for in-use vehicles
-     * Runs every 10 seconds with deadlock protection
-     */
+    // Run every 10 seconds (reduced frequency to avoid deadlocks)
     @Scheduled(fixedRate = 10000)
-    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @Transactional(isolation = Isolation.READ_COMMITTED) // Fix deadlock
     public void simulateTelemetry() {
         try {
             List<Vehicle> inUseVehicles = vehicleRepository.findByStatus(VehicleStatus.IN_USE);
@@ -38,11 +37,12 @@ public class VehicleTelemetryService {
             // Process only 5 vehicles at a time to reduce lock contention
             int count = 0;
             for (Vehicle vehicle : inUseVehicles) {
-                if (count++ >= 5) break;
+                if (count++ >= 5) break; // Limit to 5 vehicles per cycle
                 
                 try {
-                    updateVehicleTelemetryData(vehicle);
+                    updateVehicleTelemetry(vehicle);
                 } catch (Exception e) {
+                    // Log but don't fail entire batch
                     System.err.println("⚠️ Failed to update telemetry for vehicle " + 
                         vehicle.getId() + ": " + e.getMessage());
                 }
@@ -57,9 +57,36 @@ public class VehicleTelemetryService {
         }
     }
     
-    /**
-     * Update telemetry for a specific vehicle
-     */
+    private void updateVehicleTelemetry(Vehicle vehicle) {
+        // Simulate GPS movement
+        if (vehicle.getLatitude() != null && vehicle.getLongitude() != null) {
+            vehicle.setLatitude(vehicle.getLatitude() + (random.nextDouble() - 0.5) * 0.001);
+            vehicle.setLongitude(vehicle.getLongitude() + (random.nextDouble() - 0.5) * 0.001);
+        }
+        
+        // Simulate speed changes
+        vehicle.setSpeed(20.0 + random.nextDouble() * 60.0);
+        
+        // Decrease battery/fuel slightly
+        if (vehicle.getIsElectric() && vehicle.getBatteryLevel() != null && vehicle.getBatteryLevel() > 0) {
+            vehicle.setBatteryLevel(Math.max(0, vehicle.getBatteryLevel() - random.nextInt(2)));
+        } else if (vehicle.getFuelLevel() != null && vehicle.getFuelLevel() > 0) {
+            vehicle.setFuelLevel(Math.max(0, vehicle.getFuelLevel() - random.nextInt(2)));
+        }
+        
+        // Increase mileage
+        if (vehicle.getMileage() != null) {
+            vehicle.setMileage(vehicle.getMileage() + random.nextInt(5));
+        }
+        
+        // Slight health degradation
+        if (vehicle.getHealthScore() != null && random.nextInt(100) < 5) {
+            vehicle.setHealthScore(Math.max(50, vehicle.getHealthScore() - 1));
+        }
+        
+        vehicle.setLastUpdated(LocalDateTime.now());
+        vehicleRepository.save(vehicle);
+    }
     public VehicleTelemetry updateTelemetry(Long vehicleId, Map<String, Object> data) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
             .orElseThrow(() -> new RuntimeException("Vehicle not found"));
@@ -113,14 +140,14 @@ public class VehicleTelemetryService {
         
         return telemetryRepository.save(telemetry);
     }
-    
+
     /**
      * Get latest telemetry for a vehicle
      */
     public VehicleTelemetry getLatestTelemetry(Long vehicleId) {
         return telemetryRepository.findTopByVehicleIdOrderByTimestampDesc(vehicleId);
     }
-    
+
     /**
      * Get telemetry history for a vehicle within date range
      */
@@ -130,7 +157,7 @@ public class VehicleTelemetryService {
         return telemetryRepository.findByVehicleIdAndTimestampBetween(
             vehicleId, startDate, endDate);
     }
-    
+
     /**
      * Get fleet overview with telemetry summary
      */
@@ -192,53 +219,5 @@ public class VehicleTelemetryService {
         overview.put("lowBatteryAlerts", lowBatteryVehicles);
         
         return overview;
-    }
-    
-    /**
-     * Private helper to update vehicle telemetry during simulation
-     */
-    private void updateVehicleTelemetryData(Vehicle vehicle) {
-        // Simulate GPS movement
-        if (vehicle.getLatitude() != null && vehicle.getLongitude() != null) {
-            vehicle.setLatitude(vehicle.getLatitude() + (random.nextDouble() - 0.5) * 0.001);
-            vehicle.setLongitude(vehicle.getLongitude() + (random.nextDouble() - 0.5) * 0.001);
-        }
-        
-        // Simulate speed changes
-        vehicle.setSpeed(20.0 + random.nextDouble() * 60.0);
-        
-        // Decrease battery/fuel slightly
-        if (vehicle.getIsElectric() && vehicle.getBatteryLevel() != null && vehicle.getBatteryLevel() > 0) {
-            vehicle.setBatteryLevel(Math.max(0, vehicle.getBatteryLevel() - random.nextInt(2)));
-        } else if (vehicle.getFuelLevel() != null && vehicle.getFuelLevel() > 0) {
-            vehicle.setFuelLevel(Math.max(0, vehicle.getFuelLevel() - random.nextInt(2)));
-        }
-        
-        // Increase mileage
-        if (vehicle.getMileage() != null) {
-            vehicle.setMileage(vehicle.getMileage() + random.nextInt(5));
-        }
-        
-        // Slight health degradation
-        if (vehicle.getHealthScore() != null && random.nextInt(100) < 5) {
-            vehicle.setHealthScore(Math.max(50, vehicle.getHealthScore() - 1));
-        }
-        
-        vehicle.setLastUpdated(LocalDateTime.now());
-        vehicleRepository.save(vehicle);
-        
-        // Also save to telemetry history
-        VehicleTelemetry telemetry = new VehicleTelemetry();
-        telemetry.setVehicle(vehicle);
-        telemetry.setTimestamp(LocalDateTime.now());
-        telemetry.setLatitude(vehicle.getLatitude());
-        telemetry.setLongitude(vehicle.getLongitude());
-        telemetry.setSpeed(vehicle.getSpeed());
-        telemetry.setFuelLevel(vehicle.getFuelLevel());
-        telemetry.setBatteryLevel(vehicle.getBatteryLevel());
-        telemetry.setEngineTemp(80.0 + random.nextDouble() * 20.0);
-        telemetry.setTirePressure(30.0 + random.nextDouble() * 5.0);
-        
-        telemetryRepository.save(telemetry);
     }
 }

@@ -26,7 +26,7 @@ public class PredictiveMaintenanceService {
     private MaintenanceRepository maintenanceRepository;
     
     @Autowired
-    private AIIntegrationService aiService;
+    private AIService aiService;
     
     // Monitor and log vehicle health (runs every 5 minutes)
     @Scheduled(fixedRate = 300000) // 5 minutes

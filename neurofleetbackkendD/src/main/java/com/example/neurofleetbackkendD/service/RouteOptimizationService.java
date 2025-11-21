@@ -21,7 +21,7 @@ public class RouteOptimizationService {
     private VehicleRepository vehicleRepository;
     
     @Autowired
-    private AIIntegrationService aiService;
+    private AIService aiService;
     
     public Map<String, Object> optimizeRoute(Map<String, Object> request) {
         Long vehicleId = request.get("vehicleId") != null ? 

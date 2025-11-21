@@ -34,7 +34,12 @@ public interface VehicleTelemetryRepository extends JpaRepository<VehicleTelemet
 	        @Param("id") Long id
 	);
 
-    VehicleTelemetry findTopByVehicleIdOrderByTimestampDesc(Long vehicleId);
-    List<VehicleTelemetry> findByVehicleIdAndTimestampBetween(Long vehicleId, LocalDateTime start, LocalDateTime end);
-    List<VehicleTelemetry> findByVehicleId(Long vehicleId);
+//	  List<VehicleTelemetry> findByVehicleIdOrderByTimestampDesc(Long vehicleId);
+//	    List<VehicleTelemetry> findByVehicleIdAndTimestampBetween(Long vehicleId, 
+//	                                                                LocalDateTime start, 
+//	   LocalDateTime end);
+	  VehicleTelemetry findTopByVehicleIdOrderByTimestampDesc(Long vehicleId);
+	    List<VehicleTelemetry> findByVehicleIdAndTimestampBetween(Long vehicleId, LocalDateTime start, LocalDateTime end);
+	    List<VehicleTelemetry> findByVehicleId(Long vehicleId);
+	
 }

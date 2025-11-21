@@ -76,6 +76,12 @@ public class SecurityConfig {
                 .requestMatchers("/api/bookings/**").authenticated()
                 .requestMatchers("/api/maintenance/**").authenticated()
                 
+               
+                
+                .requestMatchers("/api/payments/**").authenticated()
+                .requestMatchers("/api/telemetry/**").authenticated()
+                .requestMatchers("/ws/**").permitAll()  // WebSocket endpoint
+                
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

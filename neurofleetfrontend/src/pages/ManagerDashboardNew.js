@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Logo from '../components/Logo';
 import FleetOverview from './manager/FleetOverview';
 import DriverPerformance from './manager/DriverPerformance';
-import RouteOptimization from './manager/RouteOptimization';
+import RouteOptimization from './manager/AIRouteOptimization';
 import Reports from './manager/Reports';
 import PendingBookings from './manager/PendingBookings';
 import { VehicleIcon, TrendingUpIcon, RouteIcon, ChartIcon, LogoutIcon } from '../components/Icons';

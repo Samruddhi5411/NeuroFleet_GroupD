@@ -12,27 +12,42 @@ const PaymentHistory = () => {
     loadPayments();
   }, []);
 
+  // const loadPayments = async () => {
+  //   try {
+  //     const response = await bookingService.getCustomerBookings(username);
+  //     const allBookings = response.data;
+
+  //     const completedPayments = allBookings.filter(b =>
+  //       b.status === 'COMPLETED' || b.status === 'CANCELLED'
+  //     );
+
+  //     const currentBookings = allBookings.filter(b =>
+  //       b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS'
+  //     );
+
+  //     setPayments(completedPayments);
+  //     setActiveBookings(currentBookings);
+  //   } catch (error) {
+  //     console.error('Error loading payment history:', error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const loadPayments = async () => {
-    try {
-      const response = await bookingService.getCustomerBookings(username);
-      const allBookings = response.data;
-
-      const completedPayments = allBookings.filter(b =>
-        b.status === 'COMPLETED' || b.status === 'CANCELLED'
-      );
-
-      const currentBookings = allBookings.filter(b =>
-        b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS'
-      );
-
-      setPayments(completedPayments);
-      setActiveBookings(currentBookings);
-    } catch (error) {
-      console.error('Error loading payment history:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    const response = await bookingService.getCustomerBookings(username);
+    
+    // ✅ FIX: Only show PAID bookings
+    const paidBookings = response.data.filter(b =>
+      b.paymentStatus === 'PAID' && b.status === 'COMPLETED'
+    );
+    
+    setPayments(paidBookings);
+  } catch (error) {
+    console.error('Error loading payments:', error);
+  }
+};
 
   const totalSpent = payments.reduce((sum, p) => sum + (p.totalPrice || 0), 0);
   const activeAmount = activeBookings.reduce((sum, p) => sum + (p.totalPrice || 0), 0);

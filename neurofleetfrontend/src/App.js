@@ -10,7 +10,7 @@ import ManagerDashboard from './pages/ManagerDashboardNew';
 import DriverDashboard from './pages/DriverDashboardNew';
 import CustomerDashboard from './pages/CustomerDashboardNew';
 import FleetInventory from './pages/manager/FleetInventory';
-import RouteOptimization from './pages/manager/RouteOptimization';
+import RouteOptimization from './pages/manager/AIRouteOptimization';
 
 function App() {
   return (
@@ -23,14 +23,14 @@ function App() {
           <Route path="/login/:role" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           {/* <Route path="/admin/dashboard" element={<AdminDashboard />} /> */}
-             <Route
-  path="/admin/dashboard"
-  element={
-    <ProtectedRoute allowedRoles={["ADMIN"]}>
-      <AdminDashboard />
-    </ProtectedRoute>
-  }
-/>
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
 
 
 

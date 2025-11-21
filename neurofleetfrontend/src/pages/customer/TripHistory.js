@@ -11,17 +11,31 @@ const TripHistory = () => {
     loadTripHistory();
   }, []);
 
+  // const loadTripHistory = async () => {
+  //   try {
+  //     const response = await bookingService.getCustomerBookings(username);
+  //     const completedTrips = response.data.filter(b =>
+  //       b.status === 'COMPLETED' || b.status === 'CANCELLED'
+  //     );
+  //     setTrips(completedTrips);
+  //   } catch (error) {
+  //     console.error('Error loading trip history:', error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   const loadTripHistory = async () => {
     try {
       const response = await bookingService.getCustomerBookings(username);
+
+      // ✅ FIX: Only show COMPLETED trips
       const completedTrips = response.data.filter(b =>
-        b.status === 'COMPLETED' || b.status === 'CANCELLED'
+        b.status === 'COMPLETED' // NOT CANCELLED
       );
+
       setTrips(completedTrips);
     } catch (error) {
       console.error('Error loading trip history:', error);
-    } finally {
-      setLoading(false);
     }
   };
 

@@ -21,11 +21,10 @@ public class MaintenanceController {
     private MaintenanceService maintenanceService;
     
     
-    @GetMapping("/admin/maintenance")
-    public ResponseEntity<List<MaintenanceRecord>> getAdminMaintenance() {
+    @GetMapping("/admin/maintenance")  // Add this line
+    public ResponseEntity<List<MaintenanceRecord>> getAllRecords11() {
         return ResponseEntity.ok(maintenanceService.getAllRecords());
     }
-    
     @GetMapping("/maintenance")
     public ResponseEntity<List<MaintenanceRecord>> getAllRecords1() {
         return ResponseEntity.ok(maintenanceService.getAllRecords());
@@ -53,7 +52,7 @@ public class MaintenanceController {
 //            @RequestBody MaintenanceRecord record) {
 //        return ResponseEntity.ok(maintenanceService.createRecord(record));
 //    }
-//    
+
     @PutMapping("/{id}")
     public ResponseEntity<?> updateRecord(@PathVariable Long id, 
                                          @RequestBody MaintenanceRecord record) {
@@ -68,7 +67,7 @@ public class MaintenanceController {
     public ResponseEntity<?> predictForVehicle(@PathVariable Long vehicleId) {
         try {
             MaintenanceRecord prediction = 
-                maintenanceService.predictMaintenanceForVehicle(vehicleId);
+                (MaintenanceRecord) maintenanceService.predictMaintenanceForVehicle(vehicleId);
             return ResponseEntity.ok(prediction);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -78,7 +77,7 @@ public class MaintenanceController {
     @PostMapping("/run-predictive-analysis")
     public ResponseEntity<?> runPredictiveAnalysis() {
         try {
-            maintenanceService.runPredictiveMaintenance();
+            maintenanceService.runPredictiveMaintenance1();
             return ResponseEntity.ok(Map.of("message", "Predictive analysis completed"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

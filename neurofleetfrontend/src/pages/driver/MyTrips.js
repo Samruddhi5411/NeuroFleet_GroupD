@@ -130,8 +130,8 @@ const MyTrips = () => {
         <button
           onClick={() => setActiveTab('active')}
           className={`px-6 py-3 rounded-lg font-semibold transition-all ${activeTab === 'active'
-              ? 'bg-gradient-to-r from-accent-cyan to-accent-blue text-white shadow-lg'
-              : 'bg-dark-700/40 text-white/60 hover:text-white'
+            ? 'bg-gradient-to-r from-accent-cyan to-accent-blue text-white shadow-lg'
+            : 'bg-dark-700/40 text-white/60 hover:text-white'
             }`}
         >
           🚗 Active ({activeBookings.length})
@@ -139,8 +139,8 @@ const MyTrips = () => {
         <button
           onClick={() => setActiveTab('completed')}
           className={`px-6 py-3 rounded-lg font-semibold transition-all ${activeTab === 'completed'
-              ? 'bg-gradient-to-r from-accent-green to-accent-cyan text-white shadow-lg'
-              : 'bg-dark-700/40 text-white/60 hover:text-white'
+            ? 'bg-gradient-to-r from-accent-green to-accent-cyan text-white shadow-lg'
+            : 'bg-dark-700/40 text-white/60 hover:text-white'
             }`}
         >
           ✅ Completed ({completedBookings.length})

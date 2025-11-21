@@ -114,6 +114,16 @@ export const driverService = {
     const username = localStorage.getItem('username');
     return api.put(`/driver/location?username=${username}`, { latitude, longitude });
   },
+
+  requestEarlyPayout: () => {
+    const username = localStorage.getItem('username');
+    // First get driver ID from profile, then request payout
+    return api.get(`/driver/profile?username=${username}`)
+      .then(response => {
+        const driverId = response.data.id;
+        return api.post(`/payments/driver/${driverId}/request-payout`);
+      });
+  },
 };
 export const supportService = {
   getAllTickets: () => api.get('/admin/support/tickets'),
@@ -163,6 +173,29 @@ export const analyticsService = {
   downloadSummaryReport: () => api.get('/analytics/reports/summary/csv', {
     responseType: 'blob'
   }),
+};
+
+
+export const paymentService = {
+  // Process payment after manager approval
+  processPayment: (bookingId, paymentData) =>
+    api.post(`/payments/booking/${bookingId}/pay`, paymentData),
+
+  // Get payment history
+  getCustomerPayments: (customerId) =>
+    api.get(`/payments/customer/${customerId}/history`),
+
+  // Get receipt
+  getReceipt: (paymentId) =>
+    api.get(`/payments/${paymentId}/receipt`),
+
+  // Download receipt PDF
+  downloadReceipt: (paymentId) =>
+    api.get(`/payments/${paymentId}/receipt/download`, { responseType: 'blob' }),
+
+  // Request early payout (driver)
+  requestEarlyPayout: (driverId) =>
+    api.post(`/payments/driver/${driverId}/request-payout`),
 };
 
 export default api;
