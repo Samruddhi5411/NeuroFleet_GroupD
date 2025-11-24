@@ -40,18 +40,18 @@ public class ManagerController {
         }
     }
     
-    @GetMapping("/bookings/pending")
-    public ResponseEntity<?> getPendingBookings() {
-        try {
-            System.out.println("📋 Manager requesting pending bookings...");
-            List<Booking> bookings = bookingService.getPendingBookingsForManager();
-            System.out.println("✅ Found " + bookings.size() + " pending bookings");
-            return ResponseEntity.ok(bookings);
-        } catch (Exception e) {
-            System.err.println("❌ Error fetching pending bookings: " + e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
+//    @GetMapping("/bookings/pending")
+//    public ResponseEntity<?> getPendingBookings() {
+//        try {
+//            System.out.println("📋 Manager requesting pending bookings...");
+//            List<Booking> bookings = bookingService.getPendingBookingsForManager();
+//            System.out.println("✅ Found " + bookings.size() + " pending bookings");
+//            return ResponseEntity.ok(bookings);
+//        } catch (Exception e) {
+//            System.err.println("❌ Error fetching pending bookings: " + e.getMessage());
+//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+//        }
+//    }
     
     @PutMapping("/bookings/{id}/approve")
     public ResponseEntity<?> approveBooking(@PathVariable Long id) {
