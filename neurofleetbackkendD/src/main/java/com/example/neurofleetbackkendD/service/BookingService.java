@@ -1,10 +1,7 @@
 package com.example.neurofleetbackkendD.service;
 
 import com.example.neurofleetbackkendD.model.*;
-import com.example.neurofleetbackkendD.model.enums.BookingStatus;
-import com.example.neurofleetbackkendD.model.enums.PaymentStatus;
-import com.example.neurofleetbackkendD.model.enums.UserRole;
-import com.example.neurofleetbackkendD.model.enums.VehicleStatus;
+import com.example.neurofleetbackkendD.model.enums.*;
 import com.example.neurofleetbackkendD.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,6 +23,9 @@ public class BookingService {
     
     @Autowired
     private VehicleRepository vehicleRepository;
+    
+    @Autowired
+    private NotificationService notificationService;
     
     // Customer creates booking
     @Transactional
@@ -49,13 +49,21 @@ public class BookingService {
                 booking.getDropoffLatitude(), booking.getDropoffLongitude()
             );
             booking.setTotalPrice(distance * 15.0); // ₹15 per km
+        } else {
+            // Default price if coordinates not provided
+            booking.setTotalPrice(500.0);
         }
         
-        System.out.println("✅ Creating booking for customer: " + booking.getCustomer().getFullName());
-        return bookingRepository.save(booking);
+        Booking savedBooking = bookingRepository.save(booking);
+        
+        // 🔔 SEND NOTIFICATION
+        notificationService.notifyBookingCreated(savedBooking);
+        
+        System.out.println("✅ Booking created: " + savedBooking.getId() + " for customer: " + booking.getCustomer().getFullName());
+        return savedBooking;
     }
     
-    // Manager approves booking (without driver assignment)
+    // Manager approves booking
     @Transactional
     public Booking approveBooking(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -72,7 +80,7 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
     
-    //  Assign driver to approved booking
+    // Assign driver to approved booking
     @Transactional
     public Booking assignDriverToBooking(Long bookingId, Long driverId) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -96,110 +104,23 @@ public class BookingService {
         booking.setDriver(driver);
         booking.setStatus(BookingStatus.DRIVER_ASSIGNED);
         
-        System.out.println("✅ Driver " + driver.getFullName() + " assigned to booking " + bookingId);
-        return bookingRepository.save(booking);
-    }
-    
-    // Manager approves and assigns driver 
-    public Booking managerApproveAndAssignDriver(Long bookingId, Long managerId, 
-                                                  Long driverId, String notes) {
-        Booking booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new RuntimeException("Booking not found"));
-        
-        if (booking.getStatus() != BookingStatus.PENDING) {
-            throw new RuntimeException("Booking is not in pending state");
-        }
-        
-        User manager = userRepository.findById(managerId)
-            .orElseThrow(() -> new RuntimeException("Manager not found"));
-        
-        if (manager.getRole() != UserRole.MANAGER && manager.getRole() != UserRole.ADMIN) {
-            throw new RuntimeException("Only managers can approve bookings");
-        }
-        
-        User driver = userRepository.findById(driverId)
-            .orElseThrow(() -> new RuntimeException("Driver not found"));
-        
-        if (driver.getRole() != UserRole.DRIVER) {
-            throw new RuntimeException("Selected user is not a driver");
-        }
-        
-        if (!driver.getActive()) {
-            throw new RuntimeException("Driver is not active");
-        }
-        
-        booking.setStatus(BookingStatus.DRIVER_ASSIGNED);
-        booking.setApprovedByManager(manager);
-        booking.setDriver(driver);
-        booking.setManagerNotes(notes);
-        booking.setApprovedAt(LocalDateTime.now());
-        
-        return bookingRepository.save(booking);
-    }
-    
-    // Driver accepts booking
-    @Transactional
-    public Booking driverAcceptBooking(Long bookingId, Long driverId) {
-        Booking booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new RuntimeException("Booking not found"));
-        
-        if (booking.getDriver() == null || !booking.getDriver().getId().equals(driverId)) {
-            throw new RuntimeException("This booking is not assigned to you");
-        }
-        
-        if (booking.getStatus() != BookingStatus.DRIVER_ASSIGNED) {
-            throw new RuntimeException("Booking is not in assigned state");
-        }
-        
+        // Auto-accept for demo (you can remove this to require manual acceptance)
         booking.setStatus(BookingStatus.DRIVER_ACCEPTED);
         booking.setDriverAcceptedAt(LocalDateTime.now());
         
-        return bookingRepository.save(booking);
-    }
-    
-    // Driver rejects booking
-    @Transactional
-    public Booking driverRejectBooking(Long bookingId, Long driverId, String reason) {
-        Booking booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new RuntimeException("Booking not found"));
-        
-        if (booking.getDriver() == null || !booking.getDriver().getId().equals(driverId)) {
-            throw new RuntimeException("This booking is not assigned to you");
-        }
-        
-        if (booking.getStatus() != BookingStatus.DRIVER_ASSIGNED) {
-            throw new RuntimeException("Cannot reject booking in current state");
-        }
-        
-        booking.setStatus(BookingStatus.PENDING);
-        booking.setDriver(null);
-        booking.setDriverNotes("Rejected: " + reason);
-        
-        return bookingRepository.save(booking);
-    }
-    
-    // Customer makes payment
-    @Transactional
-    public Booking processPayment(Long bookingId, String paymentMethod) {
-        Booking booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new RuntimeException("Booking not found"));
-        
-        if (booking.getStatus() != BookingStatus.DRIVER_ACCEPTED) {
-            throw new RuntimeException("Booking not ready for payment");
-        }
-        
-        booking.setPaymentStatus(PaymentStatus.PAID);
-        booking.setPaymentMethod(paymentMethod);
-        booking.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase());
+        // Auto-confirm booking (skip payment for demo)
         booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setPaymentStatus(PaymentStatus.PAID);
+        booking.setPaymentMethod("CASH");
+        booking.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         
-        // Mark vehicle as IN_USE
-        Vehicle vehicle = booking.getVehicle();
-        vehicle.setStatus(VehicleStatus.IN_USE);
-        vehicle.setCurrentDriver(booking.getDriver());
-        vehicleRepository.save(vehicle);
+        Booking savedBooking = bookingRepository.save(booking);
         
-        return bookingRepository.save(booking);
+        // 🔔 SEND NOTIFICATIONS
+        notificationService.notifyBookingApproved(savedBooking);
+        
+        System.out.println("✅ Driver " + driver.getFullName() + " assigned to booking " + bookingId);
+        return savedBooking;
     }
     
     // Driver starts trip
@@ -212,14 +133,27 @@ public class BookingService {
             throw new RuntimeException("Unauthorized");
         }
         
-        if (booking.getStatus() != BookingStatus.CONFIRMED) {
-            throw new RuntimeException("Booking is not confirmed");
+        if (booking.getStatus() != BookingStatus.CONFIRMED && 
+            booking.getStatus() != BookingStatus.DRIVER_ACCEPTED) {
+            throw new RuntimeException("Booking is not ready to start");
         }
         
         booking.setStatus(BookingStatus.IN_PROGRESS);
         booking.setStartTime(LocalDateTime.now());
         
-        return bookingRepository.save(booking);
+        // Update vehicle status
+        Vehicle vehicle = booking.getVehicle();
+        vehicle.setStatus(VehicleStatus.IN_USE);
+        vehicle.setCurrentDriver(booking.getDriver());
+        vehicleRepository.save(vehicle);
+        
+        Booking savedBooking = bookingRepository.save(booking);
+        
+        // 🔔 SEND NOTIFICATION TO CUSTOMER
+        notificationService.notifyTripStarted(savedBooking);
+        
+        System.out.println("✅ Trip started for booking: " + bookingId);
+        return savedBooking;
     }
     
     // Driver completes trip
@@ -240,13 +174,25 @@ public class BookingService {
         booking.setEndTime(LocalDateTime.now());
         booking.setCompletedAt(LocalDateTime.now());
         
-        // Release vehicle and driver
+        // Release vehicle
         Vehicle vehicle = booking.getVehicle();
         vehicle.setStatus(VehicleStatus.AVAILABLE);
         vehicle.setCurrentDriver(null);
         vehicleRepository.save(vehicle);
         
-        return bookingRepository.save(booking);
+        // Update driver earnings
+        User driver = booking.getDriver();
+        driver.setTotalTrips(driver.getTotalTrips() + 1);
+        driver.setTotalEarnings(driver.getTotalEarnings() + (booking.getTotalPrice() * 0.7)); // 70% to driver
+        userRepository.save(driver);
+        
+        Booking savedBooking = bookingRepository.save(booking);
+        
+        // 🔔 SEND NOTIFICATION
+        notificationService.notifyTripCompleted(savedBooking);
+        
+        System.out.println("✅ Trip completed for booking: " + bookingId);
+        return savedBooking;
     }
     
     // Cancel booking (customer)
@@ -259,13 +205,11 @@ public class BookingService {
             throw new RuntimeException("Unauthorized: Not your booking");
         }
         
-        // Only allow cancellation for certain statuses
         List<BookingStatus> cancellableStatuses = Arrays.asList(
             BookingStatus.PENDING,
             BookingStatus.APPROVED,
             BookingStatus.DRIVER_ASSIGNED,
-            BookingStatus.DRIVER_ACCEPTED,
-            BookingStatus.CONFIRMED
+            BookingStatus.DRIVER_ACCEPTED
         );
         
         if (!cancellableStatuses.contains(booking.getStatus())) {
@@ -279,52 +223,49 @@ public class BookingService {
         // Release vehicle if assigned
         if (booking.getVehicle() != null) {
             Vehicle vehicle = booking.getVehicle();
-            if (vehicle.getStatus() == VehicleStatus.IN_USE) {
-                vehicle.setStatus(VehicleStatus.AVAILABLE);
-                vehicle.setCurrentDriver(null);
-                vehicleRepository.save(vehicle);
-            }
+            vehicle.setStatus(VehicleStatus.AVAILABLE);
+            vehicle.setCurrentDriver(null);
+            vehicleRepository.save(vehicle);
         }
         
-        // Process refund if payment was made
-        if (booking.getPaymentStatus() == PaymentStatus.PAID) {
-            booking.setPaymentStatus(PaymentStatus.REFUNDED);
-        }
+        Booking savedBooking = bookingRepository.save(booking);
         
-        return bookingRepository.save(booking);
+        // 🔔 SEND NOTIFICATION
+        notificationService.notifyBookingCancelled(savedBooking);
+        
+        return savedBooking;
     }
     
     // Get bookings for manager review
     public List<Booking> getPendingBookingsForManager() {
-        System.out.println("📋 Fetching pending bookings from database...");
+        System.out.println("📋 Fetching pending bookings...");
         List<Booking> bookings = bookingRepository.findByStatus(BookingStatus.PENDING);
         System.out.println("✅ Found " + bookings.size() + " pending bookings");
         return bookings;
     }
-    
+ // Get driver's active booking (IN_PROGRESS or CONFIRMED)
+    public Optional<Booking> getDriverActiveBooking(Long driverId) {
+        List<Booking> activeBookings = bookingRepository.findByDriverIdAndStatusIn(
+            driverId, 
+            Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS, BookingStatus.DRIVER_ACCEPTED)
+        );
+        return activeBookings.isEmpty() ? Optional.empty() : Optional.of(activeBookings.get(0));
+    }
+
+    // Get bookings by vehicle
+    public List<Booking> getBookingsByVehicle(Long vehicleId) {
+        return bookingRepository.findByVehicleId(vehicleId);
+    }
     // Get driver's bookings
     public List<Booking> getDriverBookings(Long driverId) {
         return bookingRepository.findByDriverId(driverId);
     }
     
-    // Get driver's active booking
-    public Optional<Booking> getDriverActiveBooking(Long driverId) {
-        List<BookingStatus> activeStatuses = Arrays.asList(
-            BookingStatus.DRIVER_ASSIGNED,
-            BookingStatus.DRIVER_ACCEPTED,
-            BookingStatus.CONFIRMED,
-            BookingStatus.IN_PROGRESS
-        );
-        
-        List<Booking> bookings = bookingRepository.findByDriverId(driverId);
-        return bookings.stream()
-            .filter(b -> activeStatuses.contains(b.getStatus()))
-            .findFirst();
-    }
- // Get driver's completed bookings
+    // Get driver's completed bookings
     public List<Booking> getDriverCompletedBookings(Long driverId) {
         return bookingRepository.findByDriverIdAndStatus(driverId, BookingStatus.COMPLETED);
     }
+    
     // Get customer's bookings
     public List<Booking> getCustomerBookings(Long customerId) {
         return bookingRepository.findByCustomerId(customerId);
@@ -340,14 +281,9 @@ public class BookingService {
         return bookingRepository.findById(id);
     }
     
-    // Get bookings by vehicle
-    public List<Booking> getBookingsByVehicle(Long vehicleId) {
-        return bookingRepository.findByVehicleId(vehicleId);
-    }
-    
     // Calculate distance using Haversine formula
     private double calculateDistance(Double lat1, Double lon1, Double lat2, Double lon2) {
-        final int R = 6371; // Radius of the earth in km
+        final int R = 6371; // Earth radius in km
         
         double latDistance = Math.toRadians(lat2 - lat1);
         double lonDistance = Math.toRadians(lon2 - lon1);
@@ -356,6 +292,6 @@ public class BookingService {
                 * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         
-        return R * c; // Distance in km
+        return R * c;
     }
 }

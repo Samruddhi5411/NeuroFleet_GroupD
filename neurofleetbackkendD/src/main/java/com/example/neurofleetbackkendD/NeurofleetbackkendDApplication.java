@@ -25,17 +25,6 @@ public class NeurofleetbackkendDApplication {
     public RestTemplate restTemplate() {
         return new RestTemplate();
     }
-//    @Bean
-//    public WebMvcConfigurer corsConfigurer() {
-//        return new WebMvcConfigurer() {
-//            @Override
-//            public void addCorsMappings(CorsRegistry registry) {
-//                registry.addMapping("/**")
-//                    .allowedOrigins("*") // Allow all origins for testing
-//                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-//                    .allowedHeaders("*")
-//                    .allowCredentials(false); // Changed to false when allowing all origins
-//            }
-//        };
+
     }
 

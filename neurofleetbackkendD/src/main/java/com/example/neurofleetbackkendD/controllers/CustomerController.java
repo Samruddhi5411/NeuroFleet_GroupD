@@ -42,53 +42,7 @@ public class CustomerController {
         }
     }
     
-    /**
-     * Get customer's bookings
-     */
-    @GetMapping("/bookings")
-    public ResponseEntity<?> getCustomerBookings(@RequestParam String username) {
-        try {
-            User customer = authService.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
-            
-            List<Booking> bookings = bookingService.getCustomerBookings(customer.getId());
-            System.out.println("✅ Found " + bookings.size() + " bookings for " + username);
-            return ResponseEntity.ok(bookings);
-        } catch (Exception e) {
-            System.err.println("❌ Error fetching bookings: " + e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-    
-    /**
-     * Create new booking
-     */
-    @PostMapping("/bookings")
-    public ResponseEntity<?> createBooking(@RequestParam String username, 
-                                          @RequestBody Booking bookingRequest) {
-        try {
-            User customer = authService.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
-            
-            // Set customer
-            bookingRequest.setCustomer(customer);
-            
-            // Fetch full vehicle details
-            Vehicle vehicle = vehicleService.getVehicleById(bookingRequest.getVehicle().getId())
-                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
-            bookingRequest.setVehicle(vehicle);
-            
-            Booking booking = bookingService.createBooking(bookingRequest);
-            System.out.println("✅ Booking created: " + booking.getId());
-            
-            return ResponseEntity.ok(booking);
-        } catch (Exception e) {
-            System.err.println("❌ Error creating booking: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-    
+
     /**
      * Cancel booking
      */

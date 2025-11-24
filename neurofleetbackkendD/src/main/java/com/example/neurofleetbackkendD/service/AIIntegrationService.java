@@ -14,7 +14,7 @@ public class AIIntegrationService {
     
     private final RestTemplate restTemplate = new RestTemplate();
     
-    // 1. VEHICLE RECOMMENDATION
+    //  VEHICLE RECOMMENDATION
     public Map<String, Object> getVehicleRecommendations(Long customerId, 
                                                          Map<String, Object> filters,
                                                          List<Map<String, Object>> bookingHistory) {
@@ -41,7 +41,7 @@ public class AIIntegrationService {
         }
     }
     
-    // 2. FLEET OPTIMIZATION
+    //  FLEET OPTIMIZATION
     public Map<String, Object> optimizeFleetSelection(Double pickupLat, 
                                                       Double pickupLng,
                                                       List<Map<String, Object>> availableVehicles) {
@@ -68,7 +68,7 @@ public class AIIntegrationService {
         }
     }
     
-    // 3. DRIVER MATCHING
+    // DRIVER MATCHING
     public Map<String, Object> matchBestDriver(Double pickupLat,
                                                Double pickupLng,
                                                List<Map<String, Object>> availableDrivers) {
@@ -95,7 +95,7 @@ public class AIIntegrationService {
         }
     }
     
-    // 4. ANOMALY DETECTION
+    //  ANOMALY DETECTION
     public Map<String, Object> detectTelemetryAnomaly(Map<String, Object> telemetryData) {
         try {
             String url = aiBaseUrl + "/api/telemetry/detect-anomaly";
@@ -115,7 +115,7 @@ public class AIIntegrationService {
         }
     }
     
-    // 5. MAINTENANCE PREDICTION
+    //  MAINTENANCE PREDICTION
     public Map<String, Object> predictMaintenance(Map<String, Object> vehicleData) {
         try {
             String url = aiBaseUrl + "/api/maintenance/predict";
@@ -135,7 +135,7 @@ public class AIIntegrationService {
         }
     }
     
-    // 6. TRIP HEATMAP
+    //  TRIP HEATMAP
     public Map<String, Object> generateTripHeatmap(int days) {
         try {
             String url = aiBaseUrl + "/api/analytics/heatmap?days=" + days;
@@ -151,7 +151,7 @@ public class AIIntegrationService {
         }
     }
     
-    // 7. DEMAND FORECAST
+    //  DEMAND FORECAST
     public Map<String, Object> forecastDemand(int days) {
         try {
             String url = aiBaseUrl + "/api/analytics/demand-forecast?days=" + days;
@@ -167,7 +167,7 @@ public class AIIntegrationService {
         }
     }
     
-    // 8. LEARN CUSTOMER PATTERN
+    //  LEARN CUSTOMER PATTERN
     public void learnCustomerPattern(Long customerId, Map<String, Object> bookingData) {
         try {
             String url = aiBaseUrl + "/api/learn/customer-pattern";

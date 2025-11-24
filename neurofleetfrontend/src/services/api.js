@@ -68,10 +68,10 @@ export const bookingService = {
 };
 
 export const managerService = {
-  getPendingBookings: () => api.get('/manager/bookings/pending'),
+  getPendingBookings: () => api.get(`/manager/bookings/pending`),
   approveBooking: (id) => api.put(`/manager/bookings/${id}/approve`),
   assignDriver: (bookingId, driverId) => api.put(`/manager/bookings/${bookingId}/assign-driver?driverId=${driverId}`),
-  getAvailableDrivers: () => api.get('/manager/drivers/available'),
+  getAvailableDrivers: () => api.get(`/manager/drivers/available`),
 };
 
 export const driverService = {
@@ -125,14 +125,14 @@ export const driverService = {
       });
   },
 };
-export const supportService = {
-  getAllTickets: () => api.get('/admin/support/tickets'),
-  getCustomerTickets: (username) => api.get(`/customer/support/tickets?username=${username}`),
-  getTicketById: (id) => api.get(`/support/tickets/${id}`),
-  createTicket: (username, ticket) => api.post(`/customer/support/tickets?username=${username}`, ticket),
-  updateTicket: (id, ticket) => api.put(`/support/tickets/${id}`, ticket),
-  deleteTicket: (id) => api.delete(`/support/tickets/${id}`),
-};
+// export const supportService = {
+//   getAllTickets: () => api.get('/admin/support/tickets'),
+//   getCustomerTickets: (username) => api.get(`/customer/support/tickets?username=${username}`),
+//   getTicketById: (id) => api.get(`/support/tickets/${id}`),
+//   createTicket: (username, ticket) => api.post(`/customer/support/tickets?username=${username}`, ticket),
+//   updateTicket: (id, ticket) => api.put(`/support/tickets/${id}`, ticket),
+//   deleteTicket: (id) => api.delete(`/support/tickets/${id}`),
+// };
 
 export const maintenanceService = {
   getAll: () => api.get('/admin/maintenance'),

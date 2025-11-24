@@ -10,4 +10,5 @@ public enum BookingStatus {
     IN_PROGRESS,       // Trip started
     COMPLETED,         // Trip finished
     CANCELLED          // Booking cancelled
+, DRIVER_REJECTED
 }

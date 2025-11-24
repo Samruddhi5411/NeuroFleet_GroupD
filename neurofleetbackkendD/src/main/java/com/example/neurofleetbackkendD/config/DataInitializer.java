@@ -34,22 +34,17 @@ public class DataInitializer implements CommandLineRunner {
     
     @Override
     public void run(String... args) throws Exception {
-        // Check if data already exists
         if (userRepository.count() > 0) {
             System.out.println("⚠️ Data already exists, skipping initialization");
             return;
         }
         
-        System.out.println("🚀 Initializing NeuroFleetX Database...");
+        System.out.println("🚀 Initializing NeuroFleetX Database with REAL DATA...");
         
-        // Create Users: 1 Admin, 1 Manager, 5 Drivers, 5 Customers
         createUsers();
-        
-        // Create 50 Vehicles across India
-        createVehiclesAllIndia();
-        
-        // Create sample Bookings and Maintenance
-        createBookingsAndMaintenance();
+        createVehiclesAcrossIndia();
+        createRealBookings();
+        createMaintenanceRecords();
         
         System.out.println("✅ Database initialization completed!");
         printSummary();
@@ -68,224 +63,266 @@ public class DataInitializer implements CommandLineRunner {
         admin.setRole(UserRole.ADMIN);
         admin.setActive(true);
         userRepository.save(admin);
-        System.out.println("✅ Admin created: admin / admin123");
         
-        // 1 Manager
-        User manager = new User();
-        manager.setUsername("manager1");
-        manager.setPassword(passwordEncoder.encode("manager123"));
-        manager.setFullName("Fleet Manager");
-        manager.setEmail("manager@neurofleetx.com");
-        manager.setPhoneNumber("+91-9876543211");
-        manager.setRole(UserRole.MANAGER);
-        manager.setActive(true);
-        userRepository.save(manager);
-        System.out.println("✅ Manager created: manager1 / manager123");
-        
-        // 5 Drivers
-        String[] driverNames = {
-            "Rajesh Kumar", "Amit Singh", "Suresh Patel", "Vijay Sharma", "Prakash Reddy"
+        // 2 Managers
+        String[][] managers = {
+            {"manager1", "Fleet Manager 1", "manager1@neurofleetx.com", "+91-9876543211"},
+            {"manager2", "Fleet Manager 2", "manager2@neurofleetx.com", "+91-9876543212"}
         };
         
-        for (int i = 1; i <= 5; i++) {
+        for (String[] m : managers) {
+            User manager = new User();
+            manager.setUsername(m[0]);
+            manager.setPassword(passwordEncoder.encode("manager123"));
+            manager.setFullName(m[1]);
+            manager.setEmail(m[2]);
+            manager.setPhoneNumber(m[3]);
+            manager.setRole(UserRole.MANAGER);
+            manager.setActive(true);
+            userRepository.save(manager);
+        }
+        
+        // 5 Drivers with realistic data
+        String[][] drivers = {
+            {"driver1", "Rajesh Kumar", "rajesh.kumar@neurofleetx.com", "+91-9001234567", "DL-1420110012345"},
+            {"driver2", "Amit Singh", "amit.singh@neurofleetx.com", "+91-9001234568", "DL-1420110012346"},
+            {"driver3", "Suresh Patel", "suresh.patel@neurofleetx.com", "+91-9001234569", "DL-1420110012347"},
+            {"driver4", "Vijay Sharma", "vijay.sharma@neurofleetx.com", "+91-9001234570", "DL-1420110012348"},
+            {"driver5", "Prakash Reddy", "prakash.reddy@neurofleetx.com", "+91-9001234571", "DL-1420110012349"}
+        };
+        
+        for (int i = 0; i < drivers.length; i++) {
             User driver = new User();
-            driver.setUsername("driver" + i);
+            driver.setUsername(drivers[i][0]);
             driver.setPassword(passwordEncoder.encode("driver123"));
-            driver.setFullName(driverNames[i-1]);
-            driver.setEmail("driver" + i + "@neurofleetx.com");
-            driver.setPhoneNumber("+91-900000000" + i);
+            driver.setFullName(drivers[i][1]);
+            driver.setEmail(drivers[i][2]);
+            driver.setPhoneNumber(drivers[i][3]);
+            driver.setLicenseNumber(drivers[i][4]);
             driver.setRole(UserRole.DRIVER);
             driver.setActive(true);
-            driver.setLicenseNumber("DL-" + (1000 + i));
-            driver.setRating(4.0 + random.nextDouble()); // 4.0-5.0
-            driver.setTotalTrips(0);
-            driver.setTotalEarnings(0.0);
+            driver.setRating(4.0 + random.nextDouble());
+            driver.setTotalTrips(random.nextInt(100) + 50);
+            driver.setTotalEarnings(random.nextDouble() * 50000 + 10000);
             userRepository.save(driver);
         }
-        System.out.println("✅ Created 5 drivers: driver1-driver5 / driver123");
         
         // 5 Customers
-        String[] customerNames = {
-            "Priya Sharma", "Anita Desai", "Neha Patel", "Pooja Singh", "Kavita Reddy"
+        String[][] customers = {
+            {"customer1", "Priya Sharma", "priya.sharma@gmail.com", "+91-9201234567"},
+            {"customer2", "Anita Desai", "anita.desai@gmail.com", "+91-9201234568"},
+            {"customer3", "Neha Patel", "neha.patel@gmail.com", "+91-9201234569"},
+            {"customer4", "Pooja Singh", "pooja.singh@gmail.com", "+91-9201234570"},
+            {"customer5", "Kavita Reddy", "kavita.reddy@gmail.com", "+91-9201234571"}
         };
         
-        for (int i = 1; i <= 5; i++) {
+        for (String[] c : customers) {
             User customer = new User();
-            customer.setUsername("customer" + i);
+            customer.setUsername(c[0]);
             customer.setPassword(passwordEncoder.encode("customer123"));
-            customer.setFullName(customerNames[i-1]);
-            customer.setEmail("customer" + i + "@neurofleetx.com");
-            customer.setPhoneNumber("+91-800000000" + i);
+            customer.setFullName(c[1]);
+            customer.setEmail(c[2]);
+            customer.setPhoneNumber(c[3]);
             customer.setRole(UserRole.CUSTOMER);
             customer.setActive(true);
             userRepository.save(customer);
         }
-        System.out.println("✅ Created 5 customers: customer1-customer5 / customer123");
+        
+        System.out.println("✅ Created: 1 Admin, 2 Managers, 5 Drivers, 5 Customers");
     }
     
-    private void createVehiclesAllIndia() {
-        System.out.println("🚗 Creating 50 vehicles across India...");
+    private void createVehiclesAcrossIndia() {
+        System.out.println("🚗 Creating 50 vehicles across major Indian cities...");
         
         // Indian Cities with GPS Coordinates
         Object[][] cities = {
-            {"Mumbai", 19.0760, 72.8777, "MH"},
-            {"Delhi", 28.7041, 77.1025, "DL"},
-            {"Bangalore", 12.9716, 77.5946, "KA"},
-            {"Hyderabad", 17.3850, 78.4867, "TS"},
-            {"Chennai", 13.0827, 80.2707, "TN"},
-            {"Kolkata", 22.5726, 88.3639, "WB"},
-            {"Pune", 18.5204, 73.8567, "MH"},
-            {"Ahmedabad", 23.0225, 72.5714, "GJ"},
-            {"Jaipur", 26.9124, 75.7873, "RJ"},
-            {"Lucknow", 26.8467, 80.9462, "UP"}
+            {"Mumbai", 19.0760, 72.8777, "MH", 10},
+            {"Delhi", 28.7041, 77.1025, "DL", 10},
+            {"Bangalore", 12.9716, 77.5946, "KA", 10},
+            {"Hyderabad", 17.3850, 78.4867, "TS", 8},
+            {"Chennai", 13.0827, 80.2707, "TN", 7},
+            {"Pune", 18.5204, 73.8567, "MH", 5}
         };
         
-        String[] manufacturers = {"Tata", "Mahindra", "Maruti", "Hyundai", "Honda"};
-        String[] sedanModels = {"Dzire", "City", "Verna", "Ciaz", "Rapid"};
-        String[] suvModels = {"Creta", "Seltos", "XUV500", "Fortuner", "Scorpio"};
-        String[] vanModels = {"Innova", "Ertiga", "Marazzo", "Carnival", "Traveller"};
+        String[][] vehicleData = {
+            {"Tata", "Nexon", "SEDAN"}, {"Maruti", "Dzire", "SEDAN"},
+            {"Hyundai", "Creta", "SUV"}, {"Mahindra", "XUV500", "SUV"},
+            {"Toyota", "Innova", "VAN"}, {"Mahindra", "Bolero", "SUV"},
+            {"Honda", "City", "SEDAN"}, {"Tata", "Safari", "SUV"},
+            {"Maruti", "Ertiga", "VAN"}, {"Hyundai", "Verna", "SEDAN"}
+        };
         
-        VehicleType[] types = VehicleType.values();
         VehicleStatus[] statuses = {
             VehicleStatus.AVAILABLE, VehicleStatus.AVAILABLE, VehicleStatus.AVAILABLE,
             VehicleStatus.IN_USE, VehicleStatus.MAINTENANCE
         };
         
-        int vehicleCounter = 1;
+        int vehicleIndex = 0;
         
         for (Object[] city : cities) {
             String cityName = (String) city[0];
             Double baseLat = (Double) city[1];
             Double baseLon = (Double) city[2];
             String stateCode = (String) city[3];
+            Integer count = (Integer) city[4];
             
-            // Create 5 vehicles per city
-            for (int i = 0; i < 5 && vehicleCounter <= 50; i++) {
+            for (int i = 0; i < count && vehicleIndex < 50; i++) {
                 Vehicle vehicle = new Vehicle();
                 
-                // Vehicle Number: MH-12-AB-1234
+                // Generate realistic vehicle number: MH-02-AB-1234
                 vehicle.setVehicleNumber(stateCode + "-" + 
                     String.format("%02d", random.nextInt(99) + 1) + "-" +
                     (char)('A' + random.nextInt(26)) + (char)('A' + random.nextInt(26)) + "-" +
-                    String.format("%04d", random.nextInt(9999) + 1));
+                    String.format("%04d", random.nextInt(9999) + 1000));
                 
-                VehicleType type = types[vehicleCounter % types.length];
-                vehicle.setType(type);
+                String[] vData = vehicleData[vehicleIndex % vehicleData.length];
+                vehicle.setManufacturer(vData[0]);
+                vehicle.setModel(vData[1]);
+                vehicle.setType(VehicleType.valueOf(vData[2]));
+                vehicle.setCapacity(vehicle.getType() == VehicleType.VAN ? 8 : 
+                                   vehicle.getType() == VehicleType.SUV ? 7 : 4);
                 
-                vehicle.setManufacturer(manufacturers[random.nextInt(manufacturers.length)]);
-                
-                // Set model based on type
-                if (type == VehicleType.SEDAN) {
-                    vehicle.setModel(sedanModels[random.nextInt(sedanModels.length)]);
-                    vehicle.setCapacity(4);
-                } else if (type == VehicleType.SUV) {
-                    vehicle.setModel(suvModels[random.nextInt(suvModels.length)]);
-                    vehicle.setCapacity(7);
-                } else if (type == VehicleType.VAN) {
-                    vehicle.setModel(vanModels[random.nextInt(vanModels.length)]);
-                    vehicle.setCapacity(8);
-                } else if (type == VehicleType.TRUCK) {
-                    vehicle.setModel("Truck " + vehicleCounter);
-                    vehicle.setCapacity(2);
-                } else if (type == VehicleType.BUS) {
-                    vehicle.setModel("Bus " + vehicleCounter);
-                    vehicle.setCapacity(40);
-                } else { // BIKE
-                    vehicle.setModel("Bike " + vehicleCounter);
-                    vehicle.setCapacity(2);
-                }
-                
-                vehicle.setIsElectric(random.nextDouble() < 0.3); // 30% electric
+                vehicle.setIsElectric(random.nextDouble() < 0.2); // 20% electric
                 vehicle.setStatus(statuses[random.nextInt(statuses.length)]);
                 
-                // GPS coordinates near city center
-                vehicle.setLatitude(baseLat + (random.nextDouble() - 0.5) * 0.1);
-                vehicle.setLongitude(baseLon + (random.nextDouble() - 0.5) * 0.1);
+                // GPS coordinates near city center with realistic spread
+                vehicle.setLatitude(baseLat + (random.nextDouble() - 0.5) * 0.2);
+                vehicle.setLongitude(baseLon + (random.nextDouble() - 0.5) * 0.2);
                 
-                vehicle.setBatteryLevel(vehicle.getIsElectric() ? (70 + random.nextInt(31)) : 100);
-                vehicle.setFuelLevel(!vehicle.getIsElectric() ? (60 + random.nextInt(41)) : 0);
-                
-                vehicle.setHealthScore(75 + random.nextInt(26)); // 75-100
-                vehicle.setMileage(random.nextInt(100000));
+                vehicle.setBatteryLevel(vehicle.getIsElectric() ? (60 + random.nextInt(41)) : 100);
+                vehicle.setFuelLevel(!vehicle.getIsElectric() ? (50 + random.nextInt(51)) : 0);
+                vehicle.setHealthScore(75 + random.nextInt(26));
+                vehicle.setMileage(random.nextInt(150000) + 10000);
                 vehicle.setSpeed(vehicle.getStatus() == VehicleStatus.IN_USE ? 
-                    (20.0 + random.nextDouble() * 60) : 0.0);
+                    (15.0 + random.nextDouble() * 65) : 0.0);
                 
-                vehicle.setCreatedAt(LocalDateTime.now().minusDays(random.nextInt(365)));
-                vehicle.setLastUpdated(LocalDateTime.now());
+                vehicle.setCreatedAt(LocalDateTime.now().minusDays(random.nextInt(730))); // Up to 2 years old
+                vehicle.setLastUpdated(LocalDateTime.now().minusMinutes(random.nextInt(60)));
                 
                 vehicleRepository.save(vehicle);
-                vehicleCounter++;
+                vehicleIndex++;
             }
         }
         
-        System.out.println("✅ Created 50 vehicles");
+        System.out.println("✅ Created 50 vehicles across India");
     }
     
-    private void createBookingsAndMaintenance() {
-        System.out.println("📝 Creating sample bookings and maintenance...");
+
+    private void createRealBookings() {
+        System.out.println("📝 Creating realistic bookings...");
         
         List<Vehicle> vehicles = vehicleRepository.findAll();
         List<User> customers = userRepository.findByRole(UserRole.CUSTOMER);
         List<User> drivers = userRepository.findByRole(UserRole.DRIVER);
-        User manager = userRepository.findByRole(UserRole.MANAGER).get(0);
+        List<User> managers = userRepository.findByRole(UserRole.MANAGER);
         
-        String[] cities = {"Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai"};
+        // Fixed: Define routes array properly
+        String[][] routes = {
+            {"Delhi Connaught Place", "Gurgaon Cyber City", "28.6304", "77.2177", "28.4595", "77.0266"},
+            {"Bangalore Koramangala", "Electronic City", "12.9352", "77.6245", "12.8456", "77.6603"},
+            {"Mumbai Bandra", "Mumbai Airport", "19.0596", "72.8295", "19.0886", "72.8678"},
+            {"Hyderabad Hi-Tech City", "Secunderabad", "17.4435", "78.3772", "17.4399", "78.4983"},
+            {"Chennai T Nagar", "Chennai Airport", "13.0418", "80.2341", "12.9941", "80.1709"}
+        };
+
+        BookingStatus[] statuses = {
+            BookingStatus.PENDING, BookingStatus.APPROVED, BookingStatus.DRIVER_ASSIGNED,
+            BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED
+        };
         
-        // Create 20 bookings
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 25; i++) {
             Booking booking = new Booking();
             booking.setCustomer(customers.get(random.nextInt(customers.size())));
-            booking.setVehicle(vehicles.get(random.nextInt(vehicles.size())));
+            booking.setVehicle(vehicles.get(random.nextInt(Math.min(30, vehicles.size()))));
             booking.setDriver(drivers.get(random.nextInt(drivers.size())));
-            booking.setApprovedByManager(manager);
+            booking.setApprovedByManager(managers.get(random.nextInt(managers.size())));
             
-            LocalDateTime createdAt = LocalDateTime.now().minusDays(random.nextInt(30));
-            booking.setCreatedAt(createdAt);
-            booking.setStartTime(createdAt.plusHours(random.nextInt(24)));
-            booking.setEndTime(booking.getStartTime().plusHours(2 + random.nextInt(6)));
+            String[] route = routes[random.nextInt(routes.length)];
+            booking.setPickupLocation(route[0]);
+            booking.setDropoffLocation(route[1]);
+            booking.setPickupLatitude(Double.parseDouble(route[2]));
+            booking.setPickupLongitude(Double.parseDouble(route[3]));
+            booking.setDropoffLatitude(Double.parseDouble(route[4]));
+            booking.setDropoffLongitude(Double.parseDouble(route[5]));
             
-            String pickup = cities[random.nextInt(cities.length)];
-            String dropoff = cities[random.nextInt(cities.length)];
-            booking.setPickupLocation(pickup + " Station");
-            booking.setDropoffLocation(dropoff + " Airport");
+            LocalDateTime created = LocalDateTime.now().minusDays(random.nextInt(15));
+            booking.setCreatedAt(created);
+            booking.setStartTime(created.plusHours(random.nextInt(48)));
+            booking.setEndTime(booking.getStartTime().plusHours(random.nextInt(5) + 1));
             
-            booking.setTotalPrice(500.0 + random.nextDouble() * 2000.0);
+            double distance = calculateDistance(
+                booking.getPickupLatitude(), booking.getPickupLongitude(),
+                booking.getDropoffLatitude(), booking.getDropoffLongitude()
+            );
+            booking.setTotalPrice(distance * 15.0 + 100);
             
-            BookingStatus[] statuses = {
-                BookingStatus.PENDING, BookingStatus.CONFIRMED, 
-                BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED
-            };
-            booking.setStatus(statuses[random.nextInt(statuses.length)]);
+            BookingStatus status = statuses[random.nextInt(statuses.length)];
+            booking.setStatus(status);
+            booking.setPaymentStatus(status == BookingStatus.COMPLETED ? 
+                PaymentStatus.PAID : PaymentStatus.UNPAID);
             
-            if (booking.getStatus() == BookingStatus.COMPLETED) {
-                booking.setPaymentStatus(PaymentStatus.PAID);
-            } else {
-                booking.setPaymentStatus(PaymentStatus.UNPAID);
+            if (status == BookingStatus.COMPLETED) {
+                booking.setCompletedAt(booking.getEndTime());
             }
             
             bookingRepository.save(booking);
         }
         
-        System.out.println("✅ Created 20 bookings");
+        System.out.println("✅ Created 25 bookings");
+    }
+  
+    private void createMaintenanceRecords() {
+        System.out.println("🔧 Creating maintenance records...");
+        
+        List<Vehicle> vehicles = vehicleRepository.findAll();
+        String[] issueTypes = {
+            "Oil Change", "Brake Inspection", "Tire Replacement", 
+            "Battery Check", "Engine Maintenance", "AC Service"
+        };
+        
+        MaintenancePriority[] priorities = {
+            MaintenancePriority.LOW, MaintenancePriority.MEDIUM, MaintenancePriority.HIGH
+        };
+        
+        for (int i = 0; i < 10; i++) {
+            MaintenanceRecord record = new MaintenanceRecord();
+            record.setVehicle(vehicles.get(random.nextInt(vehicles.size())));
+            record.setIssueType(issueTypes[random.nextInt(issueTypes.length)]);
+            record.setPriority(priorities[random.nextInt(priorities.length)]);
+            record.setStatus(MaintenanceStatus.PENDING);
+            // Fixed: Cast int to Double
+            record.setRiskScore((double) random.nextInt(100));
+            record.setCreatedAt(LocalDateTime.now().minusDays(random.nextInt(30)));
+            maintenanceRepository.save(record);
+        }
+        
+        System.out.println("✅ Created 10 maintenance records");
+    }
+    private double calculateDistance(Double lat1, Double lon1, Double lat2, Double lon2) {
+        final int R = 6371;
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
     }
     
     private void printSummary() {
-        System.out.println("\n" + "=".repeat(50));
-        System.out.println("📝 TEST CREDENTIALS");
-        System.out.println("=".repeat(50));
-        System.out.println("🔐 Admin:    admin / admin123");
-        System.out.println("👨‍💼 Manager:  manager1 / manager123");
-        System.out.println("🚗 Driver:   driver1 / driver123 (driver1-driver5)");
-        System.out.println("👤 Customer: customer1 / customer123 (customer1-customer5)");
-        System.out.println("=".repeat(50));
+        System.out.println("\n" + "=".repeat(60));
+        System.out.println("🎉 NEUROFLEETX DATABASE INITIALIZED SUCCESSFULLY!");
+        System.out.println("=".repeat(60));
+        System.out.println("\n📝 TEST CREDENTIALS:");
+        System.out.println("   🔐 Admin:    admin / admin123");
+        System.out.println("   👨‍💼 Manager:  manager1 / manager123");
+        System.out.println("   🚗 Driver:   driver1 / driver123 (driver1-driver5)");
+        System.out.println("   👤 Customer: customer1 / customer123 (customer1-customer5)");
         System.out.println("\n📊 DATABASE STATISTICS:");
-        System.out.println("   👥 Total Users: " + userRepository.count());
-        System.out.println("      - Admins: 1");
-        System.out.println("      - Managers: 1");
-        System.out.println("      - Drivers: 5");
-        System.out.println("      - Customers: 5");
-        System.out.println("   🚗 Total Vehicles: " + vehicleRepository.count());
-        System.out.println("   📋 Total Bookings: " + bookingRepository.count());
-        System.out.println("=".repeat(50) + "\n");
+        System.out.println("   👥 Users: " + userRepository.count() + " (1 Admin, 2 Managers, 5 Drivers, 5 Customers)");
+        System.out.println("   🚗 Vehicles: " + vehicleRepository.count() + " (Across Mumbai, Delhi, Bangalore, etc.)");
+        System.out.println("   📋 Bookings: " + bookingRepository.count());
+        System.out.println("   🔧 Maintenance: " + maintenanceRepository.count());
+        System.out.println("=".repeat(60) + "\n");
     }
 }

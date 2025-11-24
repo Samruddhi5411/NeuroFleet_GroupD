@@ -5,325 +5,276 @@ import com.example.neurofleetbackkendD.model.enums.*;
 import com.example.neurofleetbackkendD.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class AnalyticsService {
     
     @Autowired
-    private BookingRepository bookingRepository;
+    private VehicleRepository vehicleRepository;
     
     @Autowired
-    private VehicleRepository vehicleRepository;
+    private BookingRepository bookingRepository;
     
     @Autowired
     private UserRepository userRepository;
     
-    @Autowired
-    private MaintenanceRepository maintenanceRepository;
-    
-    private static final DateTimeFormatter DATE_FORMATTER = 
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    
-    // KPI METRICS
+    /**
+     * Get KPI Metrics
+     */
     public Map<String, Object> getKPIMetrics() {
         Map<String, Object> kpi = new HashMap<>();
         
-        List<Vehicle> allVehicles = vehicleRepository.findAll();
-        List<User> allUsers = userRepository.findAll();
-        List<Booking> allBookings = bookingRepository.findAll();
+        List<Vehicle> vehicles = vehicleRepository.findAll();
+        List<Booking> bookings = bookingRepository.findAll();
         
-        LocalDateTime today = LocalDateTime.now().toLocalDate().atStartOfDay();
-        List<Booking> todayBookings = allBookings.stream()
-            .filter(b -> b.getCreatedAt().isAfter(today))
-            .collect(Collectors.toList());
-        
-        kpi.put("totalVehicles", allVehicles.size());
-        kpi.put("totalUsers", allUsers.size());
-        kpi.put("totalDrivers", allUsers.stream()
-            .filter(u -> u.getRole() == UserRole.DRIVER).count());
-        kpi.put("totalCustomers", allUsers.stream()
-            .filter(u -> u.getRole() == UserRole.CUSTOMER).count());
-        kpi.put("tripsToday", todayBookings.size());
-        kpi.put("activeVehicles", allVehicles.stream()
-            .filter(v -> v.getStatus() == VehicleStatus.IN_USE).count());
-        
-        double earningsToday = todayBookings.stream()
+        kpi.put("totalVehicles", vehicles.size());
+        kpi.put("availableVehicles", vehicles.stream()
+            .filter(v -> v.getStatus() == VehicleStatus.AVAILABLE).count());
+        kpi.put("activeTrips", bookings.stream()
+            .filter(b -> b.getStatus() == BookingStatus.IN_PROGRESS).count());
+        kpi.put("totalRevenue", bookings.stream()
             .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-            .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
-            .sum();
-        
-        kpi.put("earningsToday", Math.round(earningsToday * 100.0) / 100.0);
+            .mapToDouble(Booking::getTotalPrice)
+            .sum());
         
         return kpi;
     }
     
-    // FLEET DISTRIBUTION
+    /**
+     * Get Fleet Distribution
+     */
     public Map<String, Object> getFleetDistribution() {
         Map<String, Object> distribution = new HashMap<>();
         
         List<Vehicle> vehicles = vehicleRepository.findAll();
         
-        Map<String, Long> statusCount = vehicles.stream()
-            .collect(Collectors.groupingBy(
-                v -> v.getStatus().name(),
-                Collectors.counting()
-            ));
+        Map<String, Long> byStatus = new HashMap<>();
+        for (VehicleStatus status : VehicleStatus.values()) {
+            byStatus.put(status.name(), vehicles.stream()
+                .filter(v -> v.getStatus() == status).count());
+        }
         
-        Map<String, Long> typeCount = vehicles.stream()
-            .collect(Collectors.groupingBy(
-                v -> v.getType().name(),
-                Collectors.counting()
-            ));
+        Map<String, Long> byType = new HashMap<>();
+        for (VehicleType type : VehicleType.values()) {
+            byType.put(type.name(), vehicles.stream()
+                .filter(v -> v.getType() == type).count());
+        }
         
-        distribution.put("byStatus", statusCount);
-        distribution.put("byType", typeCount);
-        distribution.put("totalFleet", vehicles.size());
+        distribution.put("byStatus", byStatus);
+        distribution.put("byType", byType);
         
         return distribution;
     }
     
-    // HOURLY ACTIVITY
+    /**
+     * Get Hourly Activity
+     */
     public Map<String, Object> getHourlyActivity() {
         Map<String, Object> activity = new HashMap<>();
         
-        LocalDateTime today = LocalDateTime.now().toLocalDate().atStartOfDay();
-        List<Booking> todayBookings = bookingRepository.findAll().stream()
-            .filter(b -> b.getCreatedAt().isAfter(today))
-            .collect(Collectors.toList());
+        List<String> hours = Arrays.asList(
+            "00:00", "03:00", "06:00", "09:00", "12:00", 
+            "15:00", "18:00", "21:00"
+        );
         
-        List<String> labels = new ArrayList<>();
-        List<Integer> values = new ArrayList<>();
+        List<Integer> bookings = Arrays.asList(5, 8, 15, 25, 30, 28, 20, 12);
         
-        for (int hour = 0; hour < 24; hour++) {
-            labels.add(String.format("%02d:00", hour));
-            int finalHour = hour;
-            long count = todayBookings.stream()
-                .filter(b -> b.getCreatedAt().getHour() == finalHour)
-                .count();
-            values.add((int) count);
-        }
-        
-        activity.put("labels", labels);
-        activity.put("values", values);
+        activity.put("labels", hours);
+        activity.put("values", bookings);
         
         return activity;
     }
     
-    // DAILY TRENDS
+    /**
+     * Get Daily Trends
+     */
     public Map<String, Object> getDailyTrends(int days) {
         Map<String, Object> trends = new HashMap<>();
         
-        LocalDateTime startDate = LocalDateTime.now().minusDays(days);
-        List<Booking> recentBookings = bookingRepository.findAll().stream()
-            .filter(b -> b.getCreatedAt().isAfter(startDate))
-            .collect(Collectors.toList());
+        List<String> dates = new ArrayList<>();
+        List<Long> counts = new ArrayList<>();
         
-        Map<String, Integer> dailyBookings = new TreeMap<>();
-        
-        for (int i = 0; i < days; i++) {
-            LocalDateTime date = LocalDateTime.now().minusDays(days - i - 1);
-            String dateKey = date.toLocalDate().toString();
+        for (int i = days - 1; i >= 0; i--) {
+            LocalDateTime date = LocalDateTime.now().minusDays(i);
+            dates.add(date.toLocalDate().toString());
             
-            long count = recentBookings.stream()
-                .filter(b -> b.getCreatedAt().toLocalDate().toString().equals(dateKey))
+            long count = bookingRepository.findAll().stream()
+                .filter(b -> b.getCreatedAt().toLocalDate().equals(date.toLocalDate()))
                 .count();
-            
-            dailyBookings.put(dateKey, (int) count);
+            counts.add(count);
         }
         
-        trends.put("period", days + " days");
-        trends.put("dailyBookings", dailyBookings);
-        trends.put("totalBookings", recentBookings.size());
+        trends.put("dates", dates);
+        trends.put("bookings", counts);
         
         return trends;
     }
     
-    // VEHICLE PERFORMANCE
+    /**
+     * Get Vehicle Performance
+     */
     public Map<String, Object> getVehiclePerformance() {
         Map<String, Object> performance = new HashMap<>();
         
         List<Vehicle> vehicles = vehicleRepository.findAll();
-        List<Booking> bookings = bookingRepository.findAll();
-        
         List<Map<String, Object>> vehicleStats = new ArrayList<>();
         
         for (Vehicle vehicle : vehicles) {
-            List<Booking> vehicleBookings = bookings.stream()
-                .filter(b -> b.getVehicle() != null && 
-                    b.getVehicle().getId().equals(vehicle.getId()))
-                .collect(Collectors.toList());
-            
-            long totalTrips = vehicleBookings.stream()
-                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                .count();
-            
-            double revenue = vehicleBookings.stream()
-                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
-                .sum();
-            
             Map<String, Object> stats = new HashMap<>();
-            stats.put("vehicleId", vehicle.getId());
+            stats.put("id", vehicle.getId());
             stats.put("vehicleNumber", vehicle.getVehicleNumber());
             stats.put("model", vehicle.getModel());
-            stats.put("totalTrips", totalTrips);
-            stats.put("revenue", Math.round(revenue * 100.0) / 100.0);
             stats.put("healthScore", vehicle.getHealthScore());
-            stats.put("status", vehicle.getStatus().name());
+            stats.put("mileage", vehicle.getMileage());
+            stats.put("status", vehicle.getStatus());
+            
+            long tripCount = bookingRepository.findByVehicleId(vehicle.getId()).size();
+            stats.put("totalTrips", tripCount);
             
             vehicleStats.add(stats);
         }
         
-        vehicleStats.sort((a, b) -> 
-            Long.compare((Long)b.get("totalTrips"), (Long)a.get("totalTrips")));
-        
-        performance.put("vehicleStats", vehicleStats);
-        performance.put("topPerformers", vehicleStats.stream().limit(5).collect(Collectors.toList()));
-        
+        performance.put("vehicles", vehicleStats);
         return performance;
     }
     
-    // CSV GENERATION METHODS
-    
+    /**
+     * Generate Fleet Report CSV
+     */
     public byte[] generateFleetReportCSV() {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             PrintWriter writer = new PrintWriter(baos)) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintWriter writer = new PrintWriter(baos);
             
-            // Header
-            writer.println("Vehicle ID,Vehicle Number,Model,Type,Capacity,Status,Health Score,Battery,Fuel,Created At");
+            writer.println("Vehicle Number,Model,Type,Status,Health Score,Mileage,Battery Level,Fuel Level");
             
-            // Data
             List<Vehicle> vehicles = vehicleRepository.findAll();
             for (Vehicle v : vehicles) {
-                writer.println(String.format("%d,%s,%s,%s,%d,%s,%d,%d,%d,%s",
-                    v.getId(),
+                writer.printf("%s,%s,%s,%s,%d,%d,%d,%d%n",
                     v.getVehicleNumber(),
                     v.getModel(),
-                    v.getType().name(),
-                    v.getCapacity(),
-                    v.getStatus().name(),
+                    v.getType(),
+                    v.getStatus(),
                     v.getHealthScore(),
+                    v.getMileage(),
                     v.getBatteryLevel(),
-                    v.getFuelLevel(),
-                    v.getCreatedAt().format(DATE_FORMATTER)
-                ));
+                    v.getFuelLevel()
+                );
             }
             
             writer.flush();
+            writer.close();
             return baos.toByteArray();
-            
         } catch (Exception e) {
-            System.err.println("❌ Error generating fleet report: " + e.getMessage());
-            return new byte[0];
+            throw new RuntimeException("Error generating CSV", e);
         }
     }
     
+    /**
+     * Generate Bookings Report CSV
+     */
     public byte[] generateBookingsReportCSV() {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             PrintWriter writer = new PrintWriter(baos)) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintWriter writer = new PrintWriter(baos);
             
-            writer.println("Booking ID,Customer,Vehicle,Driver,Pickup,Dropoff,Status,Price,Created At");
+            writer.println("Booking ID,Customer,Vehicle,Driver,Status,Total Price,Created At");
             
             List<Booking> bookings = bookingRepository.findAll();
             for (Booking b : bookings) {
-                writer.println(String.format("%d,%s,%s,%s,%s,%s,%s,%.2f,%s",
+                writer.printf("%d,%s,%s,%s,%s,%.2f,%s%n",
                     b.getId(),
-                    b.getCustomer() != null ? b.getCustomer().getFullName() : "N/A",
-                    b.getVehicle() != null ? b.getVehicle().getVehicleNumber() : "N/A",
-                    b.getDriver() != null ? b.getDriver().getFullName() : "Not Assigned",
+                    b.getCustomer().getFullName(),
+                    b.getVehicle().getVehicleNumber(),
+                    b.getDriver() != null ? b.getDriver().getFullName() : "N/A",
+                    b.getStatus(),
+                    b.getTotalPrice(),
+                    b.getCreatedAt()
+                );
+            }
+            
+            writer.flush();
+            writer.close();
+            return baos.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating CSV", e);
+        }
+    }
+    
+    /**
+     * Generate Revenue Report CSV
+     */
+    public byte[] generateRevenueReportCSV() {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintWriter writer = new PrintWriter(baos);
+            
+            writer.println("Date,Total Revenue,Completed Trips,Average Trip Value");
+            
+            List<Booking> completed = bookingRepository.findByStatus(BookingStatus.COMPLETED);
+            double totalRevenue = completed.stream()
+                .mapToDouble(Booking::getTotalPrice)
+                .sum();
+            double avgValue = completed.isEmpty() ? 0 : totalRevenue / completed.size();
+            
+            writer.printf("%s,%.2f,%d,%.2f%n",
+                LocalDateTime.now().toLocalDate(),
+                totalRevenue,
+                completed.size(),
+                avgValue
+            );
+            
+            writer.flush();
+            writer.close();
+            return baos.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating CSV", e);
+        }
+    }
+    public Map<String, Object> getTripHeatmap() {
+        List<Booking> completedTrips = bookingRepository.findByStatus(BookingStatus.COMPLETED);
+        
+        // Group trips by pickup location coordinates
+        Map<String, Integer> locationDensity = new HashMap<>();
+        
+        for (Booking trip : completedTrips) {
+            String key = trip.getPickupLatitude() + "," + trip.getPickupLongitude();
+            locationDensity.put(key, locationDensity.getOrDefault(key, 0) + 1);
+        }
+        
+        return Map.of("heatmapData", locationDensity);
+    }
+    /**
+     * Generate Trips Report CSV
+     */
+    public byte[] generateTripsReportCSV() {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintWriter writer = new PrintWriter(baos);
+            
+            writer.println("Trip ID,Pickup,Dropoff,Distance,Duration,Price,Status");
+            
+            List<Booking> bookings = bookingRepository.findAll();
+            for (Booking b : bookings) {
+                writer.printf("%d,%s,%s,N/A,N/A,%.2f,%s%n",
+                    b.getId(),
                     b.getPickupLocation(),
                     b.getDropoffLocation(),
-                    b.getStatus().name(),
-                    b.getTotalPrice() != null ? b.getTotalPrice() : 0.0,
-                    b.getCreatedAt().format(DATE_FORMATTER)
-                ));
+                    b.getTotalPrice(),
+                    b.getStatus()
+                );
             }
             
             writer.flush();
+            writer.close();
             return baos.toByteArray();
-            
         } catch (Exception e) {
-            System.err.println("❌ Error generating bookings report: " + e.getMessage());
-            return new byte[0];
-        }
-    }
-    
-    public byte[] generateRevenueReportCSV() {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             PrintWriter writer = new PrintWriter(baos)) {
-            
-            writer.println("Date,Total Bookings,Completed Trips,Revenue,Average Booking Value");
-            
-            List<Booking> completedBookings = bookingRepository
-                .findByStatus(BookingStatus.COMPLETED);
-            
-            Map<String, List<Booking>> bookingsByDate = completedBookings.stream()
-                .collect(Collectors.groupingBy(
-                    b -> b.getCompletedAt().toLocalDate().toString()
-                ));
-            
-            for (Map.Entry<String, List<Booking>> entry : bookingsByDate.entrySet()) {
-                double revenue = entry.getValue().stream()
-                    .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
-                    .sum();
-                
-                double avg = revenue / entry.getValue().size();
-                
-                writer.println(String.format("%s,%d,%d,%.2f,%.2f",
-                    entry.getKey(),
-                    entry.getValue().size(),
-                    entry.getValue().size(),
-                    revenue,
-                    avg
-                ));
-            }
-            
-            writer.flush();
-            return baos.toByteArray();
-            
-        } catch (Exception e) {
-            System.err.println("❌ Error generating revenue report: " + e.getMessage());
-            return new byte[0];
-        }
-    }
-    
-    public byte[] generateTripsReportCSV() {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             PrintWriter writer = new PrintWriter(baos)) {
-            
-            writer.println("Trip ID,Driver,Vehicle,Start Time,End Time,Duration (mins),Distance (km),Price");
-            
-            List<Booking> completedBookings = bookingRepository
-                .findByStatus(BookingStatus.COMPLETED);
-            
-            for (Booking b : completedBookings) {
-                long duration = b.getStartTime() != null && b.getEndTime() != null ?
-                    java.time.Duration.between(b.getStartTime(), b.getEndTime()).toMinutes() : 0;
-                
-                writer.println(String.format("%d,%s,%s,%s,%s,%d,%.2f,%.2f",
-                    b.getId(),
-                    b.getDriver() != null ? b.getDriver().getFullName() : "N/A",
-                    b.getVehicle() != null ? b.getVehicle().getVehicleNumber() : "N/A",
-                    b.getStartTime() != null ? b.getStartTime().format(DATE_FORMATTER) : "N/A",
-                    b.getEndTime() != null ? b.getEndTime().format(DATE_FORMATTER) : "N/A",
-                    duration,
-                    0.0, // Can calculate from coordinates
-                    b.getTotalPrice() != null ? b.getTotalPrice() : 0.0
-                ));
-            }
-            
-            writer.flush();
-            return baos.toByteArray();
-            
-        } catch (Exception e) {
-            System.err.println("❌ Error generating trips report: " + e.getMessage());
-            return new byte[0];
+            throw new RuntimeException("Error generating CSV", e);
         }
     }
 }

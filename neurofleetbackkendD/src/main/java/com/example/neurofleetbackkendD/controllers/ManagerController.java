@@ -26,9 +26,6 @@ public class ManagerController {
     @Autowired
     private DashboardService dashboardService;
     
-    /**
-     * Get Manager Dashboard Data
-     */
     @GetMapping("/dashboard")
     public ResponseEntity<?> getManagerDashboard() {
         try {
@@ -43,9 +40,6 @@ public class ManagerController {
         }
     }
     
-    /**
-     * Get Pending Bookings for Manager Approval
-     */
     @GetMapping("/bookings/pending")
     public ResponseEntity<?> getPendingBookings() {
         try {
@@ -59,9 +53,6 @@ public class ManagerController {
         }
     }
     
-    /**
-     * Approve Booking (Step 1)
-     */
     @PutMapping("/bookings/{id}/approve")
     public ResponseEntity<?> approveBooking(@PathVariable Long id) {
         try {
@@ -74,9 +65,6 @@ public class ManagerController {
         }
     }
     
-    /**
-     * Assign Driver to Approved Booking (Step 2)
-     */
     @PutMapping("/bookings/{bookingId}/assign-driver")
     public ResponseEntity<?> assignDriver(@PathVariable Long bookingId,
                                           @RequestParam Long driverId) {
@@ -90,14 +78,11 @@ public class ManagerController {
         }
     }
     
-    /**
-     * Get Available Drivers
-     */
     @GetMapping("/drivers/available")
     public ResponseEntity<?> getAvailableDrivers() {
         try {
             System.out.println("👥 Fetching available drivers...");
-            List<User> drivers = authService.getActiveDrivers();
+            List<User> drivers = authService.getAvailableDrivers();
             System.out.println("✅ Found " + drivers.size() + " active drivers");
             return ResponseEntity.ok(drivers);
         } catch (Exception e) {

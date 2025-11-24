@@ -30,36 +30,36 @@ public class VehicleController {
         }
     }
 
-    @GetMapping("/manager/vehicles")
-    public ResponseEntity<?> getVehiclesForManager() {
-        try {
-            List<Vehicle> vehicles = vehicleService.getAllVehicles();
-            System.out.println("✅ Manager retrieved " + vehicles.size() + " vehicles");
-            return ResponseEntity.ok(vehicles);
-        } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
+//    @GetMapping("/manager/vehicles")
+//    public ResponseEntity<?> getVehiclesForManager() {
+//        try {
+//            List<Vehicle> vehicles = vehicleService.getAllVehicles();
+//            System.out.println("✅ Manager retrieved " + vehicles.size() + " vehicles");
+//            return ResponseEntity.ok(vehicles);
+//        } catch (Exception e) {
+//            System.err.println("❌ Error: " + e.getMessage());
+//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+//        }
+//    }
     
-    @GetMapping("/customer/vehicles")
-    public ResponseEntity<?> getAvailableVehicles() {
-        try {
-            List<Vehicle> vehicles = vehicleService.getAvailableVehicles();
-            System.out.println("✅ Retrieved " + vehicles.size() + " available vehicles for customer");
-            
-            if (vehicles.isEmpty()) {
-                System.out.println("⚠️ No available vehicles found");
-            }
-            
-            return ResponseEntity.ok(vehicles);
-        } catch (Exception e) {
-            System.err.println("❌ Error getting available vehicles: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-    
+//    @GetMapping("/customer/vehicles")
+//    public ResponseEntity<?> getAvailableVehicles() {
+//        try {
+//            List<Vehicle> vehicles = vehicleService.getAvailableVehicles();
+//            System.out.println("✅ Retrieved " + vehicles.size() + " available vehicles for customer");
+//            
+//            if (vehicles.isEmpty()) {
+//                System.out.println("⚠️ No available vehicles found");
+//            }
+//            
+//            return ResponseEntity.ok(vehicles);
+//        } catch (Exception e) {
+//            System.err.println("❌ Error getting available vehicles: " + e.getMessage());
+//            e.printStackTrace();
+//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+//        }
+//    }
+//    
     @GetMapping("/customer/vehicles/search")
     public ResponseEntity<?> searchVehicles(
             @RequestParam(required = false) String type,
