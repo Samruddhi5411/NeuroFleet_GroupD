@@ -62,7 +62,7 @@ public class Booking {
     private LocalDateTime driverAcceptedAt;
     private LocalDateTime completedAt;
     
-    // All Getters and Setters
+  
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     

@@ -2,10 +2,9 @@ package com.example.neurofleetbackkendD.controllers;
 
 import com.example.neurofleetbackkendD.model.Booking;
 import com.example.neurofleetbackkendD.model.User;
-import com.example.neurofleetbackkendD.model.enums.UserRole;
 import com.example.neurofleetbackkendD.service.BookingService;
+import com.example.neurofleetbackkendD.service.AuthService;
 import com.example.neurofleetbackkendD.service.DashboardService;
-import com.example.neurofleetbackkendD.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,78 +18,90 @@ import java.util.Map;
 public class ManagerController {
     
     @Autowired
-    private DashboardService dashboardService;
-    
-    @Autowired
     private BookingService bookingService;
     
     @Autowired
-    private UserRepository userRepository;
+    private AuthService authService;
     
+    @Autowired
+    private DashboardService dashboardService;
+    
+    /**
+     * Get Manager Dashboard Data
+     */
     @GetMapping("/dashboard")
     public ResponseEntity<?> getManagerDashboard() {
         try {
-            return ResponseEntity.ok(dashboardService.getManagerDashboard());
+            System.out.println("📊 Manager accessing dashboard...");
+            Map<String, Object> dashboard = dashboardService.getManagerDashboard();
+            return ResponseEntity.ok(dashboard);
         } catch (Exception e) {
-            System.err.println("❌ Error fetching manager dashboard: " + e.getMessage());
+            System.err.println("❌ Error loading manager dashboard: " + e.getMessage());
             return ResponseEntity.badRequest().body(
                 Map.of("error", e.getMessage())
             );
         }
     }
     
+    /**
+     * Get Pending Bookings for Manager Approval
+     */
     @GetMapping("/bookings/pending")
     public ResponseEntity<?> getPendingBookings() {
         try {
-            System.out.println("📋 Manager accessing pending bookings...");
+            System.out.println("📋 Manager requesting pending bookings...");
             List<Booking> bookings = bookingService.getPendingBookingsForManager();
             System.out.println("✅ Found " + bookings.size() + " pending bookings");
             return ResponseEntity.ok(bookings);
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("❌ Error fetching pending bookings: " + e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
     
+    /**
+     * Approve Booking (Step 1)
+     */
     @PutMapping("/bookings/{id}/approve")
     public ResponseEntity<?> approveBooking(@PathVariable Long id) {
         try {
-            System.out.println("✅ Manager approving booking ID: " + id);
+            System.out.println("✅ Manager approving booking: " + id);
             Booking approved = bookingService.approveBooking(id);
             return ResponseEntity.ok(approved);
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("❌ Error approving booking: " + e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
     
+    /**
+     * Assign Driver to Approved Booking (Step 2)
+     */
     @PutMapping("/bookings/{bookingId}/assign-driver")
-    public ResponseEntity<?> assignDriver(
-            @PathVariable Long bookingId,
-            @RequestParam Long driverId) {
+    public ResponseEntity<?> assignDriver(@PathVariable Long bookingId,
+                                          @RequestParam Long driverId) {
         try {
-            System.out.println("🚗 Manager assigning driver " + driverId + " to booking " + bookingId);
-            Booking booking = bookingService.assignDriverToBooking(bookingId, driverId);
-            return ResponseEntity.ok(booking);
+            System.out.println("👤 Manager assigning driver " + driverId + " to booking " + bookingId);
+            Booking assigned = bookingService.assignDriverToBooking(bookingId, driverId);
+            return ResponseEntity.ok(assigned);
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("❌ Error assigning driver: " + e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
     
+    /**
+     * Get Available Drivers
+     */
     @GetMapping("/drivers/available")
     public ResponseEntity<?> getAvailableDrivers() {
         try {
-            System.out.println("👥 Manager fetching available drivers...");
-            List<User> drivers = userRepository.findByRoleAndActive(UserRole.DRIVER, true);
-            System.out.println("✅ Found " + drivers.size() + " drivers");
+            System.out.println("👥 Fetching available drivers...");
+            List<User> drivers = authService.getActiveDrivers();
+            System.out.println("✅ Found " + drivers.size() + " active drivers");
             return ResponseEntity.ok(drivers);
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("❌ Error fetching drivers: " + e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }

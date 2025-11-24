@@ -117,7 +117,7 @@ public class BookingController {
         }
     }
     
-    // ✅ FIX: Change POST to PUT for cancel booking
+    // Change POST to PUT for cancel booking
     @PutMapping("/customer/bookings/{id}/cancel")
     public ResponseEntity<?> cancelBooking(@PathVariable Long id) {
         try {
@@ -162,9 +162,7 @@ public class BookingController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-    
-    // ❌ REMOVED THIS DUPLICATE METHOD - Now only in DriverController
-    // Get driver bookings - DELETED FROM HERE
+   
     
     // Get driver active booking
     @GetMapping("/driver/bookings/active")

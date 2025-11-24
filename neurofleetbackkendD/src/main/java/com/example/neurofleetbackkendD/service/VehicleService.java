@@ -21,46 +21,33 @@ public class VehicleService {
     @Autowired
     private BookingRepository bookingRepository;
     
-    /**
-     * Get all vehicles
-     */
+   
     public List<Vehicle> getAllVehicles() {
         return vehicleRepository.findAll();
     }
     
-    /**
-     * Get vehicle by ID
-     */
     public Optional<Vehicle> getVehicleById(Long id) {
         return vehicleRepository.findById(id);
     }
     
-    /**
-     * Get vehicles by status
-     */
+  
     public List<Vehicle> getVehiclesByStatus(VehicleStatus status) {
         return vehicleRepository.findByStatus(status);
     }
     
-    /**
-     * Create new vehicle
-     */
+
     public Vehicle createVehicle(Vehicle vehicle) {
         vehicle.setCreatedAt(LocalDateTime.now());
         vehicle.setLastUpdated(LocalDateTime.now());
         return vehicleRepository.save(vehicle);
     }
     
-    /**
-     * Get available vehicles only
-     */
+    
     public List<Vehicle> getAvailableVehicles() {
         return vehicleRepository.findByStatus(VehicleStatus.AVAILABLE);
     }
     
-    /**
-     * Update vehicle
-     */
+   
     public Vehicle updateVehicle(Long id, Vehicle updates) {
         Vehicle vehicle = vehicleRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Vehicle not found"));
@@ -87,17 +74,12 @@ public class VehicleService {
         vehicle.setLastUpdated(LocalDateTime.now());
         return vehicleRepository.save(vehicle);
     }
-    
-    /**
-     * Delete vehicle
-     */
+   
     public void deleteVehicle(Long id) {
         vehicleRepository.deleteById(id);
     }
     
-    /**
-     * Get vehicles count by status
-     */
+ 
     public Map<String, Long> getVehicleCountsByStatus() {
         List<Vehicle> allVehicles = vehicleRepository.findAll();
         
@@ -113,9 +95,7 @@ public class VehicleService {
         
         return counts;
     }
-    /**
-     * Get active vehicle locations (for map)
-     */
+   
     public List<Map<String, Object>> getActiveVehicleLocations() {
         List<Vehicle> vehicles = vehicleRepository.findAll();
         List<Map<String, Object>> locations = new ArrayList<>();
@@ -142,9 +122,7 @@ public class VehicleService {
         return locations;
     }
     
-    /**
-     * Check vehicle availability for specific dates
-     */
+  
     public boolean checkAvailability(Long vehicleId, String startTime, String endTime) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
             .orElseThrow(() -> new RuntimeException("Vehicle not found"));
@@ -181,9 +159,7 @@ public class VehicleService {
         return true; // Available
     }
     
-    /**
-     * Update vehicle telemetry
-     */
+    
     public Vehicle updateTelemetry(Long id, Map<String, Object> telemetryData) {
         Vehicle vehicle = vehicleRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Vehicle not found"));
@@ -211,9 +187,7 @@ public class VehicleService {
         return vehicleRepository.save(vehicle);
     }
     
-    /**
-     * Initialize GPS coordinates for all vehicles
-     */
+  
     public void initializeGPS() {
         List<Vehicle> vehicles = vehicleRepository.findAll();
         Random random = new Random();

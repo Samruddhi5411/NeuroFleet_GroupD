@@ -6,6 +6,7 @@ import com.example.neurofleetbackkendD.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,113 +22,103 @@ public class DashboardService {
     @Autowired
     private UserRepository userRepository;
     
-    // ✅ ADMIN DASHBOARD
+    @Autowired
+    private MaintenanceRepository maintenanceRepository;
+    
+    // ADMIN DASHBOARD
     public Map<String, Object> getAdminDashboard() {
         Map<String, Object> dashboard = new HashMap<>();
         
         try {
             List<Vehicle> allVehicles = vehicleRepository.findAll();
+            dashboard.put("totalFleet", allVehicles.size());
+            dashboard.put("vehiclesAvailable", allVehicles.stream()
+                .filter(v -> v.getStatus() == VehicleStatus.AVAILABLE).count());
+            dashboard.put("vehiclesInUse", allVehicles.stream()
+                .filter(v -> v.getStatus() == VehicleStatus.IN_USE).count());
+            dashboard.put("vehiclesMaintenance", allVehicles.stream()
+                .filter(v -> v.getStatus() == VehicleStatus.MAINTENANCE).count());
+            
             List<Booking> allBookings = bookingRepository.findAll();
-            List<User> allUsers = userRepository.findAll();
+            List<Booking> todayBookings = allBookings.stream()
+                .filter(b -> b.getCreatedAt().toLocalDate().equals(LocalDateTime.now().toLocalDate()))
+                .collect(Collectors.toList());
             
-            // Fleet metrics
-            long availableVehicles = allVehicles.stream()
-                .filter(v -> v.getStatus() == VehicleStatus.AVAILABLE)
-                .count();
+            dashboard.put("totalBookings", allBookings.size());
+            dashboard.put("activeTrips", allBookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.IN_PROGRESS).count());
+            dashboard.put("tripsToday", todayBookings.size());
+            dashboard.put("completedTrips", allBookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.COMPLETED).count());
             
-            long inUseVehicles = allVehicles.stream()
-                .filter(v -> v.getStatus() == VehicleStatus.IN_USE)
-                .count();
-            
-            // Booking metrics
-            long pendingBookings = allBookings.stream()
-                .filter(b -> b.getStatus() == BookingStatus.PENDING)
-                .count();
-            
-            long completedBookings = allBookings.stream()
+            double todayEarnings = todayBookings.stream()
                 .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                .count();
+                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
+                .sum();
             
-            // Revenue
             double totalRevenue = allBookings.stream()
                 .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
                 .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
                 .sum();
             
-            // Today's metrics
-            LocalDateTime today = LocalDateTime.now().toLocalDate().atStartOfDay();
-            long tripsToday = allBookings.stream()
-                .filter(b -> b.getCompletedAt() != null && b.getCompletedAt().isAfter(today))
-                .count();
+            dashboard.put("earningsToday", Math.round(todayEarnings * 100.0) / 100.0);
+            dashboard.put("totalRevenue", Math.round(totalRevenue * 100.0) / 100.0);
             
-            double revenueToday = allBookings.stream()
-                .filter(b -> b.getCompletedAt() != null && b.getCompletedAt().isAfter(today))
-                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
-                .sum();
+            List<MaintenanceRecord> maintenanceSchedule = maintenanceRepository
+                .findByStatus(MaintenanceStatus.SCHEDULED);
+            dashboard.put("maintenanceSchedule", maintenanceSchedule);
             
-            // User metrics
-            long activeDrivers = allUsers.stream()
-                .filter(u -> u.getRole() == UserRole.DRIVER && u.getActive())
-                .count();
+            Map<String, Object> hourlyActivity = getHourlyActivity();
+            dashboard.put("hourlyActivity", hourlyActivity);
             
-            long totalCustomers = allUsers.stream()
-                .filter(u -> u.getRole() == UserRole.CUSTOMER)
-                .count();
-            
-            dashboard.put("totalFleet", allVehicles.size());
-            dashboard.put("availableVehicles", availableVehicles);
-            dashboard.put("inUseVehicles", inUseVehicles);
-            dashboard.put("totalBookings", allBookings.size());
-            dashboard.put("pendingBookings", pendingBookings);
-            dashboard.put("completedBookings", completedBookings);
-            dashboard.put("totalRevenue", totalRevenue);
-            dashboard.put("tripsToday", tripsToday);
-            dashboard.put("revenueToday", revenueToday);
-            dashboard.put("activeDrivers", activeDrivers);
-            dashboard.put("totalCustomers", totalCustomers);
-            dashboard.put("fleetUtilization", allVehicles.isEmpty() ? 0 : 
-                (inUseVehicles * 100.0 / allVehicles.size()));
-            
-            System.out.println("✅ Admin dashboard loaded successfully");
+            System.out.println("✅ Admin dashboard generated successfully");
             
         } catch (Exception e) {
-            System.err.println("❌ Error loading admin dashboard: " + e.getMessage());
+            System.err.println("❌ Error generating admin dashboard: " + e.getMessage());
             e.printStackTrace();
         }
         
         return dashboard;
     }
     
-    //MANAGER DASHBOARD
+    // MANAGER DASHBOARD
     public Map<String, Object> getManagerDashboard() {
         Map<String, Object> dashboard = new HashMap<>();
         
         try {
-            List<Booking> pendingBookings = bookingRepository.findByStatus(BookingStatus.PENDING);
+            List<Booking> pendingBookings = bookingRepository
+                .findByStatus(BookingStatus.PENDING);
+            dashboard.put("pendingApprovals", pendingBookings.size());
+            dashboard.put("pendingBookings", pendingBookings);
+            
+            List<Booking> activeTrips = bookingRepository
+                .findByStatus(BookingStatus.IN_PROGRESS);
+            dashboard.put("activeTrips", activeTrips.size());
+            dashboard.put("activeTripsData", activeTrips);
+            
+            List<User> availableDrivers = userRepository
+                .findByRoleAndActive(UserRole.DRIVER, true);
+            dashboard.put("availableDrivers", availableDrivers.size());
+            dashboard.put("driversList", availableDrivers);
+            
             List<Vehicle> allVehicles = vehicleRepository.findAll();
-            List<User> activeDrivers = userRepository.findByRoleAndActive(UserRole.DRIVER, true);
+            dashboard.put("totalVehicles", allVehicles.size());
+            dashboard.put("availableVehicles", allVehicles.stream()
+                .filter(v -> v.getStatus() == VehicleStatus.AVAILABLE).count());
+            dashboard.put("vehiclesInUse", allVehicles.stream()
+                .filter(v -> v.getStatus() == VehicleStatus.IN_USE).count());
             
-            long availableVehicles = allVehicles.stream()
-                .filter(v -> v.getStatus() == VehicleStatus.AVAILABLE)
-                .count();
-            
-            dashboard.put("pendingBookings", pendingBookings.size());
-            dashboard.put("totalFleet", allVehicles.size());
-            dashboard.put("availableVehicles", availableVehicles);
-            dashboard.put("activeDrivers", activeDrivers.size());
-            
-            System.out.println("✅ Manager dashboard loaded successfully");
+            System.out.println("✅ Manager dashboard generated successfully");
             
         } catch (Exception e) {
-            System.err.println("❌ Error loading manager dashboard: " + e.getMessage());
+            System.err.println("❌ Error generating manager dashboard: " + e.getMessage());
             e.printStackTrace();
         }
         
         return dashboard;
     }
     
-    //  DRIVER DASHBOARD
+    // DRIVER DASHBOARD
     public Map<String, Object> getDriverDashboard(Long driverId) {
         Map<String, Object> dashboard = new HashMap<>();
         
@@ -135,289 +126,166 @@ public class DashboardService {
             User driver = userRepository.findById(driverId)
                 .orElseThrow(() -> new RuntimeException("Driver not found"));
             
-            List<Booking> driverBookings = bookingRepository.findByDriverId(driverId);
+            List<Booking> assignedBookings = bookingRepository.findByDriverId(driverId);
+            List<Booking> activeBookings = assignedBookings.stream()
+                .filter(b -> Arrays.asList(
+                    BookingStatus.DRIVER_ASSIGNED,
+                    BookingStatus.DRIVER_ACCEPTED,
+                    BookingStatus.CONFIRMED,
+                    BookingStatus.IN_PROGRESS
+                ).contains(b.getStatus()))
+                .collect(Collectors.toList());
             
-            // Today's earnings
-            LocalDateTime today = LocalDateTime.now().toLocalDate().atStartOfDay();
-            double todayEarnings = driverBookings.stream()
-                .filter(b -> b.getCompletedAt() != null && b.getCompletedAt().isAfter(today))
+            dashboard.put("assignedTrips", assignedBookings.size());
+            dashboard.put("activeTrips", activeBookings);
+            dashboard.put("completedTrips", assignedBookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.COMPLETED).count());
+            
+            double totalEarnings = assignedBookings.stream()
                 .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
+                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.7 : 0)
                 .sum();
             
-            // This week's earnings
-            LocalDateTime weekStart = LocalDateTime.now().minusWeeks(1);
-            double weekEarnings = driverBookings.stream()
-                .filter(b -> b.getCompletedAt() != null && b.getCompletedAt().isAfter(weekStart))
+            double todayEarnings = assignedBookings.stream()
                 .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
+                .filter(b -> b.getCompletedAt() != null && 
+                    b.getCompletedAt().toLocalDate().equals(LocalDateTime.now().toLocalDate()))
+                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.7 : 0)
                 .sum();
             
-            // This month's earnings
-            LocalDateTime monthStart = LocalDateTime.now().minusMonths(1);
-            double monthEarnings = driverBookings.stream()
-                .filter(b -> b.getCompletedAt() != null && b.getCompletedAt().isAfter(monthStart))
-                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
-                .sum();
-            
-            // Today's trips
-            long todayTrips = driverBookings.stream()
-                .filter(b -> b.getCompletedAt() != null && b.getCompletedAt().isAfter(today))
-                .count();
-            
-            dashboard.put("todayEarnings", todayEarnings);
-            dashboard.put("weekEarnings", weekEarnings);
-            dashboard.put("monthEarnings", monthEarnings);
-            dashboard.put("totalEarnings", driver.getTotalEarnings());
-            dashboard.put("todayTrips", todayTrips);
-            dashboard.put("totalTrips", driver.getTotalTrips());
+            dashboard.put("totalEarnings", Math.round(totalEarnings * 100.0) / 100.0);
+            dashboard.put("todayEarnings", Math.round(todayEarnings * 100.0) / 100.0);
             dashboard.put("rating", driver.getRating());
-            dashboard.put("assignedBookings", driverBookings);
             
-            System.out.println("✅ Driver dashboard loaded for: " + driver.getFullName());
+            System.out.println("✅ Driver dashboard generated successfully for: " + driver.getFullName());
             
         } catch (Exception e) {
-            System.err.println("❌ Error loading driver dashboard: " + e.getMessage());
+            System.err.println("❌ Error generating driver dashboard: " + e.getMessage());
             e.printStackTrace();
         }
         
         return dashboard;
     }
     
-    //  CUSTOMER DASHBOARD
-    public Map<String, Object> getCustomerDashboard(Long customerId) {
-        Map<String, Object> dashboard = new HashMap<>();
-        
-        try {
-            User customer = userRepository.findById(customerId)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
-            
-            List<Booking> customerBookings = bookingRepository.findByCustomerId(customerId);
-            
-            // Active bookings
-            long activeBookings = customerBookings.stream()
-                .filter(b -> b.getStatus() == BookingStatus.IN_PROGRESS || 
-                            b.getStatus() == BookingStatus.CONFIRMED)
-                .count();
-            
-            // Completed bookings
-            long completedBookings = customerBookings.stream()
-                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                .count();
-            
-            // Pending bookings
-            long pendingBookings = customerBookings.stream()
-                .filter(b -> b.getStatus() == BookingStatus.PENDING)
-                .count();
-            
-            // Total spent
-            double totalSpent = customerBookings.stream()
-                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
-                .sum();
-            
-            dashboard.put("activeBookings", activeBookings);
-            dashboard.put("completedBookings", completedBookings);
-            dashboard.put("pendingBookings", pendingBookings);
-            dashboard.put("totalBookings", customerBookings.size());
-            dashboard.put("totalSpent", totalSpent);
-            dashboard.put("recentBookings", customerBookings.stream()
-                .limit(5)
-                .collect(Collectors.toList()));
-            
-            System.out.println("✅ Customer dashboard loaded for: " + customer.getFullName());
-            
-        } catch (Exception e) {
-            System.err.println("❌ Error loading customer dashboard: " + e.getMessage());
-            e.printStackTrace();
-        }
-        
-        return dashboard;
-    }
-    
-    // KPI METRICS (for Analytics)
-    public Map<String, Object> getKPIMetrics() {
-        Map<String, Object> kpi = new HashMap<>();
-        
-        try {
-            List<Vehicle> vehicles = vehicleRepository.findAll();
-            List<Booking> bookings = bookingRepository.findAll();
-            
-            long availableVehicles = vehicles.stream()
-                .filter(v -> v.getStatus() == VehicleStatus.AVAILABLE)
-                .count();
-            
-            long inUseVehicles = vehicles.stream()
-                .filter(v -> v.getStatus() == VehicleStatus.IN_USE)
-                .count();
-            
-            double totalRevenue = bookings.stream()
-                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
-                .sum();
-            
-            kpi.put("totalFleet", vehicles.size());
-            kpi.put("availableVehicles", availableVehicles);
-            kpi.put("inUseVehicles", inUseVehicles);
-            kpi.put("totalBookings", bookings.size());
-            kpi.put("totalRevenue", totalRevenue);
-            kpi.put("fleetUtilization", vehicles.isEmpty() ? 0 : 
-                (inUseVehicles * 100.0 / vehicles.size()));
-            kpi.put("activeRoutes", inUseVehicles);
-            
-            LocalDateTime today = LocalDateTime.now().toLocalDate().atStartOfDay();
-            long tripsToday = bookings.stream()
-                .filter(b -> b.getCompletedAt() != null && b.getCompletedAt().isAfter(today))
-                .count();
-            kpi.put("tripsToday", tripsToday);
-            
-        } catch (Exception e) {
-            System.err.println("❌ Error getting KPI metrics: " + e.getMessage());
-            e.printStackTrace();
-        }
-        
-        return kpi;
-    }
-    
-    //  FLEET DISTRIBUTION
-    public Map<String, Object> getFleetDistribution() {
-        Map<String, Object> distribution = new HashMap<>();
-        
-        try {
-            List<Vehicle> vehicles = vehicleRepository.findAll();
-            
-            Map<String, Long> typeDistribution = vehicles.stream()
-                .collect(Collectors.groupingBy(
-                    v -> v.getType().name(),
-                    Collectors.counting()
-                ));
-            
-            Map<String, Long> statusDistribution = vehicles.stream()
-                .collect(Collectors.groupingBy(
-                    v -> v.getStatus().name(),
-                    Collectors.counting()
-                ));
-            
-            distribution.put("typeDistribution", typeDistribution);
-            distribution.put("statusDistribution", statusDistribution);
-            distribution.put("totalVehicles", vehicles.size());
-            
-        } catch (Exception e) {
-            System.err.println("❌ Error getting fleet distribution: " + e.getMessage());
-            e.printStackTrace();
-        }
-        
-        return distribution;
-    }
-    
-    // HOURLY ACTIVITY
-    public Map<String, Object> getHourlyActivity() {
+    // HOURLY ACTIVITY CHART
+    private Map<String, Object> getHourlyActivity() {
         Map<String, Object> activity = new HashMap<>();
         
-        try {
-            List<Booking> bookings = bookingRepository.findAll();
+        List<String> labels = new ArrayList<>();
+        List<Integer> values = new ArrayList<>();
+        
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime dayStart = now.truncatedTo(ChronoUnit.DAYS);
+        
+        List<Booking> todayBookings = bookingRepository.findAll().stream()
+            .filter(b -> b.getCreatedAt().isAfter(dayStart))
+            .collect(Collectors.toList());
+        
+        for (int hour = 0; hour < 24; hour++) {
+            labels.add(String.format("%02d:00", hour));
             
-            Map<Integer, Long> hourlyBookings = bookings.stream()
-                .filter(b -> b.getCreatedAt() != null)
-                .collect(Collectors.groupingBy(
-                    b -> b.getCreatedAt().getHour(),
-                    Collectors.counting()
-                ));
+            int hourFinal = hour;
+            long count = todayBookings.stream()
+                .filter(b -> b.getCreatedAt().getHour() == hourFinal)
+                .count();
             
-            activity.put("hourlyBookings", hourlyBookings);
-            
-        } catch (Exception e) {
-            System.err.println("❌ Error getting hourly activity: " + e.getMessage());
-            e.printStackTrace();
+            values.add((int) count);
         }
+        
+        activity.put("labels", labels);
+        activity.put("values", values);
         
         return activity;
     }
     
-    //  DAILY TRENDS
-    public Map<String, Object> getDailyTrends(int days) {
-        Map<String, Object> trends = new HashMap<>();
-        
-        try {
-            LocalDateTime startDate = LocalDateTime.now().minusDays(days);
-            List<Booking> bookings = bookingRepository.findAll().stream()
-                .filter(b -> b.getCreatedAt().isAfter(startDate))
-                .collect(Collectors.toList());
-            
-            List<String> dates = new ArrayList<>();
-            List<Long> bookingCounts = new ArrayList<>();
-            List<Double> revenues = new ArrayList<>();
-            
-            for (int i = 0; i < days; i++) {
-                LocalDateTime date = LocalDateTime.now().minusDays(days - i - 1);
-                String dateKey = date.toLocalDate().toString();
-                dates.add(dateKey);
-                
-                long count = bookings.stream()
-                    .filter(b -> b.getCreatedAt().toLocalDate().toString().equals(dateKey))
-                    .count();
-                bookingCounts.add(count);
-                
-                double revenue = bookings.stream()
-                    .filter(b -> b.getCreatedAt().toLocalDate().toString().equals(dateKey))
-                    .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                    .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
-                    .sum();
-                revenues.add(revenue);
-            }
-            
-            trends.put("dates", dates);
-            trends.put("bookings", bookingCounts);
-            trends.put("revenue", revenues);
-            
-        } catch (Exception e) {
-            System.err.println("❌ Error getting daily trends: " + e.getMessage());
-            e.printStackTrace();
-        }
-        
-        return trends;
-    }
-    
-    //  VEHICLE PERFORMANCE
-    public Map<String, Object> getVehiclePerformance() {
+    // MANAGER PERFORMANCE METRICS
+    public Map<String, Object> getManagerPerformance() {
         Map<String, Object> performance = new HashMap<>();
         
         try {
-            List<Vehicle> vehicles = vehicleRepository.findAll();
-            List<Booking> bookings = bookingRepository.findAll();
+            List<User> managers = userRepository.findByRole(UserRole.MANAGER);
+            List<Booking> allBookings = bookingRepository.findAll();
             
-            List<Map<String, Object>> topVehicles = vehicles.stream()
-                .limit(10)
-                .map(vehicle -> {
-                    long trips = bookings.stream()
-                        .filter(b -> b.getVehicle() != null && 
-                                    b.getVehicle().getId().equals(vehicle.getId()))
-                        .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                        .count();
-                    
-                    double revenue = bookings.stream()
-                        .filter(b -> b.getVehicle() != null && 
-                                    b.getVehicle().getId().equals(vehicle.getId()))
-                        .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                        .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
-                        .sum();
-                    
-                    Map<String, Object> vehicleData = new HashMap<>();
-                    vehicleData.put("vehicleNumber", vehicle.getVehicleNumber());
-                    vehicleData.put("model", vehicle.getModel());
-                    vehicleData.put("trips", trips);
-                    vehicleData.put("revenue", revenue);
-                    
-                    return vehicleData;
-                })
-                .collect(Collectors.toList());
+            List<Map<String, Object>> managerStats = new ArrayList<>();
             
-            performance.put("topVehicles", topVehicles);
+            for (User manager : managers) {
+                List<Booking> approvedByManager = allBookings.stream()
+                    .filter(b -> b.getApprovedByManager() != null && 
+                        b.getApprovedByManager().getId().equals(manager.getId()))
+                    .collect(Collectors.toList());
+                
+                double avgApprovalTime = approvedByManager.stream()
+                    .filter(b -> b.getCreatedAt() != null && b.getApprovedAt() != null)
+                    .mapToLong(b -> ChronoUnit.MINUTES.between(b.getCreatedAt(), b.getApprovedAt()))
+                    .average()
+                    .orElse(0);
+                
+                Map<String, Object> stats = new HashMap<>();
+                stats.put("managerId", manager.getId());
+                stats.put("managerName", manager.getFullName());
+                stats.put("totalApprovals", approvedByManager.size());
+                stats.put("avgApprovalTime", Math.round(avgApprovalTime));
+                stats.put("pendingApprovals", bookingRepository.findByStatus(BookingStatus.PENDING).size());
+                
+                managerStats.add(stats);
+            }
+            
+            performance.put("totalManagers", managers.size());
+            performance.put("managerStats", managerStats);
             
         } catch (Exception e) {
-            System.err.println("❌ Error getting vehicle performance: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("❌ Error getting manager performance: " + e.getMessage());
+        }
+        
+        return performance;
+    }
+    
+    // DRIVER PERFORMANCE METRICS
+    public Map<String, Object> getDriverPerformance() {
+        Map<String, Object> performance = new HashMap<>();
+        
+        try {
+            List<User> drivers = userRepository.findByRole(UserRole.DRIVER);
+            List<Booking> allBookings = bookingRepository.findAll();
+            
+            List<Map<String, Object>> driverStats = new ArrayList<>();
+            
+            for (User driver : drivers) {
+                List<Booking> driverBookings = allBookings.stream()
+                    .filter(b -> b.getDriver() != null && 
+                        b.getDriver().getId().equals(driver.getId()))
+                    .collect(Collectors.toList());
+                
+                long completedTrips = driverBookings.stream()
+                    .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
+                    .count();
+                
+                double totalEarnings = driverBookings.stream()
+                    .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
+                    .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.7 : 0)
+                    .sum();
+                
+                Map<String, Object> stats = new HashMap<>();
+                stats.put("driverId", driver.getId());
+                stats.put("driverName", driver.getFullName());
+                stats.put("rating", driver.getRating());
+                stats.put("completedTrips", completedTrips);
+                stats.put("totalEarnings", Math.round(totalEarnings * 100.0) / 100.0);
+                stats.put("active", driver.getActive());
+                
+                driverStats.add(stats);
+            }
+            
+            driverStats.sort((a, b) -> 
+                Long.compare((Long)b.get("completedTrips"), (Long)a.get("completedTrips")));
+            
+            performance.put("totalDrivers", drivers.size());
+            performance.put("activeDrivers", drivers.stream().filter(User::getActive).count());
+            performance.put("driverStats", driverStats);
+            performance.put("topPerformers", driverStats.stream().limit(5).collect(Collectors.toList()));
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error getting driver performance: " + e.getMessage());
         }
         
         return performance;

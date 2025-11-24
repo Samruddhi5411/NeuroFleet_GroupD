@@ -21,10 +21,10 @@ public class MaintenanceController {
     private MaintenanceService maintenanceService;
     
     
-    @GetMapping("/admin/maintenance")  // Add this line
-    public ResponseEntity<List<MaintenanceRecord>> getAllRecords11() {
-        return ResponseEntity.ok(maintenanceService.getAllRecords());
-    }
+//    @GetMapping("/admin/maintenance")  // Add this line
+//    public ResponseEntity<List<MaintenanceRecord>> getAllRecords11() {
+//        return ResponseEntity.ok(maintenanceService.getAllRecords());
+//    }
     @GetMapping("/maintenance")
     public ResponseEntity<List<MaintenanceRecord>> getAllRecords1() {
         return ResponseEntity.ok(maintenanceService.getAllRecords());

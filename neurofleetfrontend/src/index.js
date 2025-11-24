@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+import './utils/chartConfig'; // ✅ CRITICAL: Import BEFORE App
 import App from './App';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

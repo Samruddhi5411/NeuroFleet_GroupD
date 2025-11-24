@@ -18,7 +18,7 @@ public class NotificationService {
             booking.getId()
         );
         System.out.println(message);
-        // In production: send actual email/SMS
+        //  send actual email/SMS
     }
     
     public void notifyBookingApproved(Booking booking) {

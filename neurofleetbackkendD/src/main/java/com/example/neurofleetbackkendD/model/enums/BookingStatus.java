@@ -3,7 +3,7 @@ package com.example.neurofleetbackkendD.model.enums;
 
 public enum BookingStatus {
     PENDING,           // Customer created, waiting for manager approval
-    APPROVED,          // ✅ NEW: Manager approved, waiting for driver assignment
+    APPROVED,          //  Manager approved, waiting for driver assignment
     DRIVER_ASSIGNED,   // Manager assigned driver
     DRIVER_ACCEPTED,   // Driver accepted the booking
     CONFIRMED,         // Payment completed

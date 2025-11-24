@@ -42,7 +42,7 @@ public class UserController {
         }
     }
 
-    // Update driver profile
+    //  driver profile
     @PutMapping("/driver/profile")
     public ResponseEntity<?> updateDriverProfile(@RequestParam String username, @RequestBody User updatedProfile) {
         try {

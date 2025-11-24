@@ -5,8 +5,10 @@ import com.example.neurofleetbackkendD.model.enums.*;
 import com.example.neurofleetbackkendD.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -24,179 +26,97 @@ public class AnalyticsService {
     
     @Autowired
     private MaintenanceRepository maintenanceRepository;
-    public Map<String, Object> getRevenueAnalytics(String period) {
-        Map<String, Object> analytics = new HashMap<>();
-        
-        try {
-            List<Booking> completedBookings = bookingRepository.findByStatus(BookingStatus.COMPLETED);
-            
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime startDate;
-            
-            switch (period.toLowerCase()) {
-                case "today":
-                    startDate = now.truncatedTo(ChronoUnit.DAYS);
-                    break;
-                case "week":
-                    startDate = now.minusWeeks(1);
-                    break;
-                case "month":
-                    startDate = now.minusMonths(1);
-                    break;
-                case "year":
-                    startDate = now.minusYears(1);
-                    break;
-                default:
-                    startDate = now.minusMonths(1);
-            }
-            
-            double totalRevenue = completedBookings.stream()
-                .filter(b -> b.getCompletedAt() != null && b.getCompletedAt().isAfter(startDate))
-                .filter(b -> b.getTotalPrice() != null)
-                .mapToDouble(Booking::getTotalPrice)
-                .sum();
-            
-            long totalBookings = completedBookings.stream()
-                .filter(b -> b.getCompletedAt() != null && b.getCompletedAt().isAfter(startDate))
-                .count();
-            
-            double avgBookingValue = totalBookings > 0 ? totalRevenue / totalBookings : 0;
-            
-            analytics.put("totalRevenue", Math.round(totalRevenue * 100.0) / 100.0);
-            analytics.put("totalBookings", totalBookings);
-            analytics.put("averageBookingValue", Math.round(avgBookingValue * 100.0) / 100.0);
-            analytics.put("period", period);
-            
-        } catch (Exception e) {
-            System.err.println("❌ Error in revenue analytics: " + e.getMessage());
-            analytics.put("error", e.getMessage());
-        }
-        
-        return analytics;
-    }
     
-    public Map<String, Object> getVehicleUtilization() {
-        Map<String, Object> utilization = new HashMap<>();
-        
-        try {
-            List<Vehicle> allVehicles = vehicleRepository.findAll();
-            long totalVehicles = allVehicles.size();
-            
-            Map<String, Long> statusCount = allVehicles.stream()
-                .collect(Collectors.groupingBy(
-                    v -> v.getStatus().name(),
-                    Collectors.counting()
-                ));
-            
-            long inUse = statusCount.getOrDefault("IN_USE", 0L);
-            double utilizationRate = totalVehicles > 0 ? 
-                (inUse * 100.0 / totalVehicles) : 0;
-            
-            utilization.put("totalVehicles", totalVehicles);
-            utilization.put("inUse", inUse);
-            utilization.put("available", statusCount.getOrDefault("AVAILABLE", 0L));
-            utilization.put("maintenance", statusCount.getOrDefault("MAINTENANCE", 0L));
-            utilization.put("utilizationRate", Math.round(utilizationRate * 100.0) / 100.0);
-            
-            Map<String, Long> typeDistribution = allVehicles.stream()
-                .collect(Collectors.groupingBy(
-                    v -> v.getType().name(),
-                    Collectors.counting()
-                ));
-            utilization.put("typeDistribution", typeDistribution);
-            
-        } catch (Exception e) {
-            System.err.println("❌ Error in vehicle utilization: " + e.getMessage());
-            utilization.put("error", e.getMessage());
-        }
-        
-        return utilization;
-    }
+    private static final DateTimeFormatter DATE_FORMATTER = 
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
-    // Driver Performance Analytics
-    public Map<String, Object> getDriverPerformance() {
-        Map<String, Object> performance = new HashMap<>();
+    // KPI METRICS
+    public Map<String, Object> getKPIMetrics() {
+        Map<String, Object> kpi = new HashMap<>();
         
-        List<User> drivers = userRepository.findByRole(UserRole.DRIVER);
+        List<Vehicle> allVehicles = vehicleRepository.findAll();
+        List<User> allUsers = userRepository.findAll();
         List<Booking> allBookings = bookingRepository.findAll();
         
-        List<Map<String, Object>> driverStats = new ArrayList<>();
+        LocalDateTime today = LocalDateTime.now().toLocalDate().atStartOfDay();
+        List<Booking> todayBookings = allBookings.stream()
+            .filter(b -> b.getCreatedAt().isAfter(today))
+            .collect(Collectors.toList());
         
-        for (User driver : drivers) {
-            List<Booking> driverBookings = allBookings.stream()
-                .filter(b -> b.getDriver() != null && 
-                           b.getDriver().getId().equals(driver.getId()))
-                .collect(Collectors.toList());
-            
-            long completedTrips = driverBookings.stream()
-                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                .count();
-            
-            double totalEarnings = driverBookings.stream()
-                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.7 : 0)
-                .sum();
-            
-            Map<String, Object> stats = new HashMap<>();
-            stats.put("driverId", driver.getId());
-            stats.put("driverName", driver.getFullName());
-            stats.put("completedTrips", completedTrips);
-            stats.put("totalEarnings", Math.round(totalEarnings * 100.0) / 100.0);
-            stats.put("active", driver.getActive());
-            
-            driverStats.add(stats);
-        }
+        kpi.put("totalVehicles", allVehicles.size());
+        kpi.put("totalUsers", allUsers.size());
+        kpi.put("totalDrivers", allUsers.stream()
+            .filter(u -> u.getRole() == UserRole.DRIVER).count());
+        kpi.put("totalCustomers", allUsers.stream()
+            .filter(u -> u.getRole() == UserRole.CUSTOMER).count());
+        kpi.put("tripsToday", todayBookings.size());
+        kpi.put("activeVehicles", allVehicles.stream()
+            .filter(v -> v.getStatus() == VehicleStatus.IN_USE).count());
         
-        // Sort by completed trips
-        driverStats.sort((a, b) -> 
-            Long.compare((Long)b.get("completedTrips"), (Long)a.get("completedTrips")));
-        
-        performance.put("totalDrivers", drivers.size());
-        performance.put("activeDrivers", drivers.stream().filter(User::getActive).count());
-        performance.put("driverStats", driverStats);
-        performance.put("topPerformers", driverStats.stream().limit(5).collect(Collectors.toList()));
-        
-        return performance;
-    }
-    
-    // Maintenance Analytics
-    public Map<String, Object> getMaintenanceAnalytics() {
-        Map<String, Object> analytics = new HashMap<>();
-        
-        List<MaintenanceRecord> allRecords = maintenanceRepository.findAll();
-        
-        Map<MaintenanceStatus, Long> statusCount = allRecords.stream()
-            .collect(Collectors.groupingBy(
-                MaintenanceRecord::getStatus,
-                Collectors.counting()
-            ));
-        
-        Map<MaintenancePriority, Long> priorityCount = allRecords.stream()
-            .collect(Collectors.groupingBy(
-                MaintenanceRecord::getPriority,
-                Collectors.counting()
-            ));
-        
-        long predictiveAlerts = allRecords.stream()
-            .filter(MaintenanceRecord::getIsPredictive)
-            .count();
-        
-        double totalCost = allRecords.stream()
-            .filter(r -> r.getEstimatedCost() != null)
-            .mapToDouble(MaintenanceRecord::getEstimatedCost)
+        double earningsToday = todayBookings.stream()
+            .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
+            .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
             .sum();
         
-        analytics.put("totalRecords", allRecords.size());
-        analytics.put("statusBreakdown", statusCount);
-        analytics.put("priorityBreakdown", priorityCount);
-        analytics.put("predictiveAlerts", predictiveAlerts);
-        analytics.put("totalEstimatedCost", Math.round(totalCost * 100.0) / 100.0);
+        kpi.put("earningsToday", Math.round(earningsToday * 100.0) / 100.0);
         
-        return analytics;
+        return kpi;
     }
     
-    // Booking Trends
-    public Map<String, Object> getBookingTrends(int days) {
+    // FLEET DISTRIBUTION
+    public Map<String, Object> getFleetDistribution() {
+        Map<String, Object> distribution = new HashMap<>();
+        
+        List<Vehicle> vehicles = vehicleRepository.findAll();
+        
+        Map<String, Long> statusCount = vehicles.stream()
+            .collect(Collectors.groupingBy(
+                v -> v.getStatus().name(),
+                Collectors.counting()
+            ));
+        
+        Map<String, Long> typeCount = vehicles.stream()
+            .collect(Collectors.groupingBy(
+                v -> v.getType().name(),
+                Collectors.counting()
+            ));
+        
+        distribution.put("byStatus", statusCount);
+        distribution.put("byType", typeCount);
+        distribution.put("totalFleet", vehicles.size());
+        
+        return distribution;
+    }
+    
+    // HOURLY ACTIVITY
+    public Map<String, Object> getHourlyActivity() {
+        Map<String, Object> activity = new HashMap<>();
+        
+        LocalDateTime today = LocalDateTime.now().toLocalDate().atStartOfDay();
+        List<Booking> todayBookings = bookingRepository.findAll().stream()
+            .filter(b -> b.getCreatedAt().isAfter(today))
+            .collect(Collectors.toList());
+        
+        List<String> labels = new ArrayList<>();
+        List<Integer> values = new ArrayList<>();
+        
+        for (int hour = 0; hour < 24; hour++) {
+            labels.add(String.format("%02d:00", hour));
+            int finalHour = hour;
+            long count = todayBookings.stream()
+                .filter(b -> b.getCreatedAt().getHour() == finalHour)
+                .count();
+            values.add((int) count);
+        }
+        
+        activity.put("labels", labels);
+        activity.put("values", values);
+        
+        return activity;
+    }
+    
+    // DAILY TRENDS
+    public Map<String, Object> getDailyTrends(int days) {
         Map<String, Object> trends = new HashMap<>();
         
         LocalDateTime startDate = LocalDateTime.now().minusDays(days);
@@ -204,7 +124,7 @@ public class AnalyticsService {
             .filter(b -> b.getCreatedAt().isAfter(startDate))
             .collect(Collectors.toList());
         
-        Map<String, Long> dailyBookings = new TreeMap<>();
+        Map<String, Integer> dailyBookings = new TreeMap<>();
         
         for (int i = 0; i < days; i++) {
             LocalDateTime date = LocalDateTime.now().minusDays(days - i - 1);
@@ -214,7 +134,7 @@ public class AnalyticsService {
                 .filter(b -> b.getCreatedAt().toLocalDate().toString().equals(dateKey))
                 .count();
             
-            dailyBookings.put(dateKey, count);
+            dailyBookings.put(dateKey, (int) count);
         }
         
         trends.put("period", days + " days");
@@ -222,5 +142,188 @@ public class AnalyticsService {
         trends.put("totalBookings", recentBookings.size());
         
         return trends;
+    }
+    
+    // VEHICLE PERFORMANCE
+    public Map<String, Object> getVehiclePerformance() {
+        Map<String, Object> performance = new HashMap<>();
+        
+        List<Vehicle> vehicles = vehicleRepository.findAll();
+        List<Booking> bookings = bookingRepository.findAll();
+        
+        List<Map<String, Object>> vehicleStats = new ArrayList<>();
+        
+        for (Vehicle vehicle : vehicles) {
+            List<Booking> vehicleBookings = bookings.stream()
+                .filter(b -> b.getVehicle() != null && 
+                    b.getVehicle().getId().equals(vehicle.getId()))
+                .collect(Collectors.toList());
+            
+            long totalTrips = vehicleBookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
+                .count();
+            
+            double revenue = vehicleBookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
+                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
+                .sum();
+            
+            Map<String, Object> stats = new HashMap<>();
+            stats.put("vehicleId", vehicle.getId());
+            stats.put("vehicleNumber", vehicle.getVehicleNumber());
+            stats.put("model", vehicle.getModel());
+            stats.put("totalTrips", totalTrips);
+            stats.put("revenue", Math.round(revenue * 100.0) / 100.0);
+            stats.put("healthScore", vehicle.getHealthScore());
+            stats.put("status", vehicle.getStatus().name());
+            
+            vehicleStats.add(stats);
+        }
+        
+        vehicleStats.sort((a, b) -> 
+            Long.compare((Long)b.get("totalTrips"), (Long)a.get("totalTrips")));
+        
+        performance.put("vehicleStats", vehicleStats);
+        performance.put("topPerformers", vehicleStats.stream().limit(5).collect(Collectors.toList()));
+        
+        return performance;
+    }
+    
+    // CSV GENERATION METHODS
+    
+    public byte[] generateFleetReportCSV() {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             PrintWriter writer = new PrintWriter(baos)) {
+            
+            // Header
+            writer.println("Vehicle ID,Vehicle Number,Model,Type,Capacity,Status,Health Score,Battery,Fuel,Created At");
+            
+            // Data
+            List<Vehicle> vehicles = vehicleRepository.findAll();
+            for (Vehicle v : vehicles) {
+                writer.println(String.format("%d,%s,%s,%s,%d,%s,%d,%d,%d,%s",
+                    v.getId(),
+                    v.getVehicleNumber(),
+                    v.getModel(),
+                    v.getType().name(),
+                    v.getCapacity(),
+                    v.getStatus().name(),
+                    v.getHealthScore(),
+                    v.getBatteryLevel(),
+                    v.getFuelLevel(),
+                    v.getCreatedAt().format(DATE_FORMATTER)
+                ));
+            }
+            
+            writer.flush();
+            return baos.toByteArray();
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error generating fleet report: " + e.getMessage());
+            return new byte[0];
+        }
+    }
+    
+    public byte[] generateBookingsReportCSV() {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             PrintWriter writer = new PrintWriter(baos)) {
+            
+            writer.println("Booking ID,Customer,Vehicle,Driver,Pickup,Dropoff,Status,Price,Created At");
+            
+            List<Booking> bookings = bookingRepository.findAll();
+            for (Booking b : bookings) {
+                writer.println(String.format("%d,%s,%s,%s,%s,%s,%s,%.2f,%s",
+                    b.getId(),
+                    b.getCustomer() != null ? b.getCustomer().getFullName() : "N/A",
+                    b.getVehicle() != null ? b.getVehicle().getVehicleNumber() : "N/A",
+                    b.getDriver() != null ? b.getDriver().getFullName() : "Not Assigned",
+                    b.getPickupLocation(),
+                    b.getDropoffLocation(),
+                    b.getStatus().name(),
+                    b.getTotalPrice() != null ? b.getTotalPrice() : 0.0,
+                    b.getCreatedAt().format(DATE_FORMATTER)
+                ));
+            }
+            
+            writer.flush();
+            return baos.toByteArray();
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error generating bookings report: " + e.getMessage());
+            return new byte[0];
+        }
+    }
+    
+    public byte[] generateRevenueReportCSV() {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             PrintWriter writer = new PrintWriter(baos)) {
+            
+            writer.println("Date,Total Bookings,Completed Trips,Revenue,Average Booking Value");
+            
+            List<Booking> completedBookings = bookingRepository
+                .findByStatus(BookingStatus.COMPLETED);
+            
+            Map<String, List<Booking>> bookingsByDate = completedBookings.stream()
+                .collect(Collectors.groupingBy(
+                    b -> b.getCompletedAt().toLocalDate().toString()
+                ));
+            
+            for (Map.Entry<String, List<Booking>> entry : bookingsByDate.entrySet()) {
+                double revenue = entry.getValue().stream()
+                    .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() : 0)
+                    .sum();
+                
+                double avg = revenue / entry.getValue().size();
+                
+                writer.println(String.format("%s,%d,%d,%.2f,%.2f",
+                    entry.getKey(),
+                    entry.getValue().size(),
+                    entry.getValue().size(),
+                    revenue,
+                    avg
+                ));
+            }
+            
+            writer.flush();
+            return baos.toByteArray();
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error generating revenue report: " + e.getMessage());
+            return new byte[0];
+        }
+    }
+    
+    public byte[] generateTripsReportCSV() {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             PrintWriter writer = new PrintWriter(baos)) {
+            
+            writer.println("Trip ID,Driver,Vehicle,Start Time,End Time,Duration (mins),Distance (km),Price");
+            
+            List<Booking> completedBookings = bookingRepository
+                .findByStatus(BookingStatus.COMPLETED);
+            
+            for (Booking b : completedBookings) {
+                long duration = b.getStartTime() != null && b.getEndTime() != null ?
+                    java.time.Duration.between(b.getStartTime(), b.getEndTime()).toMinutes() : 0;
+                
+                writer.println(String.format("%d,%s,%s,%s,%s,%d,%.2f,%.2f",
+                    b.getId(),
+                    b.getDriver() != null ? b.getDriver().getFullName() : "N/A",
+                    b.getVehicle() != null ? b.getVehicle().getVehicleNumber() : "N/A",
+                    b.getStartTime() != null ? b.getStartTime().format(DATE_FORMATTER) : "N/A",
+                    b.getEndTime() != null ? b.getEndTime().format(DATE_FORMATTER) : "N/A",
+                    duration,
+                    0.0, // Can calculate from coordinates
+                    b.getTotalPrice() != null ? b.getTotalPrice() : 0.0
+                ));
+            }
+            
+            writer.flush();
+            return baos.toByteArray();
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error generating trips report: " + e.getMessage());
+            return new byte[0];
+        }
     }
 }

@@ -1,5 +1,5 @@
 package com.example.neurofleetbackkendD.model.enums;
 
 public enum MaintenancePriority {
-    LOW, MEDIUM, HIGH, CRITICAL, URGENT
+    LOW, MEDIUM, HIGH, CRITICAL
 }

@@ -1,26 +1,18 @@
-import { Navigate } from "react-router-dom";
-import { authService } from "../services/api"; // correct import
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  // Check if logged in
-  const isAuthenticated = authService.isAuthenticated
-    ? authService.isAuthenticated()
-    : !!localStorage.getItem("token"); // fallback
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
 
-  // Get user role
-  const userRole = localStorage.getItem("role");
-
-  // If not logged in → Go to login
-  if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+  if (!token) {
+    return <Navigate to="/" replace />;
   }
 
-  // If role not allowed → Go to unauthorized page
-  if (allowedRoles && !allowedRoles.includes(userRole)) {
-    return <Navigate to="/unauthorized" />;
+  if (allowedRoles && !allowedRoles.includes(role)) {
+    return <Navigate to="/" replace />;
   }
 
-  // Otherwise allow access
   return children;
 };
 

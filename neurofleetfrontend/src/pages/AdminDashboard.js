@@ -1,102 +1,114 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { vehicleService, bookingService, maintenanceService } from '../services/api';
+import axios from 'axios';
 import Logo from '../components/Logo';
-import VehicleModal from '../components/VehicleModal';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import {
   VehicleIcon,
   RouteIcon,
-  RevenueIcon,
   MaintenanceIcon,
-  BookingIcon,
   LogoutIcon,
-  AlertIcon,
-  TrendingUpIcon,
+  DownloadIcon,
   ChartIcon,
-  BatteryIcon,
-  LocationIcon,
-  FilterIcon
+  UserIcon
 } from '../components/Icons';
+
+// ✅ Fix Leaflet markers
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [vehicles, setVehicles] = useState([]);
-  const [bookings, setBookings] = useState([]);
-  const [maintenance, setMaintenance] = useState([]);
-  const [stats, setStats] = useState({
-    totalFleet: 0,
-    activeTrips: 0,
-    revenue: 0,
-    maintenanceDue: 0,
-  });
-  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState(null);
-  const [filterStatus, setFilterStatus] = useState('ALL');
   const [activeTab, setActiveTab] = useState('overview');
-
+  const [dashboardData, setDashboardData] = useState(null);
+  const [tripDensityData, setTripDensityData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const fullName = localStorage.getItem('fullName') || 'Admin';
+
+  // ✅ Chart refs to prevent canvas reuse
+  const doughnutChartRef = useRef(null);
+  const barChartRef = useRef(null);
+
+  const indianCities = [
+    { name: 'Mumbai', lat: 19.0760, lng: 72.8777, trips: 45 },
+    { name: 'Delhi', lat: 28.6139, lng: 77.2090, trips: 38 },
+    { name: 'Bangalore', lat: 12.9716, lng: 77.5946, trips: 32 },
+    { name: 'Pune', lat: 18.5204, lng: 73.8567, trips: 28 },
+    { name: 'Hyderabad', lat: 17.3850, lng: 78.4867, trips: 25 },
+  ];
 
   useEffect(() => {
     loadDashboardData();
+    const interval = setInterval(loadDashboardData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadDashboardData = async () => {
     try {
-      const [vehiclesRes, bookingsRes, maintenanceRes] = await Promise.all([
-        vehicleService.getAll(),
-        bookingService.getAll(),
-        maintenanceService.getAll(),
+      const token = localStorage.getItem('token');
+      const headers = { 'Authorization': `Bearer ${token}` };
+
+      // ✅ Load dashboard metrics
+      const [dashboardRes, kpiRes] = await Promise.all([
+        axios.get('http://localhost:8083/api/admin/dashboard', { headers }),
+        axios.get('http://localhost:8083/api/analytics/kpi', { headers }).catch(() => null)
       ]);
 
-      setVehicles(vehiclesRes.data);
-      setBookings(bookingsRes.data);
-      setMaintenance(maintenanceRes.data);
-
-      setStats({
-        totalFleet: vehiclesRes.data.length,
-        activeTrips: bookingsRes.data.filter(b => b.status === 'IN_PROGRESS').length,
-        revenue: bookingsRes.data.reduce((sum, b) => sum + (b.totalPrice || 0), 0),
-        maintenanceDue: maintenanceRes.data.filter(m => m.status === 'PENDING').length,
+      setDashboardData(dashboardRes.data);
+      setTripDensityData(indianCities);
+    } catch (error) {
+      console.error('Error loading dashboard:', error);
+      // Use mock data if backend fails
+      setDashboardData({
+        totalFleet: 50,
+        vehiclesAvailable: 20,
+        vehiclesInUse: 25,
+        vehiclesMaintenance: 5,
+        activeTrips: 25,
+        totalBookings: 1200,
+        totalDrivers: 30,
+        totalManagers: 5,
+        totalCustomers: 500,
+        maintenanceSchedule: [],
+        hourlyActivity: {
+          labels: ['00:00', '06:00', '12:00', '18:00'],
+          values: [5, 15, 30, 20]
+        }
       });
-    } catch (error) {
-      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAddVehicle = () => {
-    setSelectedVehicle(null);
-    setIsVehicleModalOpen(true);
-  };
-
-  const handleEditVehicle = (vehicle) => {
-    setSelectedVehicle(vehicle);
-    setIsVehicleModalOpen(true);
-  };
-
-  const handleSaveVehicle = async (vehicleData) => {
+  const handleDownloadReport = async (reportType) => {
     try {
-      if (selectedVehicle) {
-        await vehicleService.update(selectedVehicle.id, vehicleData);
-      } else {
-        await vehicleService.create(vehicleData);
-      }
-      await loadDashboardData();
-      setIsVehicleModalOpen(false);
-    } catch (error) {
-      console.error('Error saving vehicle:', error);
-      throw error;
-    }
-  };
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        `http://localhost:8083/api/analytics/reports/${reportType}/csv`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` },
+          responseType: 'blob'
+        }
+      );
 
-  const handleDeleteVehicle = async (id) => {
-    if (window.confirm('Are you sure you want to delete this vehicle?')) {
-      try {
-        await vehicleService.delete(id);
-        await loadDashboardData();
-      } catch (error) {
-        console.error('Error deleting vehicle:', error);
-        alert('Failed to delete vehicle. It may be in use.');
-      }
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${reportType}-report.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      alert(`✅ ${reportType} report downloaded!`);
+    } catch (error) {
+      console.error('Download error:', error);
+      alert(`❌ Report not available yet. Backend endpoint needed: /api/analytics/reports/${reportType}/csv`);
     }
   };
 
@@ -105,370 +117,346 @@ const AdminDashboard = () => {
     navigate('/');
   };
 
-  const getStatusStyle = (status) => {
-    const statusMap = {
-      'AVAILABLE': 'status-available',
-      'IN_USE': 'status-in-use',
-      'MAINTENANCE': 'status-maintenance',
-      'OUT_OF_SERVICE': 'status-critical',
-      'CONFIRMED': 'status-available',
-      'IN_PROGRESS': 'status-in-use',
-      'PENDING': 'status-maintenance',
-      'CRITICAL': 'status-critical',
-      'HIGH': 'status-critical',
-      'MEDIUM': 'status-maintenance',
-    };
-    return statusMap[status] || 'status-maintenance';
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-dark flex items-center justify-center">
+        <div className="text-white text-xl">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'fleet':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-white mb-4">Total Fleet Management</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="glass-card p-6 text-center">
+                <p className="text-white/60 text-sm mb-2">Total Vehicles</p>
+                <p className="text-4xl font-bold text-accent-cyan">{dashboardData?.totalFleet || 0}</p>
+              </div>
+              <div className="glass-card p-6 text-center">
+                <p className="text-white/60 text-sm mb-2">Available</p>
+                <p className="text-4xl font-bold text-accent-green">{dashboardData?.vehiclesAvailable || 0}</p>
+              </div>
+              <div className="glass-card p-6 text-center">
+                <p className="text-white/60 text-sm mb-2">In Use</p>
+                <p className="text-4xl font-bold text-accent-blue">{dashboardData?.vehiclesInUse || 0}</p>
+              </div>
+              <div className="glass-card p-6 text-center">
+                <p className="text-white/60 text-sm mb-2">Maintenance</p>
+                <p className="text-4xl font-bold text-accent-pink">{dashboardData?.vehiclesMaintenance || 0}</p>
+              </div>
+            </div>
+
+            <div className="glass-card p-6">
+              <h3 className="text-xl font-bold text-white mb-4">Fleet Distribution</h3>
+              <div className="h-80">
+                <Doughnut
+                  ref={doughnutChartRef}
+                  data={{
+                    labels: ['Available', 'In Use', 'Maintenance', 'Out of Service'],
+                    datasets: [{
+                      data: [
+                        dashboardData?.vehiclesAvailable || 0,
+                        dashboardData?.vehiclesInUse || 0,
+                        dashboardData?.vehiclesMaintenance || 0,
+                        0
+                      ],
+                      backgroundColor: [
+                        'rgba(34, 197, 94, 0.8)',
+                        'rgba(34, 211, 238, 0.8)',
+                        'rgba(236, 72, 153, 0.8)',
+                        'rgba(239, 68, 68, 0.8)',
+                      ],
+                      borderWidth: 0,
+                    }],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        labels: { color: '#fff' },
+                        position: 'bottom'
+                      }
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'trips':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-white mb-4">Active Trips</h2>
+            <div className="glass-card p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-accent-green">
+                  {dashboardData?.activeTrips || 0} Active Trips
+                </h3>
+                <RouteIcon size="lg" className="text-accent-green" />
+              </div>
+              <p className="text-white/60">Total Bookings: {dashboardData?.totalBookings || 0}</p>
+            </div>
+          </div>
+        );
+
+      case 'maintenance':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-white mb-4">Vehicles Under Maintenance</h2>
+            <div className="glass-card p-6">
+              <div className="space-y-4">
+                {dashboardData?.maintenanceSchedule && dashboardData.maintenanceSchedule.length > 0 ? (
+                  dashboardData.maintenanceSchedule.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between p-4 bg-dark-700/40 rounded-xl">
+                      <div>
+                        <p className="text-white font-bold">{item.vehicle?.vehicleNumber}</p>
+                        <p className="text-white/50 text-sm">{item.issueType}</p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.priority === 'HIGH' ? 'bg-red-500/20 text-red-400' :
+                          item.priority === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-blue-500/20 text-blue-400'
+                        }`}>
+                        {item.priority}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-white/50 py-8">No maintenance scheduled</p>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'heatmap':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-white mb-4">Trip Density Heatmap</h2>
+            <div className="glass-card p-6">
+              <div style={{ height: '600px', width: '100%' }}>
+                <MapContainer
+                  center={[20.5937, 78.9629]}
+                  zoom={5}
+                  style={{ height: '100%', width: '100%', borderRadius: '12px' }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; OpenStreetMap'
+                  />
+                  {tripDensityData.map((city, idx) => (
+                    <React.Fragment key={idx}>
+                      <Circle
+                        center={[city.lat, city.lng]}
+                        radius={city.trips * 5000}
+                        fillColor="#22c55e"
+                        fillOpacity={0.3}
+                        color="#22c55e"
+                      />
+                      <Marker position={[city.lat, city.lng]}>
+                        <Popup>
+                          <strong>{city.name}</strong><br />
+                          Trips: {city.trips}
+                        </Popup>
+                      </Marker>
+                    </React.Fragment>
+                  ))}
+                </MapContainer>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'hourly':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-white mb-4">Hourly Rental Activity</h2>
+            <div className="glass-card p-6">
+              <div className="h-96">
+                <Bar
+                  ref={barChartRef}
+                  data={{
+                    labels: dashboardData?.hourlyActivity?.labels || ['00:00', '06:00', '12:00', '18:00'],
+                    datasets: [{
+                      label: 'Bookings per Hour',
+                      data: dashboardData?.hourlyActivity?.values || [5, 15, 30, 20],
+                      backgroundColor: 'rgba(34, 211, 238, 0.8)',
+                      borderColor: 'rgb(34, 211, 238)',
+                      borderWidth: 2,
+                    }],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        labels: { color: '#fff' }
+                      }
+                    },
+                    scales: {
+                      y: {
+                        ticks: { color: '#fff' },
+                        grid: { color: 'rgba(255,255,255,0.1)' }
+                      },
+                      x: {
+                        ticks: { color: '#fff' },
+                        grid: { color: 'rgba(255,255,255,0.1)' }
+                      },
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'reports':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-white mb-4">Download Reports</h2>
+            <div className="glass-card p-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {['fleet', 'bookings', 'revenue', 'trips'].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => handleDownloadReport(type)}
+                    className="btn-primary flex items-center justify-center gap-2 py-6"
+                  >
+                    <DownloadIcon size="md" />
+                    <span className="capitalize">{type}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-white mb-4">Dashboard Overview</h2>
+
+            {/* ✅ KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="glass-card p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-white/60 text-sm mb-1">Total Fleet</p>
+                    <p className="text-4xl font-bold text-accent-cyan">{dashboardData?.totalFleet || 0}</p>
+                  </div>
+                  <VehicleIcon size="lg" className="text-accent-cyan" />
+                </div>
+              </div>
+
+              <div className="glass-card p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-white/60 text-sm mb-1">Active Trips</p>
+                    <p className="text-4xl font-bold text-accent-green">{dashboardData?.activeTrips || 0}</p>
+                  </div>
+                  <RouteIcon size="lg" className="text-accent-green" />
+                </div>
+              </div>
+
+              <div className="glass-card p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-white/60 text-sm mb-1">Maintenance</p>
+                    <p className="text-4xl font-bold text-accent-pink">{dashboardData?.vehiclesMaintenance || 0}</p>
+                  </div>
+                  <MaintenanceIcon size="lg" className="text-accent-pink" />
+                </div>
+              </div>
+
+              <div className="glass-card p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-white/60 text-sm mb-1">Total Users</p>
+                    <p className="text-4xl font-bold text-accent-purple">
+                      {(dashboardData?.totalDrivers || 0) +
+                        (dashboardData?.totalManagers || 0) +
+                        (dashboardData?.totalCustomers || 0)}
+                    </p>
+                  </div>
+                  <UserIcon size="lg" className="text-accent-purple" />
+                </div>
+              </div>
+            </div>
+
+            {/* ✅ User Breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="glass-card p-4">
+                <p className="text-white/60 text-sm">Drivers</p>
+                <p className="text-2xl font-bold text-white">{dashboardData?.totalDrivers || 0}</p>
+              </div>
+              <div className="glass-card p-4">
+                <p className="text-white/60 text-sm">Managers</p>
+                <p className="text-2xl font-bold text-white">{dashboardData?.totalManagers || 0}</p>
+              </div>
+              <div className="glass-card p-4">
+                <p className="text-white/60 text-sm">Customers</p>
+                <p className="text-2xl font-bold text-white">{dashboardData?.totalCustomers || 0}</p>
+              </div>
+            </div>
+          </div>
+        );
+    }
   };
 
-  const filteredVehicles = filterStatus === 'ALL'
-    ? vehicles
-    : vehicles.filter(v => v.status === filterStatus);
-
-  const kpiCards = [
-    {
-      title: 'Total Fleet',
-      value: stats.totalFleet,
-      icon: VehicleIcon,
-      gradient: 'from-accent-cyan to-accent-blue',
-      bgGlow: 'bg-accent-cyan/20',
-    },
-    {
-      title: 'Active Trips',
-      value: stats.activeTrips,
-      icon: RouteIcon,
-      gradient: 'from-accent-green to-accent-cyan',
-      bgGlow: 'bg-accent-green/20',
-    },
-    {
-      title: 'Total Revenue',
-      value: `$${stats.revenue.toFixed(2)}`,
-      icon: RevenueIcon,
-      gradient: 'from-accent-purple to-accent-pink',
-      bgGlow: 'bg-accent-purple/20',
-    },
-    {
-      title: 'Maintenance Due',
-      value: stats.maintenanceDue,
-      icon: AlertIcon,
-      gradient: 'from-accent-pink to-accent-purple',
-      bgGlow: 'bg-accent-pink/20',
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-dark relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-mesh opacity-20"></div>
-
-      <nav className="relative bg-dark-800/40 backdrop-blur-glass border-b border-white/10 shadow-glass">
+    <div className="min-h-screen bg-gradient-dark">
+      <nav className="bg-dark-800/40 backdrop-blur-glass border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <Logo size="sm" animate={false} showText={true} />
+              <Logo size="sm" showText={true} />
               <div className="h-8 w-px bg-white/20"></div>
-              <div>
-                <h1 className="text-lg font-bold text-white flex items-center gap-2">
-                  Admin Portal
-                </h1>
-                <p className="text-xs text-white/50">Full System Control</p>
-              </div>
+              <h1 className="text-lg font-bold text-white">Admin Portal</h1>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-sm text-white/70">Welcome back,</p>
-                <p className="text-sm font-semibold text-white">{fullName}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="btn-secondary flex items-center gap-2"
-              >
+              <span className="text-white/70">Welcome, {fullName}</span>
+              <button onClick={handleLogout} className="btn-secondary flex items-center gap-2">
                 <LogoutIcon size="sm" />
-                <span>Logout</span>
+                Logout
               </button>
             </div>
           </div>
         </div>
+
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex gap-2 pb-3 overflow-x-auto">
+            {[
+              { id: 'overview', label: 'Overview' },
+              { id: 'fleet', label: 'Total Fleet' },
+              { id: 'trips', label: 'Active Trips' },
+              { id: 'maintenance', label: 'Maintenance' },
+              { id: 'heatmap', label: 'Trip Heatmap' },
+              { id: 'hourly', label: 'Hourly Activity' },
+              { id: 'reports', label: 'Download Reports' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 rounded-lg font-semibold transition-all whitespace-nowrap ${activeTab === tab.id
+                    ? 'bg-gradient-to-r from-accent-cyan to-accent-blue text-white'
+                    : 'text-white/70 hover:text-white hover:bg-white/5'
+                  }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </nav>
 
-      <div className="relative max-w-7xl mx-auto p-6">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-              <ChartIcon size="lg" className="text-accent-cyan" />
-              Dashboard Overview
-            </h2>
-            <p className="text-white/50">Monitor and manage your entire fleet operations</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${activeTab === 'overview'
-                  ? 'bg-gradient-to-r from-accent-cyan to-accent-blue text-white shadow-lg'
-                  : 'text-white/70 hover:text-white hover:bg-white/5'
-                }`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('vehicles')}
-              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${activeTab === 'vehicles'
-                  ? 'bg-gradient-to-r from-accent-cyan to-accent-blue text-white shadow-lg'
-                  : 'text-white/70 hover:text-white hover:bg-white/5'
-                }`}
-            >
-              Vehicle Management
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {kpiCards.map((card, index) => {
-            const IconComponent = card.icon;
-            return (
-              <div
-                key={index}
-                className="kpi-card text-white group hover:scale-105 transition-transform duration-300 animate-fade-in-up"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className={`absolute inset-0 ${card.bgGlow} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl`}></div>
-                <div className="relative z-10">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <p className="text-white/60 text-sm font-semibold mb-2">{card.title}</p>
-                      <p className={`text-4xl font-bold bg-gradient-to-r ${card.gradient} bg-clip-text text-transparent`}>
-                        {card.value}
-                      </p>
-                    </div>
-                    <div className={`p-3 rounded-xl bg-gradient-to-br ${card.gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                      <IconComponent size="md" className="text-white" />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-accent-green text-sm">
-                    <TrendingUpIcon size="sm" />
-                    <span>+5.2% from last month</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {activeTab === 'overview' && (
-          <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <div className="glass-card p-6 animate-fade-in-up">
-                <div className="flex items-center gap-3 mb-6">
-                  <VehicleIcon size="md" className="text-accent-cyan" />
-                  <h3 className="text-xl font-bold text-white">Fleet Status</h3>
-                </div>
-                <div className="space-y-3">
-                  {vehicles.slice(0, 5).map((vehicle) => (
-                    <div
-                      key={vehicle.id}
-                      className="flex items-center justify-between p-4 bg-dark-700/40 rounded-xl border border-white/5 hover:border-white/10 hover:bg-dark-700/60 transition-all duration-300"
-                    >
-                      <div>
-                        <p className="font-semibold text-white">{vehicle.vehicleNumber}</p>
-                        <p className="text-sm text-white/50">{vehicle.model}</p>
-                      </div>
-                      <span className={`status-badge ${getStatusStyle(vehicle.status)}`}>
-                        <span className="w-2 h-2 rounded-full bg-current animate-pulse"></span>
-                        {vehicle.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="glass-card p-6 animate-fade-in-up">
-                <div className="flex items-center gap-3 mb-6">
-                  <BookingIcon size="md" className="text-accent-purple" />
-                  <h3 className="text-xl font-bold text-white">Recent Bookings</h3>
-                </div>
-                <div className="space-y-3">
-                  {bookings.slice(0, 5).map((booking) => (
-                    <div
-                      key={booking.id}
-                      className="flex items-center justify-between p-4 bg-dark-700/40 rounded-xl border border-white/5 hover:border-white/10 hover:bg-dark-700/60 transition-all duration-300"
-                    >
-                      <div>
-                        <p className="font-semibold text-white">Booking #{booking.id}</p>
-                        <p className="text-sm text-white/50">{new Date(booking.createdAt).toLocaleDateString()}</p>
-                      </div>
-                      <span className={`status-badge ${getStatusStyle(booking.status)}`}>
-                        <span className="w-2 h-2 rounded-full bg-current animate-pulse"></span>
-                        {booking.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="glass-card p-6 animate-fade-in-up">
-              <div className="flex items-center gap-3 mb-6">
-                <AlertIcon size="md" className="text-accent-pink" />
-                <h3 className="text-xl font-bold text-white">Predictive Maintenance Alerts</h3>
-                <span className="ml-auto px-3 py-1 bg-accent-pink/20 text-accent-pink text-xs font-bold rounded-full animate-pulse">
-                  AI-Powered
-                </span>
-              </div>
-              <div className="space-y-3">
-                {maintenance.filter(m => m.isPredictive).slice(0, 5).map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between p-4 bg-accent-pink/5 border border-accent-pink/20 rounded-xl hover:border-accent-pink/40 hover:bg-accent-pink/10 transition-all duration-300"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-accent-pink/20 flex items-center justify-center">
-                        <MaintenanceIcon size="sm" className="text-accent-pink" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-white">Vehicle #{item.vehicle?.vehicleNumber || 'N/A'}</p>
-                        <p className="text-sm text-white/50">{item.issueType}</p>
-                      </div>
-                    </div>
-                    <span className={`status-badge ${getStatusStyle(item.priority)}`}>
-                      <AlertIcon size="sm" />
-                      {item.priority}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {activeTab === 'vehicles' && (
-          <div className="glass-card p-6 animate-fade-in-up">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <VehicleIcon size="md" className="text-accent-cyan" />
-                <h3 className="text-xl font-bold text-white">Vehicle Management</h3>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <FilterIcon size="sm" className="text-white/50" />
-                  <select
-                    className="input-field py-2"
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                  >
-                    <option value="ALL">All Status</option>
-                    <option value="AVAILABLE">Available</option>
-                    <option value="IN_USE">In Use</option>
-                    <option value="MAINTENANCE">Maintenance</option>
-                    <option value="OUT_OF_SERVICE">Out of Service</option>
-                  </select>
-                </div>
-                <button
-                  onClick={handleAddVehicle}
-                  className="btn-primary flex items-center gap-2"
-                >
-                  <VehicleIcon size="sm" />
-                  Add Vehicle
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredVehicles.map((vehicle) => (
-                <div
-                  key={vehicle.id}
-                  className="glass-card-hover p-6 group"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h4 className="text-lg font-bold text-white mb-1">{vehicle.model}</h4>
-                      <p className="text-sm text-white/50">{vehicle.vehicleNumber}</p>
-                    </div>
-                    <span className={`status-badge ${getStatusStyle(vehicle.status)}`}>
-                      <span className="w-2 h-2 rounded-full bg-current animate-pulse"></span>
-                      {vehicle.status}
-                    </span>
-                  </div>
-
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">Type:</span>
-                      <span className="text-white font-semibold">{vehicle.type}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">Capacity:</span>
-                      <span className="text-white font-semibold">{vehicle.capacity} seats</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">Fuel Type:</span>
-                      <span className="text-white font-semibold">
-                        {vehicle.isElectric ? '⚡ Electric' : '⛽ Fuel'}
-                      </span>
-                    </div>
-                    {vehicle.isElectric && (
-                      <div className="flex items-center gap-2">
-                        <BatteryIcon size="sm" className="text-accent-cyan" level={vehicle.batteryLevel || 100} />
-                        <div className="flex-1 h-2 bg-dark-700 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-accent-cyan to-accent-blue rounded-full transition-all duration-500"
-                            style={{ width: `${vehicle.batteryLevel || 100}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-white/70">{vehicle.batteryLevel || 100}%</span>
-                      </div>
-                    )}
-                    {!vehicle.isElectric && (
-                      <div className="flex items-center gap-2">
-                        <LocationIcon size="sm" className="text-accent-green" />
-                        <div className="flex-1 h-2 bg-dark-700 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-accent-green to-accent-cyan rounded-full transition-all duration-500"
-                            style={{ width: `${vehicle.fuelLevel || 100}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-white/70">{vehicle.fuelLevel || 100}%</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEditVehicle(vehicle)}
-                      className="flex-1 btn-secondary text-sm py-2"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteVehicle(vehicle.id)}
-                      className="flex-1 btn-secondary text-sm py-2 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-400"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {filteredVehicles.length === 0 && (
-              <div className="text-center py-12">
-                <VehicleIcon size="xl" className="text-white/20 mx-auto mb-4" />
-                <p className="text-white/50 text-lg">No vehicles found</p>
-                <button
-                  onClick={handleAddVehicle}
-                  className="btn-primary mt-4"
-                >
-                  Add Your First Vehicle
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+      <div className="max-w-7xl mx-auto p-6">
+        {renderContent()}
       </div>
-
-      <VehicleModal
-        isOpen={isVehicleModalOpen}
-        onClose={() => setIsVehicleModalOpen(false)}
-        onSave={handleSaveVehicle}
-        vehicle={selectedVehicle}
-      />
     </div>
   );
 };

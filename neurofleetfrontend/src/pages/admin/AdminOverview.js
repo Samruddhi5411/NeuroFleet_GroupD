@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { VehicleIcon, TrendingUpIcon, BookingIcon, RevenueIcon } from '../../components/Icons';
-import { analyticsService } from '../../services/api';
+import { VehicleIcon, TrendingUpIcon, BookingIcon, RevenueIcon } from './Icons';
+import axios from 'axios';
 
 const AdminOverview = () => {
   const [stats, setStats] = useState(null);
@@ -8,15 +8,19 @@ const AdminOverview = () => {
 
   useEffect(() => {
     fetchDashboardStats();
+    const interval = setInterval(fetchDashboardStats, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await analyticsService.getKPIMetrics();
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:8083/api/analytics/kpi', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
-      // Fallback data
       setStats({
         totalVehicles: 50,
         totalUsers: 100,
@@ -108,22 +112,22 @@ const AdminOverview = () => {
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-dark-700/40 rounded-lg">
               <span className="text-white/60">Backend API</span>
-              <span className="status-badge status-available">
-                <span className="w-2 h-2 rounded-full bg-current animate-pulse"></span>
+              <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-accent-green/20 text-accent-green text-sm font-bold">
+                <span className="w-2 h-2 rounded-full bg-accent-green animate-pulse"></span>
                 Online
               </span>
             </div>
             <div className="flex items-center justify-between p-3 bg-dark-700/40 rounded-lg">
               <span className="text-white/60">AI Service</span>
-              <span className="status-badge status-available">
-                <span className="w-2 h-2 rounded-full bg-current animate-pulse"></span>
+              <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-accent-green/20 text-accent-green text-sm font-bold">
+                <span className="w-2 h-2 rounded-full bg-accent-green animate-pulse"></span>
                 Connected
               </span>
             </div>
             <div className="flex items-center justify-between p-3 bg-dark-700/40 rounded-lg">
               <span className="text-white/60">Database</span>
-              <span className="status-badge status-available">
-                <span className="w-2 h-2 rounded-full bg-current animate-pulse"></span>
+              <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-accent-green/20 text-accent-green text-sm font-bold">
+                <span className="w-2 h-2 rounded-full bg-accent-green animate-pulse"></span>
                 Healthy
               </span>
             </div>
