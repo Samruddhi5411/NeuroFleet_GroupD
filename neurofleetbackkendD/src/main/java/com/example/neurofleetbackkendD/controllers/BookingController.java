@@ -86,32 +86,32 @@ public class BookingController {
   
     
     // Get pending bookings
-    @GetMapping("/manager/bookings/pending")
-    public ResponseEntity<?> getPendingBookings() {
-        try {
-            List<Booking> bookings = bookingService.getPendingBookingsForManager();
-            System.out.println("✅ Returning " + bookings.size() + " pending bookings");
-            return ResponseEntity.ok(bookings);
-        } catch (Exception e) {
-            System.err.println("❌ Error fetching pending bookings: " + e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-    
+//    @GetMapping("/manager/bookings/pending")
+//    public ResponseEntity<?> getPendingBookings() {
+//        try {
+//            List<Booking> bookings = bookingService.getPendingBookingsForManager();
+//            System.out.println("✅ Returning " + bookings.size() + " pending bookings");
+//            return ResponseEntity.ok(bookings);
+//        } catch (Exception e) {
+//            System.err.println("❌ Error fetching pending bookings: " + e.getMessage());
+//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+//        }
+//    }
+//    
 
     
-    // Assign driver to booking
-    @PutMapping("/manager/bookings/{id}/assign-driver")
-    public ResponseEntity<?> assignDriver(@PathVariable Long id, @RequestParam Long driverId) {
-        try {
-            Booking assigned = bookingService.assignDriverToBooking(id, driverId);
-            return ResponseEntity.ok(assigned);
-        } catch (Exception e) {
-            System.err.println("❌ Error assigning driver: " + e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-    
+//    // Assign driver to booking
+//    @PutMapping("/manager/bookings/{id}/assign-driver")
+//    public ResponseEntity<?> assignDriver(@PathVariable Long id, @RequestParam Long driverId) {
+//        try {
+//            Booking assigned = bookingService.assignDriverToBooking(id, driverId);
+//            return ResponseEntity.ok(assigned);
+//        } catch (Exception e) {
+//            System.err.println("❌ Error assigning driver: " + e.getMessage());
+//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+//        }
+//    }
+//    
  // Get all vehicles for manager
     @GetMapping("/manager/vehicles")
     public ResponseEntity<?> getManagerVehicles() {

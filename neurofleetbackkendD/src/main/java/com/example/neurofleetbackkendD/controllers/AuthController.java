@@ -1,75 +1,19 @@
-//package com.example.neurofleetbackkendD.controllers;
-//
-//
-//
-//import com.example.neurofleetbackkendD.model.User;
-//import com.example.neurofleetbackkendD.service.AuthService;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.web.bind.annotation.*;
-//import java.util.HashMap;
-//import java.util.Map;
-//import java.util.Optional;
-//
-//@RestController
-//@RequestMapping("/api/auth")
-//@CrossOrigin(origins = "http://localhost:3000")
-//public class AuthController {
-//    
-//    @Autowired
-//    private AuthService authService;
-//    
-//    @PostMapping("/signup")
-//    public ResponseEntity<?> register(@RequestBody User user) {
-//        try {
-//            User registeredUser = authService.register(user);
-//            Map<String, Object> response = new HashMap<>();
-//            response.put("message", "User registered successfully");
-//            response.put("userId", registeredUser.getId());
-//            return ResponseEntity.ok(response);
-//        } catch (Exception e) {
-//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-//        }
-//    }
-//    
-//    @PostMapping("/login")
-//    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
-//        String username = credentials.get("username");
-//        String password = credentials.get("password");
-//        
-//        Optional<User> userOpt = authService.authenticate(username, password);
-//        
-//        if (userOpt.isPresent()) {
-//            User user = userOpt.get();
-//            Map<String, Object> response = new HashMap<>();
-//            response.put("token", "dummy-jwt-token-" + user.getId());
-//            response.put("role", user.getRole().toString());
-//            response.put("username", user.getUsername());
-//            response.put("fullName", user.getFullName());
-//            return ResponseEntity.ok(response);
-//        }
-//        
-//        return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
-//    }
-//}
-
 package com.example.neurofleetbackkendD.controllers;
 
+import com.example.neurofleetbackkendD.dto.LoginRequest;
+import com.example.neurofleetbackkendD.dto.LoginResponse;
 import com.example.neurofleetbackkendD.model.User;
 import com.example.neurofleetbackkendD.security.JwtUtil;
 import com.example.neurofleetbackkendD.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*") 
+@CrossOrigin(origins = "http://localhost:3000")
 public class AuthController {
     
     @Autowired
@@ -78,101 +22,67 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
     
-    @PostMapping("/signup")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        try {
-            User registeredUser = authService.register(user);
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "User registered successfully");
-            response.put("userId", registeredUser.getId());
-            response.put("username", registeredUser.getUsername());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
-        }
-    }
-    
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
-            String username = credentials.get("username");
-            String password = credentials.get("password");
+            System.out.println("🔐 Login attempt for: " + request.getUsername());
             
-            System.out.println("Login attempt for user: " + username);
+            // Authenticate user - handle Optional<User>
+            Optional<User> userOptional = authService.authenticate(request.getUsername(), request.getPassword());
             
-            Optional<User> userOpt = authService.authenticate(username, password);
-            
-            if (userOpt.isPresent()) {
-                User user = userOpt.get();
-                
-                // Generate JWT token
-                String token = jwtUtil.generateToken(user.getUsername(), user.getRole().toString());
-                
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", true);
-                response.put("token", token);
-                response.put("role", user.getRole().toString());
-                response.put("username", user.getUsername());
-                response.put("fullName", user.getFullName());
-                response.put("userId", user.getId());
-                response.put("email", user.getEmail());
-                
-                System.out.println("Login successful for: " + username);
-                return ResponseEntity.ok(response);
+            if (!userOptional.isPresent()) {
+                System.err.println("❌ Authentication failed - user not found or invalid password");
+                return ResponseEntity.status(401).body("Invalid credentials");
             }
             
-            System.out.println("Login failed - Invalid credentials for: " + username);
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("error", "Invalid username or password");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+            User user = userOptional.get();
+            
+            System.out.println("✅ User authenticated: " + user.getUsername());
+            System.out.println("✅ User role: " + user.getRole());
+            System.out.println("✅ User ID: " + user.getId());
+            
+            // Generate JWT token
+            String token = jwtUtil.generateToken(user.getUsername());
+            
+            System.out.println("🔑 Token generated successfully");
+            System.out.println("🔑 Token preview: " + token.substring(0, Math.min(30, token.length())) + "...");
+            System.out.println("🔑 Token length: " + token.length());
+            
+            // Create response with BOTH formats for compatibility
+            LoginResponse response = new LoginResponse();
+            response.setToken(token);
+            response.setRole(user.getRole().name());
+            response.setUsername(user.getUsername());
+            response.setFullName(user.getFullName() != null ? user.getFullName() : user.getUsername());
+            response.setId(user.getId());
+            
+            // Also include user object
+            response.setUser(user);
+            
+            System.out.println("✅ Login successful - Response prepared");
+            System.out.println("📦 Response: token=" + (token != null ? "present" : "NULL") + 
+                             ", role=" + response.getRole() + 
+                             ", username=" + response.getUsername());
+            
+            return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            System.err.println("Login error: " + e.getMessage());
+            System.err.println("❌ Login failed with exception: " + e.getMessage());
             e.printStackTrace();
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("error", "Login failed: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+            return ResponseEntity.status(401).body("Invalid credentials");
         }
     }
     
-    @GetMapping("/validate")
-    public ResponseEntity<?> validateToken(@RequestHeader(value = "Authorization", required = false) String authHeader) {
-        Map<String, Object> response = new HashMap<>();
+    @PostMapping("/signup")
+    public ResponseEntity<?> signup(@RequestBody User user) {
         try {
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                String token = authHeader.substring(7);
-                String username = jwtUtil.extractUsername(token);
-                
-                response.put("success", true);
-                response.put("valid", true);
-                response.put("username", username);
-                return ResponseEntity.ok(response);
-            }
-            
-            response.put("success", false);
-            response.put("valid", false);
-            response.put("error", "Invalid or missing token");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-            
+            System.out.println("📝 Signup attempt for: " + user.getUsername());
+            User created = authService.register(user);
+            System.out.println("✅ User registered successfully");
+            return ResponseEntity.ok(created);
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("valid", false);
-            response.put("error", "Token validation failed: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            System.err.println("❌ Signup failed: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-    }
-    
-    @GetMapping("/test")
-    public ResponseEntity<?> testEndpoint() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", "working");
-        response.put("message", "Auth endpoint is accessible");
-        return ResponseEntity.ok(response);
     }
 }

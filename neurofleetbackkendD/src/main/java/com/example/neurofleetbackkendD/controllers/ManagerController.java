@@ -7,6 +7,8 @@ import com.example.neurofleetbackkendD.service.AuthService;
 import com.example.neurofleetbackkendD.service.DashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +28,17 @@ public class ManagerController {
     @Autowired
     private DashboardService dashboardService;
     
+    
+    @GetMapping("/test")
+    public ResponseEntity<?> testManagerAccess() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("🧪 Manager Test Endpoint - Auth: " + auth);
+        return ResponseEntity.ok(Map.of(
+            "message", "Manager endpoint accessible",
+            "user", auth != null ? auth.getName() : "No auth",
+            "authorities", auth != null ? auth.getAuthorities().toString() : "No authorities"
+        ));
+    }
     @GetMapping("/dashboard")
     public ResponseEntity<?> getManagerDashboard() {
         try {
@@ -40,18 +53,18 @@ public class ManagerController {
         }
     }
     
-//    @GetMapping("/bookings/pending")
-//    public ResponseEntity<?> getPendingBookings() {
-//        try {
-//            System.out.println("📋 Manager requesting pending bookings...");
-//            List<Booking> bookings = bookingService.getPendingBookingsForManager();
-//            System.out.println("✅ Found " + bookings.size() + " pending bookings");
-//            return ResponseEntity.ok(bookings);
-//        } catch (Exception e) {
-//            System.err.println("❌ Error fetching pending bookings: " + e.getMessage());
-//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-//        }
-//    }
+    @GetMapping("/bookings/pending")
+    public ResponseEntity<?> getPendingBookings() {
+        try {
+            System.out.println("📋 Manager requesting pending bookings...");
+            List<Booking> bookings = bookingService.getPendingBookingsForManager();
+            System.out.println("✅ Found " + bookings.size() + " pending bookings");
+            return ResponseEntity.ok(bookings);
+        } catch (Exception e) {
+            System.err.println("❌ Error fetching pending bookings: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
     
     @PutMapping("/bookings/{id}/approve")
     public ResponseEntity<?> approveBooking(@PathVariable Long id) {
