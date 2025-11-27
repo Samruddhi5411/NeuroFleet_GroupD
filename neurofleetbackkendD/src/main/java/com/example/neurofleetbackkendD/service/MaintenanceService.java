@@ -27,9 +27,9 @@ public class MaintenanceService {
     @Autowired
     private NotificationService notificationService;
     
-    /**
-     * Get all maintenance records
-     */
+    
+     // Get all maintenance records
+     
     public List<MaintenanceRecord> getAllRecords() {
         return maintenanceRepository.findAll();
     }
@@ -41,30 +41,30 @@ public class MaintenanceService {
         return maintenanceRepository.findAll();
     }
     
-    /**
-     * Get predictive maintenance records
-     */
+    
+     //Get predictive maintenance records
+    
     public List<MaintenanceRecord> getPredictiveRecords() {
         return maintenanceRepository.findByStatus(MaintenanceStatus.PREDICTIVE);
     }
     
-    /**
-     * Get records by status
-     */
+    
+     //Get records by status
+     
     public List<MaintenanceRecord> getRecordsByStatus(MaintenanceStatus status) {
         return maintenanceRepository.findByStatus(status);
     }
     
-    /**
-     * Get records by vehicle
-     */
+    
+     // Get records by vehicle
+     
     public List<MaintenanceRecord> getRecordsByVehicle(Long vehicleId) {
         return maintenanceRepository.findByVehicleId(vehicleId);
     }
     
-    /**
-     * Create maintenance record
-     */
+    
+     // Create maintenance record
+     
     @Transactional
     public MaintenanceRecord createRecord(MaintenanceRecord record) {
         record.setCreatedAt(LocalDateTime.now());
@@ -84,9 +84,9 @@ public class MaintenanceService {
         return saved;
     }
     
-    /**
-     * Update maintenance record
-     */
+    
+     // Update maintenance record
+     
     @Transactional
     public MaintenanceRecord updateRecord(Long id, MaintenanceRecord updates) {
         MaintenanceRecord record = maintenanceRepository.findById(id)
@@ -123,9 +123,9 @@ public class MaintenanceService {
         return maintenanceRepository.save(record);
     }
     
-    /**
-     * Predict maintenance for a vehicle
-     */
+    
+    // Predict maintenance for a vehicle
+     
     public MaintenanceRecord predictMaintenanceForVehicle(Long vehicleId) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
             .orElseThrow(() -> new RuntimeException("Vehicle not found"));
@@ -147,9 +147,9 @@ public class MaintenanceService {
         return null;
     }
     
-    /**
-     * Run predictive maintenance for all vehicles
-     */
+    
+     // Run predictive maintenance for all vehicles
+     
     @Transactional
     public void runPredictiveMaintenance1() {
         List<Vehicle> vehicles = vehicleRepository.findAll();

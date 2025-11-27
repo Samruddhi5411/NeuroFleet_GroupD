@@ -27,9 +27,9 @@ public class CustomerController {
     @Autowired
     private AuthService authService;
     
-    /**
-     * Get all available vehicles for customer
-     */
+    
+     //Get all available vehicles for customer
+     
     @GetMapping("/vehicles")
     public ResponseEntity<?> getAvailableVehicles() {
         try {

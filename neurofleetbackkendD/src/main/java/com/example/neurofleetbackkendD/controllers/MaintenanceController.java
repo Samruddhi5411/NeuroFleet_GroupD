@@ -21,10 +21,7 @@ public class MaintenanceController {
     private MaintenanceService maintenanceService;
     
     
-//    @GetMapping("/admin/maintenance")  // Add this line
-//    public ResponseEntity<List<MaintenanceRecord>> getAllRecords11() {
-//        return ResponseEntity.ok(maintenanceService.getAllRecords());
-//    }
+
     @GetMapping("/maintenance")
     public ResponseEntity<List<MaintenanceRecord>> getAllRecords1() {
         return ResponseEntity.ok(maintenanceService.getAllRecords());
@@ -47,11 +44,7 @@ public class MaintenanceController {
     }
   
     
-//    @PostMapping
-//    public ResponseEntity<MaintenanceRecord> createRecord(
-//            @RequestBody MaintenanceRecord record) {
-//        return ResponseEntity.ok(maintenanceService.createRecord(record));
-//    }
+
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateRecord(@PathVariable Long id, 

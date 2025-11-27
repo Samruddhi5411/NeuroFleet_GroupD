@@ -82,7 +82,7 @@ import java.util.Arrays;
 public class SecurityConfig {
     
     @Autowired
-    private JwtFilter jwtFilter;  // ✅ ADD THIS - Inject the JWT filter
+    private JwtFilter jwtFilter;  
     
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

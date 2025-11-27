@@ -78,7 +78,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         System.out.println("✅ User found: " + user.getUsername());
         System.out.println("✅ User role: " + user.getRole());
         
-        // Create authority with ROLE_ prefix
+      
         SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole().name());
         
         System.out.println("✅ Authority created: " + authority.getAuthority());

@@ -53,7 +53,7 @@ public class DataInitializer implements CommandLineRunner {
     private void createUsers() {
         System.out.println("👥 Creating users...");
         
-        // 1 Admin
+        //  Admin
         User admin = new User();
         admin.setUsername("admin");
         admin.setPassword(passwordEncoder.encode("admin123"));
@@ -64,7 +64,7 @@ public class DataInitializer implements CommandLineRunner {
         admin.setActive(true);
         userRepository.save(admin);
         
-        // 2 Managers
+        //  Managers
         String[][] managers = {
             {"manager1", "Fleet Manager 1", "manager1@neurofleetx.com", "+91-9876543211"},
             {"manager2", "Fleet Manager 2", "manager2@neurofleetx.com", "+91-9876543212"}
@@ -82,7 +82,7 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(manager);
         }
         
-        // 5 Drivers with realistic data
+        //  Drivers with realistic data
         String[][] drivers = {
             {"driver1", "Rajesh Kumar", "rajesh.kumar@neurofleetx.com", "+91-9001234567", "DL-1420110012345"},
             {"driver2", "Amit Singh", "amit.singh@neurofleetx.com", "+91-9001234568", "DL-1420110012346"},
@@ -107,7 +107,7 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(driver);
         }
         
-        // 5 Customers
+        //  Customers
         String[][] customers = {
             {"customer1", "Priya Sharma", "priya.sharma@gmail.com", "+91-9201234567"},
             {"customer2", "Anita Desai", "anita.desai@gmail.com", "+91-9201234568"},
@@ -216,7 +216,7 @@ public class DataInitializer implements CommandLineRunner {
         List<User> drivers = userRepository.findByRole(UserRole.DRIVER);
         List<User> managers = userRepository.findByRole(UserRole.MANAGER);
         
-        // Fixed: Define routes array properly
+        //  Define routes array properly
         String[][] routes = {
             {"Delhi Connaught Place", "Gurgaon Cyber City", "28.6304", "77.2177", "28.4595", "77.0266"},
             {"Bangalore Koramangala", "Electronic City", "12.9352", "77.6245", "12.8456", "77.6603"},
@@ -290,7 +290,7 @@ public class DataInitializer implements CommandLineRunner {
             record.setIssueType(issueTypes[random.nextInt(issueTypes.length)]);
             record.setPriority(priorities[random.nextInt(priorities.length)]);
             record.setStatus(MaintenanceStatus.PENDING);
-            // Fixed: Cast int to Double
+            //  Cast int to Double
             record.setRiskScore((double) random.nextInt(100));
             record.setCreatedAt(LocalDateTime.now().minusDays(random.nextInt(30)));
             maintenanceRepository.save(record);

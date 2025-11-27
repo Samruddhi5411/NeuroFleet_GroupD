@@ -71,9 +71,9 @@ def fetch_backend_data(endpoint):
         print(f"❌ Error fetching from backend: {e}")
         return None
 
-# =====================================================
-# 1️⃣ ETA PREDICTION AI MODEL
-# =====================================================
+
+#  ETA PREDICTION AI MODEL
+
 
 class ETAPredictorAI:
     def __init__(self):
@@ -225,9 +225,9 @@ class ETAPredictorAI:
             'traffic_condition': 'Heavy' if traffic_factor > 1.3 else 'Moderate' if traffic_factor > 1.1 else 'Light'
         }
 
-# =====================================================
-# 2️⃣ SMART VEHICLE RECOMMENDATION AI
-# =====================================================
+
+#  SMART VEHICLE RECOMMENDATION AI
+
 
 class VehicleRecommenderAI:
     def __init__(self):
@@ -345,9 +345,8 @@ class VehicleRecommenderAI:
         
         return ", ".join(reasons) if reasons else "Good option"
 
-# =====================================================
-# 3️⃣ PREDICTIVE MAINTENANCE AI
-# =====================================================
+#  PREDICTIVE MAINTENANCE AI
+
 
 class PredictiveMaintenanceAI:
     def __init__(self):
@@ -528,13 +527,9 @@ class PredictiveMaintenanceAI:
         else:
             return 90
 
-# =====================================================
 # INITIALIZE AI MODELS
-# =====================================================
 
-# eta_predictor = ETAPredictorAI()
-# vehicle_recommender = VehicleRecommenderAI()
-# maintenance_predictor = PredictiveMaintenanceAI()
+
 
 eta_predictor = ETAPredictorAI()
 vehicle_recommender = VehicleRecommenderAI()

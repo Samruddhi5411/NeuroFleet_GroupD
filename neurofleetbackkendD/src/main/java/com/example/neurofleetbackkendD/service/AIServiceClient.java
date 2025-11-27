@@ -79,7 +79,7 @@ public class AIServiceClient {
         }
     }
     
-    // ✅ Maintenance Prediction
+    //  Maintenance Prediction
     public Map<String, Object> predictMaintenance(Long vehicleId) {
         String url = aiServiceUrl + "/predict/maintenance/" + vehicleId;
         
@@ -97,7 +97,7 @@ public class AIServiceClient {
         }
     }
     
-    // ✅ NEW: Get all maintenance predictions
+    // Get all maintenance predictions
     public List<Map<String, Object>> predictAllMaintenance() {
         String url = aiServiceUrl + "/predict/maintenance/all";
         
@@ -118,7 +118,7 @@ public class AIServiceClient {
         }
     }
     
-    // ✅ Train Models
+    //  Train Models
     public Map<String, Object> trainModels() {
         String url = aiServiceUrl + "/train";
         

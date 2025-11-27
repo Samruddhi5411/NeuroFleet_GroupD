@@ -104,11 +104,11 @@ public class BookingService {
         booking.setDriver(driver);
         booking.setStatus(BookingStatus.DRIVER_ASSIGNED);
         
-        // Auto-accept for demo (you can remove this to require manual acceptance)
+       
         booking.setStatus(BookingStatus.DRIVER_ACCEPTED);
         booking.setDriverAcceptedAt(LocalDateTime.now());
         
-        // Auto-confirm booking (skip payment for demo)
+        // dpay
         booking.setStatus(BookingStatus.CONFIRMED);
         booking.setPaymentStatus(PaymentStatus.PAID);
         booking.setPaymentMethod("CASH");
@@ -149,7 +149,7 @@ public class BookingService {
         
         Booking savedBooking = bookingRepository.save(booking);
         
-        // 🔔 SEND NOTIFICATION TO CUSTOMER
+        //  SEND NOTIFICATION TO CUSTOMER
         notificationService.notifyTripStarted(savedBooking);
         
         System.out.println("✅ Trip started for booking: " + bookingId);
@@ -222,8 +222,6 @@ public class BookingService {
         vehicle.setCurrentDriver(null);
         vehicleRepository.save(vehicle);
         
-        // Update driver earnings ONLY after payment
-        // Don't update earnings here, wait for payment confirmation
         
         Booking savedBooking = bookingRepository.save(booking);
         
@@ -245,7 +243,7 @@ public class BookingService {
         booking.setPaymentMethod(paymentMethod);
         booking.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         
-        // NOW update driver earnings
+        // update driver earnings
         User driver = booking.getDriver();
         driver.setTotalTrips(driver.getTotalTrips() + 1);
         driver.setTotalEarnings(driver.getTotalEarnings() + (booking.getTotalPrice() * 0.7));

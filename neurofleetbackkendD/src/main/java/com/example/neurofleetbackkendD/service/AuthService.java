@@ -62,7 +62,7 @@ public class AuthService {
     }
     
 
-  //* Get all customers
+  // Get all customers
      
     public List<User> getAllCustomers() {
         return userRepository.findByRole(UserRole.CUSTOMER);

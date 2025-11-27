@@ -90,33 +90,7 @@ public class BookingController {
     
   
     
-    // Get pending bookings
-//    @GetMapping("/manager/bookings/pending")
-//    public ResponseEntity<?> getPendingBookings() {
-//        try {
-//            List<Booking> bookings = bookingService.getPendingBookingsForManager();
-//            System.out.println("✅ Returning " + bookings.size() + " pending bookings");
-//            return ResponseEntity.ok(bookings);
-//        } catch (Exception e) {
-//            System.err.println("❌ Error fetching pending bookings: " + e.getMessage());
-//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-//        }
-//    }
-//    
-
-    
-//    // Assign driver to booking
-//    @PutMapping("/manager/bookings/{id}/assign-driver")
-//    public ResponseEntity<?> assignDriver(@PathVariable Long id, @RequestParam Long driverId) {
-//        try {
-//            Booking assigned = bookingService.assignDriverToBooking(id, driverId);
-//            return ResponseEntity.ok(assigned);
-//        } catch (Exception e) {
-//            System.err.println("❌ Error assigning driver: " + e.getMessage());
-//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-//        }
-//    }
-//    
+   
  // Get all vehicles for manager
     @GetMapping("/manager/vehicles")
     public ResponseEntity<?> getManagerVehicles() {
@@ -161,36 +135,7 @@ public class BookingController {
     
     
 
-//    // Start trip
-//    @PutMapping("/driver/bookings/{id}/start-trip")
-//    public ResponseEntity<?> startTrip(@PathVariable Long id, @RequestParam String username) {
-//        try {
-//            User driver = authService.findByUsername(username)
-//                .orElseThrow(() -> new RuntimeException("Driver not found"));
-//            
-//            Booking started = bookingService.startTrip(id, driver.getId());
-//            return ResponseEntity.ok(started);
-//        } catch (Exception e) {
-//            System.err.println("❌ Error starting trip: " + e.getMessage());
-//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-//        }
-//    }
-//    
-    // Complete trip
-//    @PutMapping("/driver/bookings/{id}/complete-trip")
-//    public ResponseEntity<?> completeTrip(@PathVariable Long id, @RequestParam String username) {
-//        try {
-//            User driver = authService.findByUsername(username)
-//                .orElseThrow(() -> new RuntimeException("Driver not found"));
-//            
-//            Booking completed = bookingService.completeTrip(id, driver.getId());
-//            return ResponseEntity.ok(completed);
-//        } catch (Exception e) {
-//            System.err.println("❌ Error completing trip: " + e.getMessage());
-//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-//        }
-//    }
-//    
+  
    
     // Get all bookings
     @GetMapping("/admin/bookings")

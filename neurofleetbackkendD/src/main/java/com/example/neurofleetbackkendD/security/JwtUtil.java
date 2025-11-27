@@ -154,9 +154,7 @@ import java.util.function.Function;
 
 @Component
 public class JwtUtil {
-    
-    // Use a strong secret key (in production, move this to application.properties)
-    private static final String SECRET_KEY = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
+     private static final String SECRET_KEY = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
     private static final long JWT_TOKEN_VALIDITY = 24 * 60 * 60 * 1000; // 24 hours
 
     private Key getSigningKey() {

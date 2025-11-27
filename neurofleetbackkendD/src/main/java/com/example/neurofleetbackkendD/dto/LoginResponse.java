@@ -8,7 +8,7 @@ public class LoginResponse {
     private String username;
     private String fullName;
     private Long id;
-    private User user; // Include full user object for compatibility
+    private User user; 
     
     // Constructors
     public LoginResponse() {}

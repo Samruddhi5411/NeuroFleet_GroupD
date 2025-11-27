@@ -27,7 +27,7 @@ public class DashboardService {
     @Autowired
     private MaintenanceRepository maintenanceRepository;
     
-    //Admin Dashboard - Complete Overview
+    //Admin Dashboard 
      
     public Map<String, Object> getAdminDashboard() {
         Map<String, Object> dashboard = new HashMap<>();
