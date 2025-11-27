@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -40,12 +41,32 @@ public class AnalyticsController {
         }
     }
     
-    // Get hourly activity
+//    // Get hourly activity
+//    @GetMapping("/hourly-activity")
+//    public ResponseEntity<?> getHourlyActivity() {
+//        try {
+//            Map<String, Object> activity = analyticsService.getHourlyActivity();
+//            return ResponseEntity.ok(activity);
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+//        }
+//    }
+    
     @GetMapping("/hourly-activity")
     public ResponseEntity<?> getHourlyActivity() {
         try {
             Map<String, Object> activity = analyticsService.getHourlyActivity();
             return ResponseEntity.ok(activity);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/trip-density")
+    public ResponseEntity<?> getTripDensityByCity() {
+        try {
+            List<Map<String, Object>> density = analyticsService.getTripDensityByCity();
+            return ResponseEntity.ok(density);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

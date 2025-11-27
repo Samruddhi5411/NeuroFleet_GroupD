@@ -71,24 +71,24 @@ public class AnalyticsService {
         return distribution;
     }
     
-    
-     // Get Hourly Activity
-     
-    public Map<String, Object> getHourlyActivity() {
-        Map<String, Object> activity = new HashMap<>();
-        
-        List<String> hours = Arrays.asList(
-            "00:00", "03:00", "06:00", "09:00", "12:00", 
-            "15:00", "18:00", "21:00"
-        );
-        
-        List<Integer> bookings = Arrays.asList(5, 8, 15, 25, 30, 28, 20, 12);
-        
-        activity.put("labels", hours);
-        activity.put("values", bookings);
-        
-        return activity;
-    }
+//    
+//     // Get Hourly Activity
+//     
+//    public Map<String, Object> getHourlyActivity() {
+//        Map<String, Object> activity = new HashMap<>();
+//        
+//        List<String> hours = Arrays.asList(
+//            "00:00", "03:00", "06:00", "09:00", "12:00", 
+//            "15:00", "18:00", "21:00"
+//        );
+//        
+//        List<Integer> bookings = Arrays.asList(5, 8, 15, 25, 30, 28, 20, 12);
+//        
+//        activity.put("labels", hours);
+//        activity.put("values", bookings);
+//        
+//        return activity;
+//    }
     
     
      // Get Daily Trends
@@ -276,5 +276,82 @@ public class AnalyticsService {
         } catch (Exception e) {
             throw new RuntimeException("Error generating CSV", e);
         }
+    }
+    public Map<String, Object> getHourlyActivity() {
+        List<Booking> bookings = bookingRepository.findAll();
+        Map<Integer, Long> hourlyMap = new HashMap<>();
+        
+        // Initialize all 24 hours with 0
+        for (int i = 0; i < 24; i++) {
+            hourlyMap.put(i, 0L);
+        }
+        
+        // Count bookings per hour
+        for (Booking booking : bookings) {
+            if (booking.getStartTime() != null) {
+                int hour = booking.getStartTime().getHour();
+                hourlyMap.put(hour, hourlyMap.get(hour) + 1);
+            }
+        }
+        
+        // Convert to lists for frontend
+        List<String> labels = new ArrayList<>();
+        List<Long> values = new ArrayList<>();
+        
+        for (int i = 0; i < 24; i++) {
+            labels.add(String.format("%02d:00", i));
+            values.add(hourlyMap.get(i));
+        }
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("labels", labels);
+        result.put("values", values);
+        return result;
+    }
+
+    public List<Map<String, Object>> getTripDensityByCity() {
+        List<Booking> completedBookings = bookingRepository.findAll();
+        Map<String, Integer> cityTripCount = new HashMap<>();
+        
+        // City coordinates
+        Map<String, double[]> cityCoordinates = new HashMap<>();
+        cityCoordinates.put("Mumbai", new double[]{19.0760, 72.8777});
+        cityCoordinates.put("Delhi", new double[]{28.7041, 77.1025});
+        cityCoordinates.put("Bangalore", new double[]{12.9716, 77.5946});
+        cityCoordinates.put("Hyderabad", new double[]{17.3850, 78.4867});
+        cityCoordinates.put("Chennai", new double[]{13.0827, 80.2707});
+        cityCoordinates.put("Pune", new double[]{18.5204, 73.8567});
+        cityCoordinates.put("Noida", new double[]{28.5355, 77.3910});
+        cityCoordinates.put("Gurgaon", new double[]{28.4595, 77.0266});
+        
+        // Count trips per city
+        for (Booking booking : completedBookings) {
+            String pickup = booking.getPickupLocation();
+            if (pickup != null) {
+                for (String city : cityCoordinates.keySet()) {
+                    if (pickup.toUpperCase().contains(city.toUpperCase())) {
+                        cityTripCount.put(city, cityTripCount.getOrDefault(city, 0) + 1);
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Build result list
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map.Entry<String, double[]> entry : cityCoordinates.entrySet()) {
+            String cityName = entry.getKey();
+            double[] coords = entry.getValue();
+            
+            Map<String, Object> cityData = new HashMap<>();
+            cityData.put("name", cityName);
+            cityData.put("lat", coords[0]);
+            cityData.put("lng", coords[1]);
+            cityData.put("trips", cityTripCount.getOrDefault(cityName, 0));
+            
+            result.add(cityData);
+        }
+        
+        return result;
     }
 }

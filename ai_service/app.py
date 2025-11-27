@@ -26,9 +26,9 @@ eta_predictor = None
 vehicle_recommender = None
 maintenance_predictor = None
 
-# =====================================================
+
 # UTILITY FUNCTIONS
-# =====================================================
+
 
 def haversine_distance(lat1, lon1, lat2, lon2):
     """Calculate distance between two GPS coordinates in km"""
@@ -228,15 +228,21 @@ class ETAPredictorAI:
 
 #  SMART VEHICLE RECOMMENDATION AI
 
-
 class VehicleRecommenderAI:
     def __init__(self):
         self.vehicle_cache = []
+        # Indian state codes mapping
+        self.state_mapping = {
+            'MH': 'Maharashtra', 'KA': 'Karnataka', 'DL': 'Delhi',
+            'TN': 'Tamil Nadu', 'UP': 'Uttar Pradesh', 'GJ': 'Gujarat',
+            'RJ': 'Rajasthan', 'WB': 'West Bengal', 'MP': 'Madhya Pradesh',
+            'AP': 'Andhra Pradesh', 'TG': 'Telangana', 'KL': 'Kerala',
+            'HR': 'Haryana', 'PB': 'Punjab', 'BR': 'Bihar', 'OR': 'Odisha'
+        }
     
     def fetch_vehicles(self):
         """Fetch available vehicles from backend"""
-        #  Fetch ALL vehicles, then filter
-        vehicles = fetch_backend_data('customer/vehicles')
+        vehicles = fetch_backend_data('customer/vehicles/search')
         
         if vehicles:
             self.vehicle_cache = [v for v in vehicles if v.get('status') == 'AVAILABLE']
@@ -247,8 +253,45 @@ class VehicleRecommenderAI:
         
         return self.vehicle_cache
     
-    def calculate_score(self, vehicle, pickup_lat, pickup_lon, passengers, prefer_electric=False):
-        """Calculate recommendation score for a vehicle"""
+    def get_state_from_coordinates(self, lat, lon):
+        """Determine state from GPS coordinates (simplified)"""
+        # Maharashtra (Mumbai, Pune)
+        if 15.6 <= lat <= 22.0 and 72.6 <= lon <= 80.9:
+            return 'MH'
+        # Karnataka (Bangalore)
+        elif 11.5 <= lat <= 18.5 and 74.0 <= lon <= 78.5:
+            return 'KA'
+        # Delhi NCR
+        elif 28.4 <= lat <= 28.9 and 76.8 <= lon <= 77.3:
+            return 'DL'
+        # Tamil Nadu (Chennai)
+        elif 8.0 <= lat <= 13.5 and 76.2 <= lon <= 80.3:
+            return 'TN'
+        # Gujarat (Ahmedabad)
+        elif 20.0 <= lat <= 24.7 and 68.1 <= lon <= 74.5:
+            return 'GJ'
+        # Rajasthan (Jaipur)
+        elif 24.0 <= lat <= 30.2 and 69.5 <= lon <= 78.3:
+            return 'RJ'
+        # West Bengal (Kolkata)
+        elif 21.5 <= lat <= 27.2 and 85.8 <= lon <= 89.9:
+            return 'WB'
+        else:
+            return 'UNKNOWN'
+    
+    def calculate_score(self, vehicle, pickup_lat, pickup_lon, pickup_state, 
+                       passengers, prefer_electric=False):
+        """Calculate recommendation score with STATE PRIORITY"""
+        
+        #  STATE MATCH BONUS (HIGHEST PRIORITY)
+        vehicle_state = vehicle.get('state', 'UNKNOWN')
+        state_match_bonus = 0
+        
+        if vehicle_state == pickup_state:
+            state_match_bonus = 100  #  MASSIVE bonus for same state
+        else:
+            state_match_bonus = -50  #  Heavy penalty for different state
+        
         # Distance score
         distance = haversine_distance(
             pickup_lat, pickup_lon,
@@ -276,27 +319,26 @@ class VehicleRecommenderAI:
         
         # Vehicle type bonus
         vehicle_type = vehicle.get('type', 'SEDAN')
-        type_score = {
-            'SEDAN': 10,
-            'SUV': 15,
-            'VAN': 5,
-            'LUXURY': 20
-        }.get(vehicle_type, 0)
+        type_score = {'SEDAN': 10, 'SUV': 15, 'VAN': 5, 'LUXURY': 20}.get(vehicle_type, 0)
         
-        # Final weighted score
+        #  NEW WEIGHTED SCORING (State is TOP priority)
         total_score = (
-            distance_score * 0.35 +
-            capacity_score * 0.20 +
-            health_score * 0.25 +
-            energy_score * 0.15 +
-            type_score * 0.05 +
+            state_match_bonus * 0.40 +      # 40% STATE MATCH
+            distance_score * 0.25 +          # 25% distance
+            capacity_score * 0.15 +          # 15% capacity
+            health_score * 0.12 +            # 12% health
+            energy_score * 0.05 +            # 5% energy
+            type_score * 0.03 +              # 3% type
             electric_bonus
         )
         
         return {
             'score': round(total_score, 2),
             'distance_km': round(distance, 2),
+            'state_match': vehicle_state == pickup_state,
+            'vehicle_state': vehicle_state,
             'breakdown': {
+                'state_match_bonus': state_match_bonus,
                 'distance_score': round(distance_score, 1),
                 'capacity_score': capacity_score,
                 'health_score': health_score,
@@ -304,8 +346,15 @@ class VehicleRecommenderAI:
             }
         }
     
-    def recommend(self, pickup_lat, pickup_lon, passengers=1, prefer_electric=False, top_n=5):
-        """Get top N recommended vehicles"""
+    def recommend(self, pickup_lat, pickup_lon, passengers=1, 
+                  prefer_electric=False, top_n=5, pickup_state=None):
+        """Get top N recommended vehicles with STATE PRIORITY"""
+        
+        # Auto-detect state if not provided
+        if not pickup_state:
+            pickup_state = self.get_state_from_coordinates(pickup_lat, pickup_lon)
+            print(f"🗺️ Auto-detected pickup state: {pickup_state}")
+        
         vehicles = self.fetch_vehicles()
         
         if not vehicles:
@@ -313,27 +362,48 @@ class VehicleRecommenderAI:
             return []
         
         recommendations = []
+        same_state_count = 0
+        
         for vehicle in vehicles:
-            score_data = self.calculate_score(vehicle, pickup_lat, pickup_lon, passengers, prefer_electric)
+            score_data = self.calculate_score(
+                vehicle, pickup_lat, pickup_lon, pickup_state,
+                passengers, prefer_electric
+            )
+            
+            if score_data['state_match']:
+                same_state_count += 1
             
             recommendations.append({
                 'vehicle': vehicle,
                 'recommendation_score': score_data['score'],
                 'distance_km': score_data['distance_km'],
+                'state_match': score_data['state_match'],
+                'vehicle_state': score_data['vehicle_state'],
                 'score_breakdown': score_data['breakdown'],
-                'reason': self._generate_reason(vehicle, score_data)
+                'reason': self._generate_reason(vehicle, score_data, pickup_state)
             })
         
+        # Sort by score (state-matching vehicles rank higher automatically)
         recommendations.sort(key=lambda x: x['recommendation_score'], reverse=True)
-        print(f"✅ Generated {len(recommendations)} recommendations, returning top {top_n}")
+        
+        print(f"✅ Found {same_state_count} vehicles in {pickup_state}")
+        print(f"✅ Returning top {top_n} recommendations")
+        
         return recommendations[:top_n]
     
-    def _generate_reason(self, vehicle, score_data):
+    def _generate_reason(self, vehicle, score_data, pickup_state):
         """Generate human-readable recommendation reason"""
         reasons = []
         
+        # STATE MATCH is PRIMARY reason
+        if score_data['state_match']:
+            state_name = self.state_mapping.get(pickup_state, pickup_state)
+            reasons.append(f"✅ Available in {state_name}")
+        else:
+            reasons.append(f"⚠️ From {score_data['vehicle_state']} (outside your state)")
+        
         if score_data['distance_km'] < 2:
-            reasons.append("Very close to pickup location")
+            reasons.append("Very close to pickup")
         elif score_data['distance_km'] < 5:
             reasons.append("Nearby")
         
@@ -341,10 +411,9 @@ class VehicleRecommenderAI:
             reasons.append("Excellent condition")
         
         if vehicle.get('isElectric'):
-            reasons.append("Eco-friendly electric vehicle")
+            reasons.append("Eco-friendly EV")
         
-        return ", ".join(reasons) if reasons else "Good option"
-
+        return ", ".join(reasons)
 #  PREDICTIVE MAINTENANCE AI
 
 
@@ -583,20 +652,27 @@ def predict_eta():
     
     return jsonify(result)
 
+
+
 @app.route('/recommend/vehicles', methods=['POST'])
 def recommend_vehicles():
-    """Get vehicle recommendations"""
+    """Get vehicle recommendations with STATE PRIORITY"""
     data = request.json
+    
+    
+    pickup_state = data.get('pickupState')  # "MH", "KA"
     
     recommendations = vehicle_recommender.recommend(
         pickup_lat=data['pickupLat'],
         pickup_lon=data['pickupLon'],
         passengers=data.get('passengers', 1),
         prefer_electric=data.get('preferElectric', False),
-        top_n=data.get('topN', 5)
+        top_n=data.get('topN', 5),
+        pickup_state=pickup_state  
     )
     
     return jsonify(recommendations)
+
 
 @app.route('/predict/maintenance/<int:vehicle_id>', methods=['GET'])
 def predict_maintenance(vehicle_id):

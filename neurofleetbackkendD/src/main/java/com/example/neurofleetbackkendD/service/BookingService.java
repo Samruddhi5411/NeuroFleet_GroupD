@@ -80,7 +80,48 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
     
-    // Assign driver to approved booking
+//    // Assign driver to approved booking
+//    @Transactional
+//    public Booking assignDriverToBooking(Long bookingId, Long driverId) {
+//        Booking booking = bookingRepository.findById(bookingId)
+//            .orElseThrow(() -> new RuntimeException("Booking not found"));
+//        
+//        if (booking.getStatus() != BookingStatus.APPROVED) {
+//            throw new RuntimeException("Booking must be approved before assigning driver");
+//        }
+//        
+//        User driver = userRepository.findById(driverId)
+//            .orElseThrow(() -> new RuntimeException("Driver not found"));
+//        
+//        if (driver.getRole() != UserRole.DRIVER) {
+//            throw new RuntimeException("Selected user is not a driver");
+//        }
+//        
+//        if (!driver.getActive()) {
+//            throw new RuntimeException("Driver is not active");
+//        }
+//        
+//        booking.setDriver(driver);
+//        booking.setStatus(BookingStatus.DRIVER_ASSIGNED);
+//        
+//       
+//        booking.setStatus(BookingStatus.DRIVER_ACCEPTED);
+//        booking.setDriverAcceptedAt(LocalDateTime.now());
+//        
+//        // dpay
+//        booking.setStatus(BookingStatus.CONFIRMED);
+//        booking.setPaymentStatus(PaymentStatus.PAID);
+//        booking.setPaymentMethod("CASH");
+//        booking.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+//        
+//        Booking savedBooking = bookingRepository.save(booking);
+//        
+//        //  SEND NOTIFICATIONS
+//        notificationService.notifyBookingApproved(savedBooking);
+//        
+//        System.out.println("✅ Driver " + driver.getFullName() + " assigned to booking " + bookingId);
+//        return savedBooking;
+//    }
     @Transactional
     public Booking assignDriverToBooking(Long bookingId, Long driverId) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -104,25 +145,25 @@ public class BookingService {
         booking.setDriver(driver);
         booking.setStatus(BookingStatus.DRIVER_ASSIGNED);
         
-       
+        // Auto-accept by driver
         booking.setStatus(BookingStatus.DRIVER_ACCEPTED);
         booking.setDriverAcceptedAt(LocalDateTime.now());
         
-        // dpay
+        // Move to CONFIRMED status
         booking.setStatus(BookingStatus.CONFIRMED);
-        booking.setPaymentStatus(PaymentStatus.PAID);
-        booking.setPaymentMethod("CASH");
-        booking.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        
+      
+        
+        // Keep payment as UNPAID
+        booking.setPaymentStatus(PaymentStatus.UNPAID);
         
         Booking savedBooking = bookingRepository.save(booking);
         
-        //  SEND NOTIFICATIONS
         notificationService.notifyBookingApproved(savedBooking);
         
         System.out.println("✅ Driver " + driver.getFullName() + " assigned to booking " + bookingId);
         return savedBooking;
     }
-    
     // Driver starts trip
     @Transactional
     public Booking startTrip(Long bookingId, Long driverId) {

@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -30,7 +31,6 @@ const DriverDashboard = () => {
   const fullName = localStorage.getItem('fullName') || 'Driver';
   const driverId = localStorage.getItem('userId');
 
-  // Get driver's actual location on mount
   useEffect(() => {
     getDriverLocation();
     loadTrips();
@@ -38,25 +38,7 @@ const DriverDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // const getDriverLocation = () => {
-  //   if (navigator.geolocation) {
-  //     navigator.geolocation.getCurrentPosition(
-  //       (position) => {
-  //         setDriverLocation([position.coords.latitude, position.coords.longitude]);
-  //       },
-  //       (error) => {
-  //         console.log('Location error:', error);
-  //         // Fallback: Use random location based on driver ID to make each driver unique
-  //         const randomOffset = driverId ? (parseInt(driverId) * 0.01) : 0;
-  //         setDriverLocation([19.0760 + randomOffset, 72.8777 + randomOffset]);
-  //       }
-  //     );
-  //   } else {
-  //     // Unique location per driver
-  //     const randomOffset = driverId ? (parseInt(driverId) * 0.01) : Math.random() * 0.1;
-  //     setDriverLocation([19.0760 + randomOffset, 72.8777 + randomOffset]);
-  //   }
-  // };
+
   const getDriverLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -68,30 +50,61 @@ const DriverDashboard = () => {
         },
         (error) => {
           console.log('Location error:', error);
-          // Use driver ID to create unique locations in LAND (not water)
-          const driverIdNum = driverId ? parseInt(driverId) : Math.random() * 100;
-          // Mumbai coordinates range (ON LAND)
-          const baseLat = 19.0760;  // Mumbai center
-          const baseLon = 72.8777;
-          // Add offset based on driver ID (0.01 = ~1km)
-          const latOffset = (driverIdNum % 10) * 0.01;
-          const lonOffset = Math.floor(driverIdNum / 10) * 0.01;
-          const finalLat = baseLat + latOffset;
-          const finalLon = baseLon + lonOffset;
-          console.log(`📍 Using fallback location for driver ${driverId}: ${finalLat}, ${finalLon}`);
+
+          // Use username hash instead of userId to ensure consistent distribution
+          const usernameHash = username ? username.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 1;
+          const driverSequence = (usernameHash % 8) + 1; // Force range 1-8
+
+          const cities = [
+            { name: 'Mumbai', lat: 19.0760, lon: 72.8777 },
+            { name: 'Delhi', lat: 28.7041, lon: 77.1025 },
+            { name: 'Bangalore', lat: 12.9716, lon: 77.5946 },
+            { name: 'Hyderabad', lat: 17.3850, lon: 78.4867 },
+            { name: 'Chennai', lat: 13.0827, lon: 80.2707 },
+            { name: 'Pune', lat: 18.5204, lon: 73.8567 },
+            { name: 'Noida', lat: 28.5355, lon: 77.3910 },
+            { name: 'Gurgaon', lat: 28.4595, lon: 77.0266 }
+          ];
+
+          const cityIndex = (driverSequence - 1) % cities.length;
+          const city = cities[cityIndex];
+
+          const latOffset = (Math.random() - 0.5) * 0.02;
+          const lonOffset = (Math.random() - 0.5) * 0.02;
+
+          const finalLat = city.lat + latOffset;
+          const finalLon = city.lon + lonOffset;
+
+          console.log(`📍 Driver ${username} (sequence ${driverSequence}) assigned to ${city.name}: ${finalLat}, ${finalLon}`);
           setDriverLocation([finalLat, finalLon]);
         }
       );
     } else {
-      // No geolocation support - use unique location per driver
-      const driverIdNum = driverId ? parseInt(driverId) : Math.random() * 100;
-      const baseLat = 19.0760;
-      const baseLon = 72.8777;
-      const latOffset = (driverIdNum % 10) * 0.01;
-      const lonOffset = Math.floor(driverIdNum / 10) * 0.01;
-      setDriverLocation([baseLat + latOffset, baseLon + lonOffset]);
+      // Use username hash for consistent city assignment
+      const usernameHash = username ? username.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 1;
+      const driverSequence = (usernameHash % 8) + 1;
+
+      const cities = [
+        { name: 'Mumbai', lat: 19.0760, lon: 72.8777 },
+        { name: 'Delhi', lat: 28.7041, lon: 77.1025 },
+        { name: 'Bangalore', lat: 12.9716, lon: 77.5946 },
+        { name: 'Hyderabad', lat: 17.3850, lon: 78.4867 },
+        { name: 'Chennai', lat: 13.0827, lon: 80.2707 },
+        { name: 'Pune', lat: 18.5204, lon: 73.8567 },
+        { name: 'Noida', lat: 28.5355, lon: 77.3910 },
+        { name: 'Gurgaon', lat: 28.4595, lon: 77.0266 }
+      ];
+
+      const cityIndex = (driverSequence - 1) % cities.length;
+      const city = cities[cityIndex];
+
+      const latOffset = (Math.random() - 0.5) * 0.02;
+      const lonOffset = (Math.random() - 0.5) * 0.02;
+
+      setDriverLocation([city.lat + latOffset, city.lon + lonOffset]);
     }
   };
+
   const loadTrips = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -174,7 +187,6 @@ const DriverDashboard = () => {
     ['DRIVER_ASSIGNED', 'DRIVER_ACCEPTED', 'CONFIRMED', 'IN_PROGRESS'].includes(t.status)
   );
 
-  // Only show paid completed trips
   const paidTrips = completedTrips.filter(t => t.paymentStatus === 'PAID');
   const totalEarnings = paidTrips.reduce((sum, trip) => sum + (trip.totalPrice * 0.7), 0);
   const pendingEarnings = completedTrips.filter(t => t.paymentStatus !== 'PAID').reduce((sum, trip) => sum + (trip.totalPrice * 0.7), 0);
@@ -208,8 +220,8 @@ const DriverDashboard = () => {
                         </div>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${trip.status === 'IN_PROGRESS' ? 'bg-accent-cyan/20 text-accent-cyan' :
-                          trip.status === 'CONFIRMED' ? 'bg-accent-green/20 text-accent-green' :
-                            'bg-yellow-500/20 text-yellow-400'
+                        trip.status === 'CONFIRMED' ? 'bg-accent-green/20 text-accent-green' :
+                          'bg-yellow-500/20 text-yellow-400'
                         }`}>
                         {trip.status.replace(/_/g, ' ')}
                       </span>
@@ -423,8 +435,8 @@ const DriverDashboard = () => {
                     <div className="flex justify-between text-sm">
                       <span className="text-white/60">Status:</span>
                       <span className={`font-bold ${vehicleMetrics.fuelLevel > 50 ? 'text-accent-green' :
-                          vehicleMetrics.fuelLevel > 20 ? 'text-yellow-400' :
-                            'text-red-400'
+                        vehicleMetrics.fuelLevel > 20 ? 'text-yellow-400' :
+                          'text-red-400'
                         }`}>
                         {vehicleMetrics.fuelLevel > 50 ? 'Good' :
                           vehicleMetrics.fuelLevel > 20 ? 'Low' : 'Critical'}
@@ -454,8 +466,8 @@ const DriverDashboard = () => {
                     <div className="flex justify-between text-sm">
                       <span className="text-white/60">Status:</span>
                       <span className={`font-bold ${vehicleMetrics.batteryLevel > 50 ? 'text-accent-cyan' :
-                          vehicleMetrics.batteryLevel > 20 ? 'text-yellow-400' :
-                            'text-red-400'
+                        vehicleMetrics.batteryLevel > 20 ? 'text-yellow-400' :
+                          'text-red-400'
                         }`}>
                         {vehicleMetrics.batteryLevel > 50 ? 'Charged' :
                           vehicleMetrics.batteryLevel > 20 ? 'Low' : 'Critical'}
@@ -571,8 +583,8 @@ const DriverDashboard = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-4 py-2 rounded-lg font-semibold transition-all whitespace-nowrap ${activeTab === tab.id
-                    ? 'bg-gradient-to-r from-accent-green to-accent-cyan text-white'
-                    : 'text-white/70 hover:text-white hover:bg-white/5'
+                  ? 'bg-gradient-to-r from-accent-green to-accent-cyan text-white'
+                  : 'text-white/70 hover:text-white hover:bg-white/5'
                   }`}
               >
                 {tab.label}
