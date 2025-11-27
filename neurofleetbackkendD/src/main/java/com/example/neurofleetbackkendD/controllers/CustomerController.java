@@ -43,9 +43,9 @@ public class CustomerController {
     }
     
 
-    /**
-     * Cancel booking
-     */
+
+   //  Cancel booking
+   
     @PutMapping("/bookings/{id}/cancel")
     public ResponseEntity<?> cancelBooking(@PathVariable Long id, 
                                           @RequestParam String username) {
@@ -62,9 +62,9 @@ public class CustomerController {
         }
     }
     
-    /**
-     * Get booking by ID
-     */
+
+     // Get booking by ID
+   
     @GetMapping("/bookings/{id}")
     public ResponseEntity<?> getBookingById(@PathVariable Long id) {
         try {

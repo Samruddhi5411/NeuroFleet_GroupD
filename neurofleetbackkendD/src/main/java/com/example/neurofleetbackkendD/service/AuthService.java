@@ -19,37 +19,34 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
     
-    /**
-     * Find user by username
-     */
+   //Find user by username
+     
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
     }
     
-    /**
-     * Find user by ID
-     */
+
+  // Find user by ID
+
     public Optional<User> findById(Long id) {
         return userRepository.findById(id);
     }
     
-    /**
-     * Get all users
-     */
+
+   //Get all users
+  
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
-    
-    /**
-     * Get users by role
-     */
+    //   Get users by role
+  
     public List<User> getUsersByRole(UserRole role) {
         return userRepository.findByRole(role);
     }
     
-    /**
-     * Get active drivers only
-     */
+
+// Get active drivers only
+ 
     public List<User> getActiveDrivers() {
         List<User> drivers = userRepository.findByRole(UserRole.DRIVER);
         return drivers.stream()
@@ -57,16 +54,16 @@ public class AuthService {
             .toList();
     }
     
-    /**
-     * Get all managers
-     */
+
+ //  Get all managers
+     
     public List<User> getAllManagers() {
         return userRepository.findByRole(UserRole.MANAGER);
     }
     
-    /**
-     * Get all customers
-     */
+
+  //* Get all customers
+     
     public List<User> getAllCustomers() {
         return userRepository.findByRole(UserRole.CUSTOMER);
     }
@@ -74,9 +71,9 @@ public class AuthService {
         return userRepository.findByRoleAndActive(UserRole.DRIVER, true);
     }
     
-    /**
-     * Create new user
-     */
+ 
+//    Create new user
+     
     public User register(User user) {
         userRepository.findByUsername(user.getUsername()).ifPresent(u -> {
             throw new RuntimeException("Username already exists");
@@ -93,9 +90,9 @@ public class AuthService {
     }
 
     
-    /**
-     * Update user
-     */
+//   Update user 						
+
+
     public User updateUser(Long id, User updates) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
@@ -122,9 +119,9 @@ public class AuthService {
         return userRepository.save(user);
     }
     
-    /**
-     * Toggle user active status
-     */
+   
+     //Toggle user active status
+     
     public User toggleUserActive(Long id) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
@@ -133,9 +130,9 @@ public class AuthService {
         return userRepository.save(user);
     }
     
-    /**
-     * Authenticate user
-     */
+    
+     // Authenticate user
+     
     public Optional<User> authenticate(String username, String password) {
         Optional<User> userOpt = userRepository.findByUsername(username);
         
@@ -149,9 +146,9 @@ public class AuthService {
         return Optional.empty();
     }
     
-    /**
-     * Count users by role
-     */
+    
+  // Count users by role
+     
     public long countByRole(UserRole role) {
         return userRepository.findByRole(role).size();
     }

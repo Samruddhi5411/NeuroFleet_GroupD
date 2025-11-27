@@ -27,9 +27,8 @@ public class DashboardService {
     @Autowired
     private MaintenanceRepository maintenanceRepository;
     
-    /**
-     * Admin Dashboard - Complete Overview
-     */
+    //Admin Dashboard - Complete Overview
+     
     public Map<String, Object> getAdminDashboard() {
         Map<String, Object> dashboard = new HashMap<>();
         
@@ -71,9 +70,9 @@ public class DashboardService {
         return dashboard;
     }
     
-    /**
-     * Manager Dashboard
-     */
+    
+    //  Manager Dashboard
+     
     public Map<String, Object> getManagerDashboard() {
         Map<String, Object> dashboard = new HashMap<>();
         
@@ -101,10 +100,10 @@ public class DashboardService {
         System.out.println("✅ Manager Dashboard loaded");
         return dashboard;
     }
+   
     
-    /**
-     * Driver Dashboard
-     */
+    //  Driver Dashboard
+     
     public Map<String, Object> getDriverDashboard(Long driverId) {
         Map<String, Object> dashboard = new HashMap<>();
         
@@ -130,10 +129,10 @@ public class DashboardService {
         System.out.println("✅ Driver Dashboard loaded for " + driver.getFullName());
         return dashboard;
     }
+   
     
-    /**
-     * Manager Performance Metrics
-     */
+    //  Manager Performance Metrics
+   
     public Map<String, Object> getManagerPerformance() {
         Map<String, Object> performance = new HashMap<>();
         
@@ -159,9 +158,9 @@ public class DashboardService {
         return performance;
     }
     
-    /**
-     * Driver Performance Metrics
-     */
+    
+     //Driver Performance Metrics
+     
     public Map<String, Object> getDriverPerformance() {
         Map<String, Object> performance = new HashMap<>();
         

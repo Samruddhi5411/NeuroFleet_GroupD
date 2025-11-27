@@ -2,21 +2,50 @@
 
 import axios from 'axios';
 
-const AI_BASE_URL = 'http://localhost:8083/api/ai';
+const AI_API_BASE = 'http://localhost:8080/api/ai';
 
 export const aiService = {
-  // Predictive Maintenance
-  predictMaintenance: (vehicleId) =>
-    axios.post(`${AI_BASE_URL}/maintenance/predict/${vehicleId}`),
+  // Predict ETA
+  async predictETA(pickupLat, pickupLon, dropoffLat, dropoffLon, vehicleHealth = 0.85, isElectric = false) {
+    const response = await fetch(`${AI_API_BASE}/eta`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pickupLat,
+        pickupLon,
+        dropoffLat,
+        dropoffLon,
+        vehicleHealth,
+        isElectric
+      })
+    });
+    return response.json();
+  },
 
-  analyzeFleetMaintenance: () =>
-    axios.get(`${AI_BASE_URL}/maintenance/analyze-fleet`),
+  // Get vehicle recommendations
+  async recommendVehicles(pickupLat, pickupLon, passengers = 1, preferElectric = false) {
+    const response = await fetch(`${AI_API_BASE}/recommend-vehicles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pickupLat,
+        pickupLon,
+        passengers,
+        preferElectric
+      })
+    });
+    return response.json();
+  },
 
-  // Route Optimization
-  optimizeRoute: (routeData) =>
-    axios.post(`${AI_BASE_URL}/route/optimize`, routeData),
+  // Predict maintenance
+  async predictMaintenance(vehicleId) {
+    const response = await fetch(`${AI_API_BASE}/maintenance/${vehicleId}`);
+    return response.json();
+  },
 
-  // Smart Recommendations
-  getVehicleRecommendations: (customerId) =>
-    axios.get(`${AI_BASE_URL}/recommend/vehicles/${customerId}`),
+  // Train models
+  async trainModels() {
+    const response = await fetch(`${AI_API_BASE}/train`, { method: 'POST' });
+    return response.json();
+  }
 };

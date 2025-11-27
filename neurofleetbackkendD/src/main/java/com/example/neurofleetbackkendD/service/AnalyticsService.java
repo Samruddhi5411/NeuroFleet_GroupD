@@ -23,9 +23,9 @@ public class AnalyticsService {
     @Autowired
     private UserRepository userRepository;
     
-    /**
-     * Get KPI Metrics
-     */
+    
+    // Get KPI Metrics
+     
     public Map<String, Object> getKPIMetrics() {
         Map<String, Object> kpi = new HashMap<>();
         
@@ -45,9 +45,9 @@ public class AnalyticsService {
         return kpi;
     }
     
-    /**
-     * Get Fleet Distribution
-     */
+    
+     //Get Fleet Distribution
+     
     public Map<String, Object> getFleetDistribution() {
         Map<String, Object> distribution = new HashMap<>();
         
@@ -71,9 +71,9 @@ public class AnalyticsService {
         return distribution;
     }
     
-    /**
-     * Get Hourly Activity
-     */
+    
+     // Get Hourly Activity
+     
     public Map<String, Object> getHourlyActivity() {
         Map<String, Object> activity = new HashMap<>();
         
@@ -90,9 +90,9 @@ public class AnalyticsService {
         return activity;
     }
     
-    /**
-     * Get Daily Trends
-     */
+    
+     // Get Daily Trends
+     
     public Map<String, Object> getDailyTrends(int days) {
         Map<String, Object> trends = new HashMap<>();
         
@@ -115,9 +115,9 @@ public class AnalyticsService {
         return trends;
     }
     
-    /**
-     * Get Vehicle Performance
-     */
+    
+     // Get Vehicle Performance
+     
     public Map<String, Object> getVehiclePerformance() {
         Map<String, Object> performance = new HashMap<>();
         
@@ -143,9 +143,9 @@ public class AnalyticsService {
         return performance;
     }
     
-    /**
-     * Generate Fleet Report CSV
-     */
+    
+     // Generate Fleet Report CSV
+     
     public byte[] generateFleetReportCSV() {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -175,9 +175,9 @@ public class AnalyticsService {
         }
     }
     
-    /**
-     * Generate Bookings Report CSV
-     */
+    
+     //Generate Bookings Report CSV
+     
     public byte[] generateBookingsReportCSV() {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -206,9 +206,9 @@ public class AnalyticsService {
         }
     }
     
-    /**
-     * Generate Revenue Report CSV
-     */
+  
+     // Generate Revenue Report CSV
+
     public byte[] generateRevenueReportCSV() {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -249,9 +249,9 @@ public class AnalyticsService {
         
         return Map.of("heatmapData", locationDensity);
     }
-    /**
-     * Generate Trips Report CSV
-     */
+    
+     //Generate Trips Report CSV
+     
     public byte[] generateTripsReportCSV() {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();

@@ -94,6 +94,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/admin/**").permitAll()
+                .requestMatchers("/api/ai/**").permitAll()
                 .requestMatchers("/api/manager/**").permitAll()
                 .requestMatchers("/api/driver/**").permitAll()
                 .requestMatchers("/api/customer/**").permitAll()

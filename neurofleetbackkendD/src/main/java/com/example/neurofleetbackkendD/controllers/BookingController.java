@@ -3,6 +3,8 @@ package com.example.neurofleetbackkendD.controllers;
 import com.example.neurofleetbackkendD.model.Booking;
 import com.example.neurofleetbackkendD.model.User;
 import com.example.neurofleetbackkendD.model.Vehicle;
+import com.example.neurofleetbackkendD.model.enums.PaymentStatus;
+import com.example.neurofleetbackkendD.repository.BookingRepository;
 import com.example.neurofleetbackkendD.service.AuthService;
 import com.example.neurofleetbackkendD.service.BookingService;
 import com.example.neurofleetbackkendD.service.VehicleService;
@@ -25,6 +27,9 @@ public class BookingController {
     
     @Autowired
     private VehicleService vehicleService;
+    
+    @Autowired
+    private BookingRepository  bookingRepository;
    
     
 
@@ -141,8 +146,22 @@ public class BookingController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+    @PostMapping("/customer/bookings/{id}/pay")
+    public ResponseEntity<?> processPayment(@PathVariable Long id,
+                                           @RequestBody Map<String, String> paymentData) {
+        try {
+            String paymentMethod = paymentData.get("paymentMethod");
+            Booking paid = bookingService.processCustomerPayment(id, paymentMethod);
+            return ResponseEntity.ok(paid);
+        } catch (Exception e) {
+            System.err.println("❌ Error processing payment: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
     
-    // Start trip
+    
+
+//    // Start trip
 //    @PutMapping("/driver/bookings/{id}/start-trip")
 //    public ResponseEntity<?> startTrip(@PathVariable Long id, @RequestParam String username) {
 //        try {

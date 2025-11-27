@@ -157,7 +157,7 @@ export const analyticsService = {
   getDailyTrends: (days) => api.get(`/analytics/daily-trends?days=${days || 7}`),
   getVehiclePerformance: () => api.get('/analytics/vehicle-performance'),
 
-  // ✅ FIX: Add responseType for blob downloads
+  //  Add responseType for blob downloads
   downloadFleetReport: () => api.get('/analytics/reports/fleet/csv', {
     responseType: 'blob'
   }),

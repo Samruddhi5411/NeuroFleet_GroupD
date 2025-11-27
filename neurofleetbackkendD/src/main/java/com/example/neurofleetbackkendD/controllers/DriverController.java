@@ -26,9 +26,9 @@ public class DriverController {
     @Autowired
     private DashboardService dashboardService;
     
-    /**
-     * Get Driver Dashboard Data
-     */
+
+     // Get Driver Dashboard Data
+  
     @GetMapping("/dashboard")
     public ResponseEntity<?> getDriverDashboard(@RequestParam String username) {
         try {
@@ -42,10 +42,9 @@ public class DriverController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-    
-    /**
-     * Get Driver's Assigned Bookings
-     */
+  
+     // Get Driver's Assigned Bookings
+     
     @GetMapping("/bookings")
     public ResponseEntity<?> getDriverBookings(@RequestParam String username) {
         try {
@@ -61,9 +60,9 @@ public class DriverController {
         }
     }
     
-    /**
-     * Driver Starts Trip
-     */
+    
+     // Driver Starts Trip
+     
     @PutMapping("/bookings/{id}/start-trip")
     public ResponseEntity<?> startTrip(@PathVariable Long id, 
                                        @RequestParam String username) {
@@ -80,9 +79,9 @@ public class DriverController {
         }
     }
     
-    /**
-     * Driver Completes Trip
-     */
+    
+     // Driver Completes Trip
+     
     @PutMapping("/bookings/{id}/complete-trip")
     public ResponseEntity<?> completeTrip(@PathVariable Long id, 
                                           @RequestParam String username) {
@@ -99,27 +98,10 @@ public class DriverController {
         }
     }
     
-    /**
-     * Get Driver's Active Booking
-     */
-//    @GetMapping("/bookings/active")
-//    public ResponseEntity<?> getActiveBooking(@RequestParam String username) {
-//        try {
-//            User driver = authService.findByUsername(username)
-//                .orElseThrow(() -> new RuntimeException("Driver not found"));
-//
-//            return bookingService.getDriverActiveBooking(driver.getId())
-//                .<ResponseEntity<?>>map(ResponseEntity::ok)
-//                .orElse(ResponseEntity.ok(Map.of("message", "No active booking")));
-//                
-//        } catch (Exception e) {
-//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-//        }
-//    }
-//    
-    /**
-     * Get Driver's Completed Bookings
-     */
+   
+
+     // Get Driver's Completed Bookings
+
     @GetMapping("/bookings/completed")
     public ResponseEntity<?> getCompletedBookings(@RequestParam String username) {
         try {

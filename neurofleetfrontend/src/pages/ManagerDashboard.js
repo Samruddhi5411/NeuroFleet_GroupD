@@ -1,8 +1,8 @@
+
+
 // import React, { useState, useEffect } from 'react';
 // import { useNavigate } from 'react-router-dom';
 // import axios from 'axios';
-// import Logo from '../components/Logo';
-// import { VehicleIcon, BookingIcon, RouteIcon, MaintenanceIcon, LogoutIcon, LocationIcon, CalendarIcon } from '../components/Icons';
 
 // const ManagerDashboard = () => {
 //   const navigate = useNavigate();
@@ -31,7 +31,7 @@
 //         axios.get('http://localhost:8083/api/manager/bookings/pending', { headers }),
 //         axios.get('http://localhost:8083/api/manager/drivers/available', { headers }),
 //         axios.get('http://localhost:8083/api/manager/vehicles', { headers }),
-//         axios.get('http://localhost:8083/api/admin/maintenance', { headers })
+//         axios.get('http://localhost:8083/api/admin/maintenance', { headers }).catch(() => ({ data: [] }))
 //       ]);
 
 //       setPendingBookings(bookingsRes.data);
@@ -54,12 +54,14 @@
 //       const token = localStorage.getItem('token');
 //       const headers = { 'Authorization': `Bearer ${token}` };
 
+//       // Step 1: Approve booking
 //       await axios.put(
 //         `http://localhost:8083/api/manager/bookings/${selectedBooking.id}/approve`,
 //         {},
 //         { headers }
 //       );
 
+//       // Step 2: Assign driver
 //       await axios.put(
 //         `http://localhost:8083/api/manager/bookings/${selectedBooking.id}/assign-driver?driverId=${selectedDriver}`,
 //         {},
@@ -71,7 +73,8 @@
 //       setSelectedDriver('');
 //       loadAllData();
 //     } catch (error) {
-//       alert('❌ Failed to process booking');
+//       console.error('Approval error:', error);
+//       alert('❌ Failed to process booking: ' + (error.response?.data?.error || error.message));
 //     } finally {
 //       setLoading(false);
 //     }
@@ -90,6 +93,18 @@
 //       'PENDING': 'bg-yellow-500/20 text-yellow-400',
 //     };
 //     return map[status] || 'bg-white/10 text-white/50';
+//   };
+
+//   const getVehicleIcon = (type) => {
+//     const icons = {
+//       SEDAN: '🚗',
+//       SUV: '🚙',
+//       VAN: '🚐',
+//       TRUCK: '🚛',
+//       BUS: '🚌',
+//       BIKE: '🏍️'
+//     };
+//     return icons[type] || '🚗';
 //   };
 
 //   const renderContent = () => {
@@ -124,12 +139,12 @@
 //             </div>
 
 //             <div className="glass-card p-6">
-//               <h3 className="text-xl font-bold text-white mb-4">Fleet Status Cards</h3>
+//               <h3 className="text-xl font-bold text-white mb-4">Fleet Status</h3>
 //               <div className="space-y-3">
 //                 {vehicles.map((vehicle) => (
 //                   <div key={vehicle.id} className="flex items-center justify-between p-4 bg-dark-700/40 rounded-xl">
 //                     <div className="flex items-center gap-4">
-//                       <VehicleIcon size="md" className="text-accent-cyan" />
+//                       <div className="text-3xl">{getVehicleIcon(vehicle.type)}</div>
 //                       <div>
 //                         <p className="text-white font-semibold">{vehicle.model}</p>
 //                         <p className="text-white/50 text-sm">{vehicle.vehicleNumber}</p>
@@ -154,7 +169,7 @@
 //       case 'drivers':
 //         return (
 //           <div className="space-y-6">
-//             <h2 className="text-3xl font-bold text-white mb-4">Drivers & Active Trips</h2>
+//             <h2 className="text-3xl font-bold text-white mb-4">Available Drivers</h2>
 //             <div className="glass-card p-6">
 //               {drivers.length > 0 ? (
 //                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -203,7 +218,7 @@
 //                     <div key={log.id} className="flex items-center justify-between p-4 bg-dark-700/40 rounded-xl">
 //                       <div className="flex items-center gap-4">
 //                         <div className="w-10 h-10 rounded-lg bg-accent-pink/20 flex items-center justify-center">
-//                           <MaintenanceIcon size="sm" className="text-accent-pink" />
+//                           <span className="text-accent-pink">🔧</span>
 //                         </div>
 //                         <div>
 //                           <p className="text-white font-semibold">Vehicle: {log.vehicle?.vehicleNumber}</p>
@@ -249,32 +264,36 @@
 
 //                     <div className="space-y-2 mb-4">
 //                       <div className="flex items-center gap-2 text-sm">
-//                         <VehicleIcon size="sm" className="text-accent-cyan" />
-//                         <span className="text-white/60">Vehicle:</span>
-//                         <span className="text-white font-semibold">
-//                           {booking.vehicle?.model} ({booking.vehicle?.vehicleNumber})
-//                         </span>
+//                         <span className="text-3xl">{getVehicleIcon(booking.vehicle?.type)}</span>
+//                         <div>
+//                           <p className="text-white/60 text-xs">Vehicle</p>
+//                           <p className="text-white font-semibold">
+//                             {booking.vehicle?.model} ({booking.vehicle?.vehicleNumber})
+//                           </p>
+//                         </div>
 //                       </div>
 //                       <div className="flex items-start gap-2 text-sm">
-//                         <LocationIcon size="sm" className="text-accent-green mt-0.5" />
+//                         <span className="text-green-400">📍</span>
 //                         <div className="flex-1">
-//                           <p className="text-white/60">Pickup</p>
+//                           <p className="text-white/60 text-xs">Pickup</p>
 //                           <p className="text-white font-semibold">{booking.pickupLocation}</p>
 //                         </div>
 //                       </div>
 //                       <div className="flex items-start gap-2 text-sm">
-//                         <LocationIcon size="sm" className="text-accent-pink mt-0.5" />
+//                         <span className="text-pink-400">🏁</span>
 //                         <div className="flex-1">
-//                           <p className="text-white/60">Dropoff</p>
+//                           <p className="text-white/60 text-xs">Dropoff</p>
 //                           <p className="text-white font-semibold">{booking.dropoffLocation}</p>
 //                         </div>
 //                       </div>
 //                       <div className="flex items-center gap-2 text-sm">
-//                         <CalendarIcon size="sm" className="text-accent-cyan" />
-//                         <span className="text-white/60">Time:</span>
-//                         <span className="text-white font-semibold">
-//                           {new Date(booking.startTime).toLocaleString()}
-//                         </span>
+//                         <span className="text-cyan-400">📅</span>
+//                         <div>
+//                           <p className="text-white/60 text-xs">Time</p>
+//                           <p className="text-white font-semibold">
+//                             {new Date(booking.startTime).toLocaleString()}
+//                           </p>
+//                         </div>
 //                       </div>
 //                     </div>
 
@@ -326,7 +345,7 @@
 //               </div>
 //             ) : (
 //               <div className="glass-card p-12 text-center">
-//                 <BookingIcon size="xl" className="text-white/20 mx-auto mb-4" />
+//                 <div className="text-6xl mb-4">📋</div>
 //                 <p className="text-white/50">No pending bookings</p>
 //               </div>
 //             )}
@@ -341,14 +360,12 @@
 //         <div className="max-w-7xl mx-auto px-6 py-4">
 //           <div className="flex justify-between items-center">
 //             <div className="flex items-center gap-4">
-//               <Logo size="sm" showText={true} />
-//               <div className="h-8 w-px bg-white/20"></div>
+//               <div className="text-2xl">🚗</div>
 //               <h1 className="text-lg font-bold text-white">Manager Portal</h1>
 //             </div>
 //             <div className="flex items-center gap-4">
 //               <span className="text-white/70">Welcome, {fullName}</span>
-//               <button onClick={handleLogout} className="btn-secondary flex items-center gap-2">
-//                 <LogoutIcon size="sm" />
+//               <button onClick={handleLogout} className="btn-secondary">
 //                 Logout
 //               </button>
 //             </div>
@@ -359,9 +376,9 @@
 //           <div className="flex gap-2 pb-3 overflow-x-auto">
 //             {[
 //               { id: 'pending', label: 'Pending Bookings' },
-//               { id: 'vehicles', label: 'Vehicles Assigned' },
-//               { id: 'drivers', label: 'Drivers & Active Trips' },
-//               { id: 'maintenance', label: 'Maintenance Logs' },
+//               { id: 'vehicles', label: 'Vehicles' },
+//               { id: 'drivers', label: 'Drivers' },
+//               { id: 'maintenance', label: 'Maintenance' },
 //             ].map(tab => (
 //               <button
 //                 key={tab.id}
@@ -397,7 +414,7 @@ const ManagerDashboard = () => {
   const [pendingBookings, setPendingBookings] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [vehicles, setVehicles] = useState([]);
-  const [maintenanceLogs, setMaintenanceLogs] = useState([]);
+  const [maintenancePredictions, setMaintenancePredictions] = useState([]);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [selectedDriver, setSelectedDriver] = useState('');
   const [loading, setLoading] = useState(false);
@@ -414,19 +431,32 @@ const ManagerDashboard = () => {
       const token = localStorage.getItem('token');
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      const [bookingsRes, driversRes, vehiclesRes, maintenanceRes] = await Promise.all([
+      const [bookingsRes, driversRes, vehiclesRes] = await Promise.all([
         axios.get('http://localhost:8083/api/manager/bookings/pending', { headers }),
         axios.get('http://localhost:8083/api/manager/drivers/available', { headers }),
-        axios.get('http://localhost:8083/api/manager/vehicles', { headers }),
-        axios.get('http://localhost:8083/api/admin/maintenance', { headers }).catch(() => ({ data: [] }))
+        axios.get('http://localhost:8083/api/manager/vehicles', { headers })
       ]);
 
       setPendingBookings(bookingsRes.data);
       setDrivers(driversRes.data);
       setVehicles(vehiclesRes.data);
-      setMaintenanceLogs(maintenanceRes.data.slice(0, 10));
+
+      // Load AI maintenance predictions
+      loadAIMaintenance();
     } catch (error) {
       console.error('Error loading data:', error);
+    }
+  };
+
+  const loadAIMaintenance = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:8083/api/ai/maintenance/all', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setMaintenancePredictions(response.data || []);
+    } catch (error) {
+      console.error('AI maintenance error:', error);
     }
   };
 
@@ -441,14 +471,12 @@ const ManagerDashboard = () => {
       const token = localStorage.getItem('token');
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      // Step 1: Approve booking
       await axios.put(
         `http://localhost:8083/api/manager/bookings/${selectedBooking.id}/approve`,
         {},
         { headers }
       );
 
-      // Step 2: Assign driver
       await axios.put(
         `http://localhost:8083/api/manager/bookings/${selectedBooking.id}/assign-driver?driverId=${selectedDriver}`,
         {},
@@ -494,12 +522,21 @@ const ManagerDashboard = () => {
     return icons[type] || '🚗';
   };
 
+  const getPriorityColor = (priority) => {
+    const colors = {
+      'HIGH': 'bg-red-500/20 text-red-400 border-red-500/30',
+      'MEDIUM': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+      'LOW': 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+    };
+    return colors[priority] || 'bg-gray-500/20 text-gray-400';
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'vehicles':
         return (
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-white mb-4">Vehicles Assigned</h2>
+            <h2 className="text-3xl font-bold text-white mb-4">🚗 Fleet Overview</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
               <div className="glass-card p-6 text-center">
                 <p className="text-white/60 text-sm mb-2">Available</p>
@@ -520,34 +557,50 @@ const ManagerDashboard = () => {
                 </p>
               </div>
               <div className="glass-card p-6 text-center">
-                <p className="text-white/60 text-sm mb-2">Total</p>
+                <p className="text-white/60 text-sm mb-2">Total Fleet</p>
                 <p className="text-4xl font-bold text-accent-purple">{vehicles.length}</p>
               </div>
             </div>
 
             <div className="glass-card p-6">
-              <h3 className="text-xl font-bold text-white mb-4">Fleet Status</h3>
+              <h3 className="text-xl font-bold text-white mb-4">Vehicle Status</h3>
               <div className="space-y-3">
-                {vehicles.map((vehicle) => (
-                  <div key={vehicle.id} className="flex items-center justify-between p-4 bg-dark-700/40 rounded-xl">
-                    <div className="flex items-center gap-4">
-                      <div className="text-3xl">{getVehicleIcon(vehicle.type)}</div>
-                      <div>
-                        <p className="text-white font-semibold">{vehicle.model}</p>
-                        <p className="text-white/50 text-sm">{vehicle.vehicleNumber}</p>
+                {vehicles.map((vehicle) => {
+                  const aiPrediction = maintenancePredictions.find(p => p.vehicle_id === vehicle.id);
+                  
+                  return (
+                    <div key={vehicle.id} className="flex items-center justify-between p-4 bg-dark-700/40 rounded-xl hover:bg-dark-700/60 transition">
+                      <div className="flex items-center gap-4">
+                        <div className="text-3xl">{getVehicleIcon(vehicle.type)}</div>
+                        <div>
+                          <p className="text-white font-semibold">{vehicle.model}</p>
+                          <p className="text-white/50 text-sm">{vehicle.vehicleNumber}</p>
+                          {aiPrediction && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-cyan-400 text-xs">🤖 AI:</span>
+                              <span className={`text-xs px-2 py-0.5 rounded ${getPriorityColor(aiPrediction.prediction?.priority)}`}>
+                                {aiPrediction.prediction?.priority} Priority
+                              </span>
+                              <span className="text-white/50 text-xs">
+                                Risk: {aiPrediction.prediction?.risk_score}%
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right text-sm">
+                          <p className="text-white/60">Type: {vehicle.type}</p>
+                          <p className="text-white/60">Health: {vehicle.healthScore}%</p>
+                          <p className="text-white/60">Capacity: {vehicle.capacity} seats</p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(vehicle.status)}`}>
+                          {vehicle.status}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right text-sm">
-                        <p className="text-white/60">Type: {vehicle.type}</p>
-                        <p className="text-white/60">Capacity: {vehicle.capacity} seats</p>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(vehicle.status)}`}>
-                        {vehicle.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -556,7 +609,7 @@ const ManagerDashboard = () => {
       case 'drivers':
         return (
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-white mb-4">Available Drivers</h2>
+            <h2 className="text-3xl font-bold text-white mb-4">👥 Available Drivers</h2>
             <div className="glass-card p-6">
               {drivers.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -577,9 +630,14 @@ const ManagerDashboard = () => {
                           <span className="text-white font-semibold">{driver.totalTrips || 0}</span>
                         </div>
                         <div className="flex justify-between">
+                          <span className="text-white/60">Earnings:</span>
+                          <span className="text-accent-green font-semibold">${(driver.totalEarnings || 0).toFixed(0)}</span>
+                        </div>
+                        <div className="flex justify-between">
                           <span className="text-white/60">Status:</span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${driver.active ? 'bg-accent-green/20 text-accent-green' : 'bg-red-500/20 text-red-400'
-                            }`}>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                            driver.active ? 'bg-accent-green/20 text-accent-green' : 'bg-red-500/20 text-red-400'
+                          }`}>
                             {driver.active ? 'ONLINE' : 'OFFLINE'}
                           </span>
                         </div>
@@ -597,35 +655,118 @@ const ManagerDashboard = () => {
       case 'maintenance':
         return (
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-white mb-4">Maintenance Logs</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-3xl font-bold text-white">🤖 AI Maintenance Predictions</h2>
+              <button
+                onClick={loadAIMaintenance}
+                className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg font-semibold hover:opacity-90"
+              >
+                🔄 Refresh AI
+              </button>
+            </div>
+
+            {maintenancePredictions.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="glass-card p-4 bg-red-500/10 border border-red-500/20">
+                  <p className="text-white/60 text-sm mb-1">High Priority</p>
+                  <p className="text-red-400 font-bold text-3xl">
+                    {maintenancePredictions.filter(p => p.prediction?.priority === 'HIGH').length}
+                  </p>
+                </div>
+                <div className="glass-card p-4 bg-yellow-500/10 border border-yellow-500/20">
+                  <p className="text-white/60 text-sm mb-1">Medium Priority</p>
+                  <p className="text-yellow-400 font-bold text-3xl">
+                    {maintenancePredictions.filter(p => p.prediction?.priority === 'MEDIUM').length}
+                  </p>
+                </div>
+                <div className="glass-card p-4 bg-blue-500/10 border border-blue-500/20">
+                  <p className="text-white/60 text-sm mb-1">Low Priority</p>
+                  <p className="text-blue-400 font-bold text-3xl">
+                    {maintenancePredictions.filter(p => p.prediction?.priority === 'LOW').length}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="glass-card p-6">
-              {maintenanceLogs.length > 0 ? (
+              {maintenancePredictions.length > 0 ? (
                 <div className="space-y-3">
-                  {maintenanceLogs.map((log) => (
-                    <div key={log.id} className="flex items-center justify-between p-4 bg-dark-700/40 rounded-xl">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-accent-pink/20 flex items-center justify-center">
-                          <span className="text-accent-pink">🔧</span>
+                  {maintenancePredictions
+                    .sort((a, b) => {
+                      const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+                      return priorityOrder[a.prediction?.priority] - priorityOrder[b.prediction?.priority];
+                    })
+                    .map((item) => (
+                      <div key={item.vehicle_id} className={`p-4 rounded-xl border-2 ${
+                        item.prediction?.priority === 'HIGH' ? 'bg-red-500/10 border-red-500/30' :
+                        item.prediction?.priority === 'MEDIUM' ? 'bg-yellow-500/10 border-yellow-500/30' :
+                        'bg-blue-500/10 border-blue-500/30'
+                      }`}>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="text-3xl">🔧</div>
+                            <div>
+                              <p className="text-white font-semibold">{item.vehicle_number}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-cyan-400 text-xs">🤖 AI Prediction</span>
+                                <span className={`px-2 py-0.5 rounded text-xs font-bold ${getPriorityColor(item.prediction?.priority)}`}>
+                                  {item.prediction?.priority} Priority
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-white/60 text-xs">Risk Score</p>
+                            <p className={`font-bold text-2xl ${
+                              item.prediction?.risk_score > 70 ? 'text-red-400' :
+                              item.prediction?.risk_score > 40 ? 'text-yellow-400' :
+                              'text-blue-400'
+                            }`}>
+                              {item.prediction?.risk_score}%
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-white font-semibold">Vehicle: {log.vehicle?.vehicleNumber}</p>
-                          <p className="text-white/50 text-sm">{log.issueType}</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-white/60">Low Risk:</span>
+                            <span className="text-blue-400 font-semibold">{item.prediction?.confidence?.LOW}%</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-white/60">Medium Risk:</span>
+                            <span className="text-yellow-400 font-semibold">{item.prediction?.confidence?.MEDIUM}%</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-white/60">High Risk:</span>
+                            <span className="text-red-400 font-semibold">{item.prediction?.confidence?.HIGH}%</span>
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-white/10">
+                          <p className="text-white/60 text-xs mb-2">🤖 AI Recommendations:</p>
+                          <ul className="space-y-1">
+                            {item.prediction?.recommendations?.map((rec, idx) => (
+                              <li key={idx} className="text-white text-sm flex items-start gap-2">
+                                <span className="text-cyan-400">•</span>
+                                <span>{rec}</span>
+                              </li>
+                            ))}
+                          </ul>
+                          {item.prediction?.next_maintenance_days && (
+                            <p className="text-white/50 text-xs mt-2">
+                              ⏰ Next maintenance in: <strong>{item.prediction.next_maintenance_days} days</strong>
+                            </p>
+                          )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${log.priority === 'HIGH' ? 'bg-red-500/20 text-red-400' :
-                            log.priority === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400' :
-                              'bg-blue-500/20 text-blue-400'
-                          }`}>
-                          {log.priority}
-                        </span>
-                        <p className="text-white/50 text-xs mt-1">{log.status}</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               ) : (
-                <div className="text-center text-white/50 py-8">No maintenance logs</div>
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">🤖</div>
+                  <p className="text-white/50 mb-2">No AI predictions available</p>
+                  <p className="text-white/30 text-sm">Make sure the AI service is running on port 5000</p>
+                </div>
               )}
             </div>
           </div>
@@ -634,7 +775,7 @@ const ManagerDashboard = () => {
       default: // pending bookings
         return (
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-white mb-4">Pending Bookings ({pendingBookings.length})</h2>
+            <h2 className="text-3xl font-bold text-white mb-4">📋 Pending Bookings ({pendingBookings.length})</h2>
             {pendingBookings.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {pendingBookings.map((booking) => (
@@ -698,7 +839,7 @@ const ManagerDashboard = () => {
                             <option value="">Select driver...</option>
                             {drivers.map((driver) => (
                               <option key={driver.id} value={driver.id}>
-                                {driver.fullName} (⭐ {driver.rating || 5.0})
+                                {driver.fullName} (⭐ {driver.rating || 5.0}) - {driver.totalTrips || 0} trips
                               </option>
                             ))}
                           </select>
@@ -762,18 +903,19 @@ const ManagerDashboard = () => {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex gap-2 pb-3 overflow-x-auto">
             {[
-              { id: 'pending', label: 'Pending Bookings' },
-              { id: 'vehicles', label: 'Vehicles' },
-              { id: 'drivers', label: 'Drivers' },
-              { id: 'maintenance', label: 'Maintenance' },
+              { id: 'pending', label: '📋 Pending Bookings' },
+              { id: 'vehicles', label: '🚗 Fleet' },
+              { id: 'drivers', label: '👥 Drivers' },
+              { id: 'maintenance', label: '🤖 AI Maintenance' },
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 rounded-lg font-semibold transition-all whitespace-nowrap ${activeTab === tab.id
+                className={`px-4 py-2 rounded-lg font-semibold transition-all whitespace-nowrap ${
+                  activeTab === tab.id
                     ? 'bg-gradient-to-r from-accent-purple to-accent-pink text-white'
                     : 'text-white/70 hover:text-white hover:bg-white/5'
-                  }`}
+                }`}
               >
                 {tab.label}
               </button>
