@@ -34,9 +34,9 @@ public class MaintenanceService {
         return maintenanceRepository.findAll();
     }
     
-    /**
-     * Get all maintenance records (alias)
-     */
+   
+    // Get all maintenance records 
+     
     public List<MaintenanceRecord> getAllMaintenanceRecords() {
         return maintenanceRepository.findAll();
     }

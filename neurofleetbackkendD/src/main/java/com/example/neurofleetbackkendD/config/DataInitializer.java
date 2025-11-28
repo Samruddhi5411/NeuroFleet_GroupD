@@ -102,8 +102,8 @@ public class DataInitializer implements CommandLineRunner {
             driver.setRole(UserRole.DRIVER);
             driver.setActive(true);
             driver.setRating(4.0 + random.nextDouble());
-            driver.setTotalTrips(random.nextInt(100) + 50);
-            driver.setTotalEarnings(random.nextDouble() * 50000 + 10000);
+            driver.setTotalTrips(0);  
+            driver.setTotalEarnings(0.0);  
             userRepository.save(driver);
         }
         

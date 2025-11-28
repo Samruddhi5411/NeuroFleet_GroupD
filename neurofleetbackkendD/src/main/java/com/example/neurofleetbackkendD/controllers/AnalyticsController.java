@@ -41,16 +41,7 @@ public class AnalyticsController {
         }
     }
     
-//    // Get hourly activity
-//    @GetMapping("/hourly-activity")
-//    public ResponseEntity<?> getHourlyActivity() {
-//        try {
-//            Map<String, Object> activity = analyticsService.getHourlyActivity();
-//            return ResponseEntity.ok(activity);
-//        } catch (Exception e) {
-//            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-//        }
-//    }
+
     
     @GetMapping("/hourly-activity")
     public ResponseEntity<?> getHourlyActivity() {

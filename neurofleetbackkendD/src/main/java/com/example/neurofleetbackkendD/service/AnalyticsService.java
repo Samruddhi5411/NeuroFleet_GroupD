@@ -70,26 +70,7 @@ public class AnalyticsService {
         
         return distribution;
     }
-    
-//    
-//     // Get Hourly Activity
-//     
-//    public Map<String, Object> getHourlyActivity() {
-//        Map<String, Object> activity = new HashMap<>();
-//        
-//        List<String> hours = Arrays.asList(
-//            "00:00", "03:00", "06:00", "09:00", "12:00", 
-//            "15:00", "18:00", "21:00"
-//        );
-//        
-//        List<Integer> bookings = Arrays.asList(5, 8, 15, 25, 30, 28, 20, 12);
-//        
-//        activity.put("labels", hours);
-//        activity.put("values", bookings);
-//        
-//        return activity;
-//    }
-    
+
     
      // Get Daily Trends
      

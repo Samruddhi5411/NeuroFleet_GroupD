@@ -75,6 +75,7 @@ def fetch_backend_data(endpoint):
 #  ETA PREDICTION AI MODEL
 
 
+
 class ETAPredictorAI:
     def __init__(self):
         self.model = None
@@ -85,7 +86,6 @@ class ETAPredictorAI:
         """Fetch real bookings data and prepare for training"""
         print("📊 Fetching booking data from backend...")
         
-        #  Fetch from correct endpoint
         bookings = fetch_backend_data('admin/bookings')
         
         if not bookings or len(bookings) < 10:
@@ -98,7 +98,6 @@ class ETAPredictorAI:
         for booking in bookings:
             if booking.get('status') == 'COMPLETED' and booking.get('startTime') and booking.get('endTime'):
                 try:
-                    # Extract features
                     distance = haversine_distance(
                         booking.get('pickupLatitude', 0),
                         booking.get('pickupLongitude', 0),
@@ -142,25 +141,37 @@ class ETAPredictorAI:
         return np.array(features), np.array(targets)
     
     def _generate_synthetic_data(self, n_samples=100):
-        """Generate synthetic training data"""
+        """Generate REALISTIC synthetic training data for Indian cities"""
         features = []
         targets = []
         
         for _ in range(n_samples):
-            distance = np.random.uniform(5, 50)
+            distance = np.random.uniform(1, 50)  # 1-50 km
             hour = np.random.randint(0, 24)
             day_of_week = np.random.randint(0, 7)
             traffic_factor = get_traffic_factor(hour)
             health_score = np.random.uniform(0.7, 1.0)
             is_electric = np.random.choice([0, 1])
             
-            base_time = distance * 2.5
-            traffic_delay = base_time * (traffic_factor - 1) * 0.5
-            health_penalty = (1 - health_score) * 5
-            electric_bonus = -2 if is_electric else 0
+            #  Realistic speed calculation
+            if traffic_factor > 1.3:  # Heavy traffic (peak hours)
+                avg_speed = np.random.uniform(15, 25)  # 15-25 km/h
+            elif traffic_factor > 1.1:  # Moderate traffic
+                avg_speed = np.random.uniform(25, 40)  # 25-40 km/h
+            else:  # Light traffic (late night)
+                avg_speed = np.random.uniform(40, 60)  # 40-60 km/h
             
-            eta = base_time + traffic_delay + health_penalty + electric_bonus + np.random.normal(0, 3)
-            eta = max(10, eta)
+            # Calculate base time in minutes
+            base_time = (distance / avg_speed) * 60
+            
+         
+            health_penalty = (1 - health_score) * 3  # Max 3 min penalty
+            electric_bonus = -1 if is_electric else 0  # EVs slightly faster
+            random_variation = np.random.normal(0, 2)  # ±2 min variation
+            
+            # Final ETA
+            eta = base_time + health_penalty + electric_bonus + random_variation
+            eta = max(5, eta)  # Minimum 5 minutes
             
             features.append([distance, hour, day_of_week, traffic_factor, health_score, is_electric])
             targets.append(eta)
@@ -218,13 +229,29 @@ class ETAPredictorAI:
         features_scaled = self.scaler.transform(features)
         eta_minutes = self.model.predict(features_scaled)[0]
         
+        # 🔧 SAFETY CHECK: Cap unrealistic predictions
+        if eta_minutes > distance * 10:  # If ETA > 10 min/km, recalculate
+            print(f"⚠️ Unrealistic prediction detected: {eta_minutes:.1f} min for {distance:.2f} km")
+            # Fallback to rule-based calculation
+            if traffic_factor > 1.3:
+                avg_speed = 20  # km/h
+            elif traffic_factor > 1.1:
+                avg_speed = 30  # km/h
+            else:
+                avg_speed = 45  # km/h
+            
+            eta_minutes = (distance / avg_speed) * 60
+            print(f"✅ Using fallback calculation: {eta_minutes:.1f} min")
+        
+        # Cap maximum ETA at 3 hours for safety
+        eta_minutes = min(eta_minutes, 180)
+        
         return {
             'eta_minutes': round(eta_minutes, 1),
             'distance_km': round(distance, 2),
             'estimated_arrival': (now + timedelta(minutes=eta_minutes)).isoformat(),
             'traffic_condition': 'Heavy' if traffic_factor > 1.3 else 'Moderate' if traffic_factor > 1.1 else 'Light'
         }
-
 
 #  SMART VEHICLE RECOMMENDATION AI
 

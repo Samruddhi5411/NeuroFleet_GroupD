@@ -80,48 +80,7 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
     
-//    // Assign driver to approved booking
-//    @Transactional
-//    public Booking assignDriverToBooking(Long bookingId, Long driverId) {
-//        Booking booking = bookingRepository.findById(bookingId)
-//            .orElseThrow(() -> new RuntimeException("Booking not found"));
-//        
-//        if (booking.getStatus() != BookingStatus.APPROVED) {
-//            throw new RuntimeException("Booking must be approved before assigning driver");
-//        }
-//        
-//        User driver = userRepository.findById(driverId)
-//            .orElseThrow(() -> new RuntimeException("Driver not found"));
-//        
-//        if (driver.getRole() != UserRole.DRIVER) {
-//            throw new RuntimeException("Selected user is not a driver");
-//        }
-//        
-//        if (!driver.getActive()) {
-//            throw new RuntimeException("Driver is not active");
-//        }
-//        
-//        booking.setDriver(driver);
-//        booking.setStatus(BookingStatus.DRIVER_ASSIGNED);
-//        
-//       
-//        booking.setStatus(BookingStatus.DRIVER_ACCEPTED);
-//        booking.setDriverAcceptedAt(LocalDateTime.now());
-//        
-//        // dpay
-//        booking.setStatus(BookingStatus.CONFIRMED);
-//        booking.setPaymentStatus(PaymentStatus.PAID);
-//        booking.setPaymentMethod("CASH");
-//        booking.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-//        
-//        Booking savedBooking = bookingRepository.save(booking);
-//        
-//        //  SEND NOTIFICATIONS
-//        notificationService.notifyBookingApproved(savedBooking);
-//        
-//        System.out.println("✅ Driver " + driver.getFullName() + " assigned to booking " + bookingId);
-//        return savedBooking;
-//    }
+
     @Transactional
     public Booking assignDriverToBooking(Long bookingId, Long driverId) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -196,45 +155,7 @@ public class BookingService {
         System.out.println("✅ Trip started for booking: " + bookingId);
         return savedBooking;
     }
-    
-    // Driver completes trip
-//    @Transactional
-//    public Booking completeTrip(Long bookingId, Long driverId) {
-//        Booking booking = bookingRepository.findById(bookingId)
-//            .orElseThrow(() -> new RuntimeException("Booking not found"));
-//        
-//        if (booking.getDriver() == null || !booking.getDriver().getId().equals(driverId)) {
-//            throw new RuntimeException("Unauthorized");
-//        }
-//        
-//        if (booking.getStatus() != BookingStatus.IN_PROGRESS) {
-//            throw new RuntimeException("Trip is not in progress");
-//        }
-//        
-//        booking.setStatus(BookingStatus.COMPLETED);
-//        booking.setEndTime(LocalDateTime.now());
-//        booking.setCompletedAt(LocalDateTime.now());
-//        
-//        // Release vehicle
-//        Vehicle vehicle = booking.getVehicle();
-//        vehicle.setStatus(VehicleStatus.AVAILABLE);
-//        vehicle.setCurrentDriver(null);
-//        vehicleRepository.save(vehicle);
-//        
-//        // Update driver earnings
-//        User driver = booking.getDriver();
-//        driver.setTotalTrips(driver.getTotalTrips() + 1);
-//        driver.setTotalEarnings(driver.getTotalEarnings() + (booking.getTotalPrice() * 0.7)); // 70% to driver
-//        userRepository.save(driver);
-//        
-//        Booking savedBooking = bookingRepository.save(booking);
-//        
-//        //  SEND NOTIFICATION
-//        notificationService.notifyTripCompleted(savedBooking);
-//        
-//        System.out.println("✅ Trip completed for booking: " + bookingId);
-//        return savedBooking;
-//    }
+
     @Transactional
     public Booking completeTrip(Long bookingId, Long driverId) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -284,15 +205,34 @@ public class BookingService {
         booking.setPaymentMethod(paymentMethod);
         booking.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         
-        // update driver earnings
+        //  DRIVER STATISTICS FROM REAL BOOKINGS
         User driver = booking.getDriver();
-        driver.setTotalTrips(driver.getTotalTrips() + 1);
-        driver.setTotalEarnings(driver.getTotalEarnings() + (booking.getTotalPrice() * 0.7));
+        
+        // Count REAL completed trips
+        Long completedTrips = bookingRepository.countByDriverIdAndStatus(
+            driver.getId(), 
+            BookingStatus.COMPLETED
+        );
+        driver.setTotalTrips(completedTrips.intValue());
+        
+        // Calculate REAL earnings from completed trips
+        List<Booking> completedBookings = bookingRepository.findByDriverIdAndStatus(
+            driver.getId(), 
+            BookingStatus.COMPLETED
+        );
+        Double totalEarnings = completedBookings.stream()
+            .filter(b -> b.getPaymentStatus() == PaymentStatus.PAID)
+            .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.7 : 0.0)
+            .sum();
+        driver.setTotalEarnings(totalEarnings);
+        
         userRepository.save(driver);
         
         Booking savedBooking = bookingRepository.save(booking);
         
         System.out.println("✅ Payment processed for booking: " + bookingId);
+        System.out.println("✅ Driver " + driver.getFullName() + " now has " + completedTrips + " trips, earnings: ₹" + totalEarnings);
+        
         return savedBooking;
     }
     

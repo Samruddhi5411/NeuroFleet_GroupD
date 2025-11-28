@@ -24,14 +24,14 @@ public class Payment {
     private User driver;
     
     private Double amount;
-    private String paymentMethod; // CARD, CASH, UPI, WALLET
+    private String paymentMethod; 
     private String transactionId;
-    private String cardLast4; // Last 4 digits of card
+    private String cardLast4; 
     
     @Enumerated(EnumType.STRING)
     private PaymentStatus status = PaymentStatus.UNPAID;
     
-    private String payoutStatus = "PENDING"; // PENDING, REQUESTED, APPROVED, PAID
+    private String payoutStatus = "PENDING"; 
     
     private LocalDateTime paidAt;
     private LocalDateTime refundedAt;

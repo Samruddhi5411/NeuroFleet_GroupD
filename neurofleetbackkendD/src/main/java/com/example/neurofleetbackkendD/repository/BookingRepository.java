@@ -23,10 +23,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     
     // Find by driver and multiple statuses
     List<Booking> findByDriverIdAndStatusIn(Long driverId, List<BookingStatus> statuses);
-    
+    Long countByDriverIdAndStatus(Long driverId, BookingStatus status);
     // Find by vehicle
     List<Booking> findByVehicleId(Long vehicleId);
     
     // Find active bookings (for monitoring)
     List<Booking> findByStatusIn(List<BookingStatus> statuses);
+    
 }

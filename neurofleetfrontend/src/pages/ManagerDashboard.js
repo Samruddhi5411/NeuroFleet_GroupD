@@ -40,7 +40,8 @@ const ManagerDashboard = () => {
         axios.get('http://localhost:8083/api/manager/drivers/available', { headers }),
         axios.get('http://localhost:8083/api/manager/vehicles', { headers })
       ]);
-
+       console.log('🔍 DRIVERS RESPONSE:', driversRes.data);
+    console.log('🔍 First driver totalTrips:', driversRes.data[0]?.totalTrips);
       setPendingBookings(bookingsRes.data);
       setDrivers(driversRes.data);
       setVehicles(vehiclesRes.data);
@@ -232,17 +233,14 @@ const ManagerDashboard = () => {
                       <div className="text-sm space-y-1">
                         <div className="flex justify-between">
                           <span className="text-white/60">Total Trips:</span>
+                          {/*  REAL trips from database */}
                           <span className="text-white font-semibold">{driver.totalTrips || 0}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-white/60">Earnings:</span>
-                          <span className="text-accent-green font-semibold">${(driver.totalEarnings || 0).toFixed(0)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-white/60">Status:</span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${driver.active ? 'bg-accent-green/20 text-accent-green' : 'bg-red-500/20 text-red-400'
-                            }`}>
-                            {driver.active ? 'ONLINE' : 'OFFLINE'}
+                          {/*  REAL earnings */}
+                          <span className="text-accent-green font-semibold">
+                            ₹{(driver.totalEarnings || 0).toFixed(0)}
                           </span>
                         </div>
                       </div>
@@ -446,6 +444,7 @@ const ManagerDashboard = () => {
                               </option>
                             ))}
                           </select>
+
                         </div>
                         <div className="flex gap-2">
                           <button
