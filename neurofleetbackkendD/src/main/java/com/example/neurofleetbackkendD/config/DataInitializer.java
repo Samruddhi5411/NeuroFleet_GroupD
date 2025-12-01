@@ -44,6 +44,7 @@ public class DataInitializer implements CommandLineRunner {
         createUsers();
         createVehiclesAcrossIndia();
         createRealBookings();
+        updateDriverStatistics();
         createMaintenanceRecords();
         
         System.out.println("✅ Database initialization completed!");
@@ -270,7 +271,36 @@ public class DataInitializer implements CommandLineRunner {
         
         System.out.println("✅ Created 25 bookings");
     }
-  
+    private void updateDriverStatistics() {
+        System.out.println("📊 Updating driver statistics from real bookings...");
+        
+        List<User> drivers = userRepository.findByRole(UserRole.DRIVER);
+        
+        for (User driver : drivers) {
+            // Count COMPLETED trips for this driver
+            Long completedTrips = bookingRepository.countByDriverIdAndStatus(
+                driver.getId(), 
+                BookingStatus.COMPLETED
+            );
+            driver.setTotalTrips(completedTrips.intValue());
+            
+            // Calculate earnings from PAID trips (70% of fare goes to driver)
+            List<Booking> paidBookings = bookingRepository.findByDriverIdAndStatus(
+                driver.getId(), 
+                BookingStatus.COMPLETED
+            );
+            Double totalEarnings = paidBookings.stream()
+                .filter(b -> b.getPaymentStatus() == PaymentStatus.PAID)
+                .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.7 : 0.0)
+                .sum();
+            driver.setTotalEarnings(totalEarnings);
+            
+            userRepository.save(driver);
+            
+            System.out.println("✅ Updated " + driver.getFullName() + 
+                             " - Trips: " + completedTrips + ", Earnings: ₹" + totalEarnings);
+        }
+    }
     private void createMaintenanceRecords() {
         System.out.println("🔧 Creating maintenance records...");
         

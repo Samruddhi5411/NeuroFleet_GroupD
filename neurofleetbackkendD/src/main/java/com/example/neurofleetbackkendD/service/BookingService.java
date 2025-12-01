@@ -156,6 +156,7 @@ public class BookingService {
         return savedBooking;
     }
 
+
     @Transactional
     public Booking completeTrip(Long bookingId, Long driverId) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -173,24 +174,46 @@ public class BookingService {
         booking.setEndTime(LocalDateTime.now());
         booking.setCompletedAt(LocalDateTime.now());
         
-        // Set payment status to PENDING if not already paid
         if (booking.getPaymentStatus() != PaymentStatus.PAID) {
             booking.setPaymentStatus(PaymentStatus.PENDING);
         }
         
-        // Release vehicle
         Vehicle vehicle = booking.getVehicle();
         vehicle.setStatus(VehicleStatus.AVAILABLE);
         vehicle.setCurrentDriver(null);
         vehicleRepository.save(vehicle);
         
+        //  UPDATE DRIVER STATS IMMEDIATELY
+        User driver = booking.getDriver();
+        
+        // Count REAL completed trips
+        Long completedTrips = bookingRepository.countByDriverIdAndStatus(
+            driver.getId(), 
+            BookingStatus.COMPLETED
+        );
+        driver.setTotalTrips(completedTrips.intValue());
+        
+        // Calculate earnings from PAID trips only
+        List<Booking> paidBookings = bookingRepository.findByDriverIdAndStatus(
+            driver.getId(), 
+            BookingStatus.COMPLETED
+        );
+        Double totalEarnings = paidBookings.stream()
+            .filter(b -> b.getPaymentStatus() == PaymentStatus.PAID)
+            .mapToDouble(b -> b.getTotalPrice() != null ? b.getTotalPrice() * 0.7 : 0.0)
+            .sum();
+        driver.setTotalEarnings(totalEarnings);
+        
+        userRepository.save(driver);
+        
+        System.out.println("✅ Driver stats updated: " + driver.getFullName() + 
+                           " - Trips: " + completedTrips + ", Earnings: ₹" + totalEarnings);
         
         Booking savedBooking = bookingRepository.save(booking);
         
         System.out.println("✅ Trip completed for booking: " + bookingId + " - Waiting for payment");
         return savedBooking;
     }
-
     // Add payment processing method
     @Transactional
     public Booking processCustomerPayment(Long bookingId, String paymentMethod) {
