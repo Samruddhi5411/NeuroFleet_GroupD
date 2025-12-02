@@ -61,7 +61,12 @@ public class User {
     
     private LocalDateTime createdAt = LocalDateTime.now();
     
-  
+    @Column(name = "assigned_city")
+    private String assignedCity;
+    
+    public String getAssignedCity() { return assignedCity; }
+    public void setAssignedCity(String assignedCity) { this.assignedCity = assignedCity; }
+    
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
 

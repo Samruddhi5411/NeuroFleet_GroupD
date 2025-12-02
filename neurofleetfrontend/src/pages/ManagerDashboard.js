@@ -21,15 +21,20 @@ const ManagerDashboard = () => {
     const interval = setInterval(loadAllData, 30000);
     return () => clearInterval(interval);
   }, []);
-  const getDriverCity = (driverId) => {
-    const cities = [
-      'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad',
-      'Chennai', 'Pune', 'Noida', 'Gurgaon'
-    ];
+  // const getDriverCity = (driverId) => {
+  //   const cities = [
+  //     'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad',
+  //     'Chennai', 'Pune', 'Noida', 'Gurgaon'
+  //   ];
 
-    const cityIndex = (driverId - 1) % cities.length;
-    return cities[cityIndex];
+  //   const cityIndex = (driverId - 1) % cities.length;
+  //   return cities[cityIndex];
+  // };
+
+  const getDriverCity = (driver) => {
+    return driver.assignedCity || 'Not Assigned';
   };
+
   const loadAllData = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -40,8 +45,8 @@ const ManagerDashboard = () => {
         axios.get('http://localhost:8083/api/manager/drivers/available', { headers }),
         axios.get('http://localhost:8083/api/manager/vehicles', { headers })
       ]);
-       console.log('🔍 DRIVERS RESPONSE:', driversRes.data);
-    console.log('🔍 First driver totalTrips:', driversRes.data[0]?.totalTrips);
+      console.log('🔍 DRIVERS RESPONSE:', driversRes.data);
+      console.log('🔍 First driver totalTrips:', driversRes.data[0]?.totalTrips);
       setPendingBookings(bookingsRes.data);
       setDrivers(driversRes.data);
       setVehicles(vehiclesRes.data);
@@ -219,7 +224,7 @@ const ManagerDashboard = () => {
               {drivers.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-                  {drivers.map((driver) => (
+                  {/* {drivers.map((driver) => (
                     <div key={driver.id} className="glass-card-hover p-4">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent-cyan to-accent-blue flex items-center justify-center text-white font-bold">
@@ -229,7 +234,21 @@ const ManagerDashboard = () => {
                           <h4 className="text-white font-semibold">{driver.fullName}</h4>
                           <p className="text-white/50 text-xs">📍 {getDriverCity(driver.id)}</p>
                         </div>
+                      </div> */}
+                  {drivers.map((driver) => (
+                    <div key={driver.id} className="glass-card-hover p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent-cyan to-accent-blue flex items-center justify-center text-white font-bold">
+                          {driver.fullName?.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-white font-semibold">{driver.fullName}</h4>
+                          {/* ✅ Updated to read from backend */}
+                          <p className="text-white/50 text-xs">📍 {driver.assignedCity || 'Not Assigned'}</p>
+                        </div>
                       </div>
+
+
                       <div className="text-sm space-y-1">
                         <div className="flex justify-between">
                           <span className="text-white/60">Total Trips:</span>
@@ -432,7 +451,7 @@ const ManagerDashboard = () => {
                             Assign Driver
                           </label>
 
-                          <select
+                          {/* <select
                             className="input-field"
                             value={selectedDriver}
                             onChange={(e) => setSelectedDriver(e.target.value)}
@@ -441,6 +460,20 @@ const ManagerDashboard = () => {
                             {drivers.map((driver) => (
                               <option key={driver.id} value={driver.id}>
                                 {driver.fullName} (📍 {getDriverCity(driver.id)}) - {driver.totalTrips || 0} trips
+                              </option>
+                            ))}
+                          </select> */}
+
+                          <select
+                            className="input-field"
+                            value={selectedDriver}
+                            onChange={(e) => setSelectedDriver(e.target.value)}
+                          >
+                            <option value="">Select driver...</option>
+                            {drivers.map((driver) => (
+                              <option key={driver.id} value={driver.id}>
+                                {/* ✅ Updated */}
+                                {driver.fullName} (📍 {driver.assignedCity || 'N/A'}) - {driver.totalTrips || 0} trips
                               </option>
                             ))}
                           </select>

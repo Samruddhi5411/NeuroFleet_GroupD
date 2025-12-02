@@ -353,8 +353,8 @@ const CustomerDashboard = () => {
                   <div className="text-right">
                     <p className="text-white/70 text-sm">Traffic</p>
                     <p className={`font-semibold ${etaData.traffic_condition === 'Heavy' ? 'text-red-400' :
-                        etaData.traffic_condition === 'Moderate' ? 'text-yellow-400' :
-                          'text-green-400'
+                      etaData.traffic_condition === 'Moderate' ? 'text-yellow-400' :
+                        'text-green-400'
                       }`}>{etaData.traffic_condition}</p>
                   </div>
                 </div>
@@ -438,8 +438,8 @@ const CustomerDashboard = () => {
                         <div className="flex justify-between">
                           <span className="text-white/60">Health:</span>
                           <span className={`font-semibold ${vehicle.healthScore >= 90 ? 'text-green-400' :
-                              vehicle.healthScore >= 75 ? 'text-yellow-400' :
-                                'text-red-400'
+                            vehicle.healthScore >= 75 ? 'text-yellow-400' :
+                              'text-red-400'
                             }`}>
                             {vehicle.healthScore}%
                           </span>
@@ -675,8 +675,8 @@ const CustomerDashboard = () => {
                         </div>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${booking.status === 'IN_PROGRESS' ? 'bg-accent-cyan/20 text-accent-cyan' :
-                          booking.status === 'CONFIRMED' ? 'bg-accent-green/20 text-accent-green' :
-                            'bg-yellow-500/20 text-yellow-400'
+                        booking.status === 'CONFIRMED' ? 'bg-accent-green/20 text-accent-green' :
+                          'bg-yellow-500/20 text-yellow-400'
                         }`}>
                         {booking.status.replace(/_/g, ' ')}
                       </span>
@@ -915,8 +915,8 @@ const CustomerDashboard = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-4 py-2 rounded-lg font-semibold transition-all whitespace-nowrap relative ${activeTab === tab.id
-                    ? 'bg-gradient-to-r from-accent-green to-accent-cyan text-white'
-                    : 'text-white/70 hover:text-white hover:bg-white/5'
+                  ? 'bg-gradient-to-r from-accent-green to-accent-cyan text-white'
+                  : 'text-white/70 hover:text-white hover:bg-white/5'
                   }`}
               >
                 {tab.label}

@@ -291,6 +291,8 @@ class VehicleRecommenderAI:
         # Delhi NCR
         elif 28.4 <= lat <= 28.9 and 76.8 <= lon <= 77.3:
             return 'DL'
+        # elif 16.0 <= lat <= 19.5 and 77.0 <= lon <= 81.0:
+        #     return 'TG'
         # Tamil Nadu (Chennai)
         elif 8.0 <= lat <= 13.5 and 76.2 <= lon <= 80.3:
             return 'TN'
@@ -305,6 +307,41 @@ class VehicleRecommenderAI:
             return 'WB'
         else:
             return 'UNKNOWN'
+
+    # def get_state_from_coordinates(self, lat, lon):
+    # """Determine state from GPS coordinates (simplified)"""
+    # # Maharashtra (Mumbai, Pune)
+    # if 15.6 <= lat <= 21.0 and 72.6 <= lon <= 75.9:
+    #     return 'MH'
+    # # Karnataka (Bangalore)
+    # elif 11.5 <= lat <= 18.5 and 74.0 <= lon <= 78.3:
+    #     return 'KA'
+    # # Telangana (Hyderabad) - FIXED COORDINATES
+    # elif 16.0 <= lat <= 19.5 and 77.0 <= lon <= 81.0:
+    #     return 'TG'
+    # # Delhi NCR
+    # elif 28.4 <= lat <= 28.9 and 76.8 <= lon <= 77.3:
+    #     return 'DL'
+    # # Haryana (Gurgaon)
+    # elif 27.5 <= lat <= 30.5 and 75.5 <= lon <= 77.5:
+    #     return 'HR'
+    # # Uttar Pradesh (Noida)
+    # elif 25.0 <= lat <= 30.5 and 77.0 <= lon <= 84.5:
+    #     return 'UP'
+    # # Tamil Nadu (Chennai)
+    # elif 8.0 <= lat <= 13.5 and 76.2 <= lon <= 80.3:
+    #     return 'TN'
+    # # Gujarat (Ahmedabad)
+    # elif 20.0 <= lat <= 24.7 and 68.1 <= lon <= 74.5:
+    #     return 'GJ'
+    # # Rajasthan (Jaipur)
+    # elif 24.0 <= lat <= 30.2 and 69.5 <= lon <= 78.3:
+    #     return 'RJ'
+    # # West Bengal (Kolkata)
+    # elif 21.5 <= lat <= 27.2 and 85.8 <= lon <= 89.9:
+    #     return 'WB'
+    # else:
+    #     return 'UNKNOWN'
     
     def calculate_score(self, vehicle, pickup_lat, pickup_lon, pickup_state, 
                        passengers, prefer_electric=False):
