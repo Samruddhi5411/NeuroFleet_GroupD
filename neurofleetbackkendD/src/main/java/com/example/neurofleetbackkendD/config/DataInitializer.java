@@ -140,7 +140,7 @@ public class DataInitializer implements CommandLineRunner {
             {"Mumbai", 19.0760, 72.8777, "MH", 10},
             {"Delhi", 28.7041, 77.1025, "DL", 10},
             {"Bangalore", 12.9716, 77.5946, "KA", 10},
-            {"Hyderabad", 17.3850, 78.4867, "TS", 8},
+//            {"Hyderabad", 17.3850, 78.4867, "TS", 8},
             {"Chennai", 13.0827, 80.2707, "TN", 7},
             {"Pune", 18.5204, 73.8567, "MH", 5}
         };

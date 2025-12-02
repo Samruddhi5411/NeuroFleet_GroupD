@@ -51,8 +51,8 @@ const CustomerDashboard = () => {
     'Bangalore Koramangala': { lat: 12.9352, lon: 77.6245 },
     'Bangalore Electronic City': { lat: 12.8456, lon: 77.6603 },
     'Bangalore Airport': { lat: 13.1986, lon: 77.7066 },
-    'Hyderabad Hi-Tech City': { lat: 17.4435, lon: 78.3772 },
-    'Hyderabad Secunderabad': { lat: 17.4399, lon: 78.4983 },
+    // 'Hyderabad Hi-Tech City': { lat: 17.4435, lon: 78.3772 },
+    // 'Hyderabad Secunderabad': { lat: 17.4399, lon: 78.4983 },
     'Chennai T Nagar': { lat: 13.0418, lon: 80.2341 },
     'Chennai Airport': { lat: 12.9941, lon: 80.1709 },
   };
