@@ -206,10 +206,7 @@ class ETAPredictorAI:
     
     def predict(self, pickup_lat, pickup_lon, dropoff_lat, dropoff_lon, 
                 vehicle_health=0.85, is_electric=False):
-        """Predict ETA for a trip"""
-        if not self.is_trained:
-            print("⚠️ Model not trained, training now...")
-            self.train()
+        """Predict ETA for a trip with REALISTIC time calculations"""
         
         distance = haversine_distance(pickup_lat, pickup_lon, dropoff_lat, dropoff_lon)
         now = datetime.now()
@@ -217,40 +214,50 @@ class ETAPredictorAI:
         day_of_week = now.weekday()
         traffic_factor = get_traffic_factor(hour)
         
-        features = np.array([[
-            distance,
-            hour,
-            day_of_week,
-            traffic_factor,
-            vehicle_health,
-            1 if is_electric else 0
-        ]])
+        # 🚗 REALISTIC SPEED CALCULATIONS FOR INDIAN CITIES
+        if traffic_factor > 1.3:  # Heavy traffic (8-10 AM, 6-8 PM)
+            avg_speed = 20  # km/h
+        elif traffic_factor > 1.1:  # Moderate traffic (11 AM - 5 PM)
+            avg_speed = 35  # km/h
+        else:  # Light traffic (late night/early morning)
+            avg_speed = 50  # km/h
         
-        features_scaled = self.scaler.transform(features)
-        eta_minutes = self.model.predict(features_scaled)[0]
+        # Base time calculation (distance / speed) * 60 minutes
+        base_time_minutes = (distance / avg_speed) * 60
         
-        # 🔧 SAFETY CHECK: Cap unrealistic predictions
-        if eta_minutes > distance * 10:  # If ETA > 10 min/km, recalculate
-            print(f"⚠️ Unrealistic prediction detected: {eta_minutes:.1f} min for {distance:.2f} km")
-            # Fallback to rule-based calculation
-            if traffic_factor > 1.3:
-                avg_speed = 20  # km/h
-            elif traffic_factor > 1.1:
-                avg_speed = 30  # km/h
-            else:
-                avg_speed = 45  # km/h
-            
-            eta_minutes = (distance / avg_speed) * 60
-            print(f"✅ Using fallback calculation: {eta_minutes:.1f} min")
+        # Apply vehicle health penalty (poor health = slower)
+        health_penalty = (1 - vehicle_health) * 5  # Max 5 min penalty
         
-        # Cap maximum ETA at 3 hours for safety
-        eta_minutes = min(eta_minutes, 180)
+        # Electric vehicles are slightly faster (better acceleration)
+        electric_bonus = -2 if is_electric else 0
+        
+        # Add realistic variation (traffic signals, lane changes, etc.)
+        random_delay = np.random.uniform(1, 5)  # 1-5 min delay
+        
+        # Final ETA
+        eta_minutes = base_time_minutes + health_penalty + electric_bonus + random_delay
+        
+        # Safety checks
+        eta_minutes = max(5, eta_minutes)  # Minimum 5 minutes
+        eta_minutes = min(eta_minutes, 180)  # Maximum 3 hours
+        
+        # 🔒 ENFORCE MINIMUM TIME-PER-KM RATIO
+        # For 16 km, minimum should be ~20-25 minutes
+        min_time_per_km = 1.5  # At least 1.5 min/km (40 km/h max speed)
+        min_eta = distance * min_time_per_km
+        eta_minutes = max(eta_minutes, min_eta)
+        
+        print(f"🗺️ Distance: {distance:.2f} km")
+        print(f"⏱️ Base time: {base_time_minutes:.1f} min (avg speed: {avg_speed} km/h)")
+        print(f"🚦 Traffic: {traffic_factor} ({['Light', 'Moderate', 'Heavy'][int(traffic_factor > 1.1) + int(traffic_factor > 1.3) - 1]})")
+        print(f"✅ Final ETA: {eta_minutes:.1f} min")
         
         return {
             'eta_minutes': round(eta_minutes, 1),
             'distance_km': round(distance, 2),
             'estimated_arrival': (now + timedelta(minutes=eta_minutes)).isoformat(),
-            'traffic_condition': 'Heavy' if traffic_factor > 1.3 else 'Moderate' if traffic_factor > 1.1 else 'Light'
+            'traffic_condition': 'Heavy' if traffic_factor > 1.3 else 'Moderate' if traffic_factor > 1.1 else 'Light',
+            'avg_speed_kmh': round(avg_speed, 1)
         }
 
 #  SMART VEHICLE RECOMMENDATION AI
